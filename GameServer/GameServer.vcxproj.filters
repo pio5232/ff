@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Contents">
+      <UniqueIdentifier>{048b9bd9-46c2-4aae-878c-86a8ae277639}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sector">
+      <UniqueIdentifier>{fc796a0b-ff7f-49a4-b479-94d59933265b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{22e1e4e6-b25e-4750-9ab2-19f23b31ea58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Entities">
+      <UniqueIdentifier>{69c1a678-d62d-4f3b-871b-27b6e4436b11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PlayerState">
+      <UniqueIdentifier>{1e73846a-5314-4c62-a14f-225ba27b4aff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="아직정리안됨">
+      <UniqueIdentifier>{a944b2a1-7aed-4084-8cc1-18ee5163e40f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LanClientSession.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformComponent.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="GameServerDefine.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="StatComponent.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="GameMonitor.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="LanClient.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketHandler.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerStateController.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="SectorManager.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="WorldChat.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="AIPlayer.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlayer.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerState.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerStateBase.h">
+      <Filter>아직정리안됨</Filter>
+    </ClInclude>
+    <ClInclude Include="GameServer.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="GameSystem.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="UserManager.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketBuilder.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWorld.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="LanClientSession.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="GameServerDefine.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="StatComponent.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="TransformComponent.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="GameMonitor.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="LanClient.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketHandler.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="Sector.h">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerStateController.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="SectorManager.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="AIPlayer.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="GamePlayer.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerState.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerStateBase.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="WorldChat.cpp">
+      <Filter>아직정리안됨</Filter>
+    </ClCompile>
+    <ClCompile Include="GameServer.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="GameSystem.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="UserManager.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketBuilder.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWorld.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

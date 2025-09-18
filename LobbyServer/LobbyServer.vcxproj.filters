@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Main">
+      <UniqueIdentifier>{99479852-0d69-4088-b54b-662856415cec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>{2f76d789-50c4-407e-a93e-8ba4a6099cbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{f35def21-3bc7-49a9-935b-96cdb99603aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Define">
+      <UniqueIdentifier>{01d18937-dcae-46eb-b41c-2d9ee86131c7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="LobbyServer.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketBuilder.cpp" />
+    <ClCompile Include="LanServer.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="RoomManager.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketHandler.cpp" />
+    <ClCompile Include="LobbySystem.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="UserManager.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="LobbyDefine.cpp">
+      <Filter>Define</Filter>
+    </ClCompile>
+    <ClCompile Include="LobbyLanSystem.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="IContentClient.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PacketBuilder.h" />
+    <ClInclude Include="LobbyServer.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="LanServer.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Room.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="RoomManager.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketHandler.h" />
+    <ClInclude Include="LobbySystem.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="UserManager.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="LobbyDefine.h">
+      <Filter>Define</Filter>
+    </ClInclude>
+    <ClInclude Include="LobbyLanSystem.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="IContentClient.h" />
+  </ItemGroup>
+</Project>
