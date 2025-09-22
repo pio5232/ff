@@ -9,7 +9,7 @@ namespace jh_content
 	public:
 		using SendPacketFunc = std::function<void(ULONGLONG, PacketPtr&)>; // sessionId
 
-		UserManager() : m_sendPacketFunc{} {}
+		UserManager(SendPacketFunc sendPacketFunc) : m_sendPacketFunc(sendPacketFunc) {}
 		UserManager(const UserManager&) = delete;
 		UserManager& operator=(const UserManager&) = delete;
 
@@ -36,11 +36,15 @@ namespace jh_content
 		{
 			m_sessionIdToUserUMap.clear();
 			m_userIdToUserUMap.clear();
+			m_entityIdToUserUMap.clear();
 		}
+		
+		void RegisterEntityIdToUser(ULONGLONG entityId, UserPtr userPtr);
+		void DeleteEntityIdToUser(ULONGLONG entityId);
 		
 		UserPtr GetUserByUserId(ULONGLONG userId);
 		UserPtr GetUserBySessionId(ULONGLONG sessionId);
-
+		UserPtr GetUserByEntityId(ULONGLONG entityId);
 	private:
 		SendPacketFunc m_sendPacketFunc;
 		//std::unordered_map<ULONGLONG, GamePlayerPtr> m_sessionIdToPlayerDic;
@@ -48,5 +52,10 @@ namespace jh_content
 
 		std::unordered_map<ULONGLONG, UserPtr> m_sessionIdToUserUMap;
 		std::unordered_map<ULONGLONG, UserPtr> m_userIdToUserUMap;
+
+		// EntityID
+		std::unordered_map<ULONGLONG, UserPtr> m_entityIdToUserUMap;
+
+
 	};
 }

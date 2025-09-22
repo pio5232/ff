@@ -16,6 +16,6 @@ namespace jh_content
 		void UpdateAIMovement();
 
 	private:
-		float _movementUpdateInterval;
+		float m_fMovementUpdateInterval;
 	};
 }

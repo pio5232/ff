@@ -1,12 +1,12 @@
 #include "pch.h"
 #include "TransformComponent.h"
 
-TransformComponent::TransformComponent(const Vector3& pos) : BaseComponent(ComponentType::Transform), _position(pos), _rotation{ Vector3::Zero() }, _moveSpeed(defaultWalkSpeed), _dirNormalized(Vector3::Zero())
+TransformComponent::TransformComponent(const Vector3& pos) : BaseComponent(ComponentType::Transform), m_position(pos), m_rotation{ Vector3::Zero() }, m_fMoveSpeed(defaultWalkSpeed), m_dirNormalized(Vector3::Zero())
 {
 }
-TransformComponent::TransformComponent() : BaseComponent(ComponentType::Transform), _moveSpeed(defaultWalkSpeed), _rotation{ Vector3::Zero() }, _dirNormalized(Vector3::Zero())
+TransformComponent::TransformComponent() : BaseComponent(ComponentType::Transform), m_fMoveSpeed(defaultWalkSpeed), m_rotation{ Vector3::Zero() }, m_dirNormalized(Vector3::Zero())
 {
-	_position = GenerateRandomPos();
+	m_position = GenerateRandomPos();
 }
 
 TransformComponent::~TransformComponent()
@@ -18,7 +18,7 @@ void TransformComponent::SetRandomDirection()
 {
 	if (IsEdge() && CheckChance(30))
 	{
-		Vector3 positionToCenter = Vector3(centerX, 0, centerZ) - _position;
+		Vector3 positionToCenter = Vector3(centerX, 0, centerZ) - m_position;
 
 		float rotY = atan2f(positionToCenter.x, positionToCenter.z) * deg2Rad;
 
@@ -30,7 +30,7 @@ void TransformComponent::SetRandomDirection()
 
 	float offset = static_cast<float>(GetRandDouble(-randomRange, randomRange));
 
-	SetDirection(_rotation.y + offset);
+	SetDirection(m_rotation.y + offset);
 
 	return;
 }
@@ -38,13 +38,13 @@ void TransformComponent::SetRandomDirection()
 void TransformComponent::Move(float delta)
 {
 
-	Vector3 moveVector = _dirNormalized * delta * _moveSpeed;
-	if (CanGo(_position.x + moveVector.x, _position.z + moveVector.z) == false)
+	Vector3 moveVector = m_dirNormalized * delta * m_fMoveSpeed;
+	if (CanGo(m_position.x + moveVector.x, m_position.z + moveVector.z) == false)
 		return;
 
-	_position += moveVector;
+	m_position += moveVector;
 
-	//printf(" Transform Update -  pos [ %0.3f, %0.3f, %0.3f ]]\n", _position.x, _position.y, _position.z);
+	//printf(" Transform Update -  pos [ %0.3f, %0.3f, %0.3f ]]\n", m_position.m_iX, m_position.y, m_position.m_iZ);
 
 }
 
@@ -52,15 +52,15 @@ void TransformComponent::SetDirection(float rotY)
 {
 	const float deg2Rad = 3.141592f / 180.0f;
 
-	_rotation.y = NormalizeAngle(rotY);
+	m_rotation.y = NormalizeAngle(rotY);
 	// transform.forward.normalized와 같다. 내가 바라보고 있는 방향의 방향 벡터, 현재 로테이션은 RotY
-	_dirNormalized = Vector3(sinf(_rotation.y * deg2Rad), 0, cosf(_rotation.y * deg2Rad));
+	m_dirNormalized = Vector3(sinf(m_rotation.y * deg2Rad), 0, cosf(m_rotation.y * deg2Rad));
 
 }
 
 void TransformComponent::SetPosition(const Vector3& pos)
 {
-	_position = pos;
+	m_position = pos;
 }
 
 bool TransformComponent::CanGo(float prediction_x, float prediction_z) const
@@ -70,6 +70,6 @@ bool TransformComponent::CanGo(float prediction_x, float prediction_z) const
 
 bool TransformComponent::IsEdge() const
 {
-	return _position.x < edgeThreshold || _position.x >(mapXMax - edgeThreshold)
-		|| _position.z < edgeThreshold || _position.z >(mapZMax - edgeThreshold);
+	return m_position.x < edgeThreshold || m_position.x >(mapXMax - edgeThreshold)
+		|| m_position.z < edgeThreshold || m_position.z >(mapZMax - edgeThreshold);
 }

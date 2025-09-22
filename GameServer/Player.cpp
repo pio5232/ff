@@ -1,15 +1,14 @@
 #include "pch.h"
 #include "Player.h"
 #include "UserManager.h"
-#include "BufferMaker.h"
 #include "PlayerStateController.h"
 #include "PacketBuilder.h"
 #include "GameWorld.h"
 #include "PlayerState.h"
 using namespace jh_network;
-jh_content::Player::Player(GameWorld* worldPtr, EntityType type, float updateInterval) : Entity(type), _worldPtr(worldPtr), _lastUpdatePos{}, _posUpdateInterval(updateInterval), _statComponent()
+jh_content::Player::Player(GameWorld* worldPtr, EntityType type, float updateInterval) : Entity(type), m_pWorldPtr(worldPtr), m_lastUpdatePos{}, m_fPosUpdateInterval(updateInterval), m_statComponent()
 {
-	_stateController = std::make_unique<PlayerStateController>(this);
+	m_pStateController = std::make_unique<PlayerStateController>(this);
 
 	const Vector3 pos = GetPosition();
 	printf("Player Constructor - [ID : %llu, Position : [%0.3f, %0.3f, %0.3f]\n", GetEntityId(), pos.x, pos.y, pos.z);
@@ -23,68 +22,67 @@ jh_content::Player::~Player()
 void jh_content::Player::Update(float delta)
 {
 
-	_stateController->Update(delta);
+	m_pStateController->Update(delta);
 }
 
 void jh_content::Player::Move(float delta)
 {
-	//_posUpdateInterval -= delta;
+	m_fPosUpdateInterval -= delta;
 
-	//if (_posUpdateInterval <= 0)
-	//{
-	//	_posUpdateInterval = posUpdateInterval;
+	if (m_fPosUpdateInterval <= 0)
+	{
+		m_fPosUpdateInterval = posUpdateInterval;
 
-	SendPositionUpdate();
-	//}
+		SendPositionUpdate();
+	}
 
-	_transformComponent.Move(delta);
+	m_transformComponent.Move(delta);
 
-	//printf(" Transform Update -  EntityID : %llu, pos [ %0.3f, %0.3f, %0.3f ]]\n",GetEntityId(), _transformComponent.GetPosConst().x, _transformComponent.GetPosConst().y, _transformComponent.GetPosConst().z);
+	//printf(" Transform Update -  EntityID : %llu, pos [ %0.3f, %0.3f, %0.3f ]]\n",GetEntityId(), m_transformComponent.GetPosConst().m_iX, m_transformComponent.GetPosConst().y, m_transformComponent.GetPosConst().m_iZ);
 }
 
 bool jh_content::Player::IsMoving() const
 {
-	return _stateController->GetMoveType() == jh_content::PlayerMoveStateBase::MoveState::Move;
+	return m_pStateController->GetMoveType() == jh_content::PlayerMoveStateBase::MoveState::Move;
 }
 
-void jh_content::Player::TakeDamage(uint16 damage)
+void jh_content::Player::TakeDamage(USHORT damage)
 {
-	_statComponent.TakeDamage(damage);
+	m_statComponent.TakeDamage(damage);
 
-	_stateController->ChangeState(&jh_content::PlayerAttackedState::GetInstance());
+	m_pStateController->ChangeState(&jh_content::PlayerAttackedState::GetInstance());
 }
 
 
 void jh_content::Player::BroadcastMoveState()
 {
-	if (_stateController->GetMoveType() == jh_content::PlayerMoveStateBase::MoveState::Move)
+	if (m_pStateController->GetMoveType() == jh_content::PlayerMoveStateBase::MoveState::Move)
 	{
-		jh_network::SharedSendBuffer buffer = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(GetEntityId(), _transformComponent.GetPosConst(), _transformComponent.GetRotConst().y);
+		PacketPtr buffer = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(GetEntityId(), m_transformComponent.GetPosConst(), m_transformComponent.GetRotConst().y);
 
-		_worldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
+		m_pWorldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
 
 		//jh_content::UserManager::GetInstance().SendToAllPlayer(buffer);
 	}
-	else if (_stateController->GetMoveType() == jh_content::PlayerMoveStateBase::MoveState::Idle)
+	else if (m_pStateController->GetMoveType() == jh_content::PlayerMoveStateBase::MoveState::Idle)
 	{
-		jh_network::SharedSendBuffer buffer = jh_content::PacketBuilder::BuildMoveStopNotifyPacket(GetEntityId(), _transformComponent.GetPosConst(), _transformComponent.GetRotConst().y);
+		PacketPtr buffer = jh_content::PacketBuilder::BuildMoveStopNotifyPacket(GetEntityId(), m_transformComponent.GetPosConst(), m_transformComponent.GetRotConst().y);
 
-		_worldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
+		m_pWorldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
 
 		//jh_content::UserManager::GetInstance().SendToAllPlayer(buffer);
 	}
 }
 void jh_content::Player::SendPositionUpdate()
 {
-	Vector3 currentPos = _transformComponent.GetPosConst();
+	Vector3 currentPos = m_transformComponent.GetPosConst();
 
-	if ((currentPos - _lastUpdatePos).sqrMagnitude() < 0.01f)
+	if ((currentPos - m_lastUpdatePos).sqrMagnitude() < 0.01f)
 		return;
 
-	SharedSendBuffer buffer = jh_content::PacketBuilder::BuildUpdateTransformPacket(jh_utility::GetTimeStamp(), GetEntityId(), currentPos, _transformComponent.GetRotConst());
+	PacketPtr buffer = jh_content::PacketBuilder::BuildUpdateTransformPacket(jh_utility::GetTimeStamp(), GetEntityId(), currentPos, m_transformComponent.GetRotConst());
 
-	//jh_content::UserManager::GetInstance().SendToAllPlayer(buffer);
-	_worldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
+	m_pWorldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
 
-	_lastUpdatePos = currentPos;
+	m_lastUpdatePos = currentPos;
 }

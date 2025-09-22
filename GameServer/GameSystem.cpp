@@ -41,8 +41,13 @@ void jh_content::GameSystem::Stop()
 
 jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThread(nullptr), m_bIsRunning(true), m_dwLoadCompletedCnt(0), m_pOwner(owner), m_gameInfo{}
 {
-	m_pGameWorld = std::make_unique<jh_content::GameWorld>();
-	m_pUserManager = std::make_unique<jh_content::UserManager>();
+	auto sendPacketFunc = [this](ULONGLONG sessionId, PacketPtr& _packet)
+		{
+			m_pOwner->SendPacket(sessionId, _packet);
+		};
+
+	m_pUserManager = std::make_unique<jh_content::UserManager>(sendPacketFunc);
+	m_pGameWorld = std::make_unique<jh_content::GameWorld>(m_pUserManager.get(), sendPacketFunc);
 
 	std::random_device rd; // 난수 생성기
 	std::mt19937_64 generator(rd()); // 시드 섞음.
@@ -113,7 +118,7 @@ void jh_content::GameSystem::GameLogic()
 		
 		if (deltaSum >= fixedDeltaTime)
 		{ 
-			m_pGameWorld->Update();
+			m_pGameWorld->Update(deltaTime);
 
 			deltaSum -= fixedDeltaTime;
 		}
@@ -167,6 +172,23 @@ void jh_content::GameSystem::ProcessSessionConnectionEvent()
 		break;
 		case jh_utility::SessionConnectionEventType::DISCONNECT:
 		{
+			UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
+
+			if (nullptr == userPtr)
+			{
+				_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[ProcessSessionConnectionEvent] 유저가 존재하지 않습니다. SessionId: [%llu]", sessionId);
+				break;
+			}
+			ULONGLONG userId = userPtr->GetUserId();
+
+			GamePlayerPtr gamePlayerPtr = userPtr->GetPlayer();
+
+			if (nullptr != gamePlayerPtr)
+			{
+				ULONGLONG entityId = gamePlayerPtr->GetEntityId();
+				m_pUserManager->DeleteEntityIdToUser(entityId);
+				m_pGameWorld->RemoveEntity(entityId);
+			}
 			m_pUserManager->RemoveUser(sessionId);
 			// 유저 접속 종료 처리.
 		}
@@ -231,6 +253,7 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 	newUser->SetPlayer(newPlayer);
 
 	m_pGameWorld->AddEntity(static_pointer_cast<jh_content::Entity>(newPlayer));
+	m_pUserManager->RegisterEntityIdToUser(newPlayer->GetEntityId(), newUser);
 	
 	jh_network::MakeMyCharacterPacket makeMyCharacterPacket;
 	

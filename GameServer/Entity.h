@@ -4,7 +4,7 @@
 #include "Sector.h"
 namespace jh_content
 {
-	class Entity : public std::enable_shared_from_this<Entity>
+	class Entity
 	{
 	public:
 		enum class EntityType : byte
@@ -18,12 +18,12 @@ namespace jh_content
 		~Entity() {}
 
 		virtual void Update(float delta) = 0;
-		const Vector3& GetPosition() const { return _transformComponent.GetPosConst(); }
-		const Vector3& GetRotation() const { return _transformComponent.GetRotConst(); }
-		const Vector3& GetNormalizedForward() const { return _transformComponent.GetNormalizedDir(); }
+		const Vector3& GetPosition() const { return m_transformComponent.GetPosConst(); }
+		const Vector3& GetRotation() const { return m_transformComponent.GetRotConst(); }
+		const Vector3& GetNormalizedForward() const { return m_transformComponent.GetNormalizedDir(); }
 
-		ULONGLONG GetEntityId() const { return _entityId; }
-		EntityType GetType() const { return _entityType; }
+		ULONGLONG GetEntityId() const { return m_ullEntityId; }
+		EntityType GetType() const { return m_entityType; }
 
 		virtual void TakeDamage(USHORT damage) = 0;
 		virtual bool IsDead() const = 0;
@@ -31,14 +31,14 @@ namespace jh_content
 		virtual bool IsMoving() const { return false; }
 
 		bool IsSectorUpdated();
-		const Sector& GetCurrentSector() const { return _curSector; }
-		const Sector& GetPrevSector() const { return _prevSector; }
+		const Sector& GetCurrentSector() const { return m_curSector; }
+		const Sector& GetPrevSector() const { return m_prevSector; }
 	private:
-		ULONGLONG _entityId;
-		const EntityType _entityType;
+		ULONGLONG m_ullEntityId;
+		const EntityType m_entityType;
 	protected:
-		TransformComponent _transformComponent;
-		Sector _curSector;
-		Sector _prevSector;
+		TransformComponent m_transformComponent;
+		Sector m_curSector;
+		Sector m_prevSector;
 	};
 }

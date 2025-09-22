@@ -8,11 +8,11 @@ public:
 
 	~TransformComponent();
 
-	const Vector3 GetRotConst() const { return _rotation; }
+	const Vector3 GetRotConst() const { return m_rotation; }
 
-	const Vector3& GetPosConst() const { return _position; }
+	const Vector3& GetPosConst() const { return m_position; }
 
-	const Vector3& GetNormalizedDir() const { return _dirNormalized; }
+	const Vector3& GetNormalizedDir() const { return m_dirNormalized; }
 	void SetRandomDirection();
 
 	void Move(float delta);
@@ -23,11 +23,11 @@ private:
 	bool IsEdge() const;
 
 private:
-	Vector3 _rotation;
-	Vector3 _position;
-	float _moveSpeed;
+	Vector3 m_rotation;
+	Vector3 m_position;
+	float m_fMoveSpeed;
 
-	Vector3 _dirNormalized;
+	Vector3 m_dirNormalized;
 	//bool _isMoving;
 };
 

@@ -4,20 +4,20 @@ namespace jh_content
 {
 	struct Sector
 	{
-		int x;
-		int z;
+		int m_iX;
+		int m_iZ;
 
 		Sector& operator= (const Sector& other)
 		{
-			x = other.x;
-			z = other.z;
+			m_iX = other.m_iX;
+			m_iZ = other.m_iZ;
 
 			return *this;
 		}
 
 		bool operator ==(const Sector& other)
 		{
-			return (x == other.x && z == other.z);
+			return (m_iX == other.m_iX && m_iZ == other.m_iZ);
 		}
 
 		bool operator !=(const Sector& other)
@@ -27,10 +27,10 @@ namespace jh_content
 
 		bool operator< (const Sector& other) const
 		{
-			if (z != other.z)
-				return z < other.z;
+			if (m_iZ != other.m_iZ)
+				return m_iZ < other.m_iZ;
 
-			return x < other.x;
+			return m_iX < other.m_iX;
 		}
 	};
 

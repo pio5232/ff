@@ -1,25 +1,21 @@
 #include "pch.h"
 #include <Windows.h>
 #include "GameWorld.h"
-#include "Entity.h"
-#include "WorldChat.h"
 #include "UserManager.h"
+#include "Entity.h"
 #include "AIPlayer.h"
-#include "BufferMaker.h"
 #include "SectorManager.h"
 #include "PacketBuilder.h"
 #include "GamePlayer.h"
 #include <algorithm>
-#include "GameSession.h"
 #include "Memory.h"
 
-jh_content::GameWorld::GameWorld() : m_bIsGameRunning(true), m_bIsUpdateRunning(false), m_fDeltaSum(0)
+jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc) : m_bIsGameRunning(true), m_bIsUpdateRunning(false), m_fDeltaSum(0), m_pUserManager(userManager), m_sendPacketFunc(sendPacketFunc)
 {
-	_sectorManager = std::make_unique<jh_content::SectorManager>();
+	m_pSectorManager = std::make_unique<jh_content::SectorManager>();
 
 	srand(GetCurrentThreadId());
 
-	_worldChat = std::make_shared<WorldChat>();
 }
 
 jh_content::GameWorld::~GameWorld()
@@ -62,7 +58,7 @@ void jh_content::GameWorld::Update(float deltaTime)
 
 			if (entity->IsSectorUpdated())
 			{
-				_sectorManager->UpdateSector(entity);
+				m_pSectorManager->UpdateSector(entity);
 			}
 
 			if (Entity::EntityType::GamePlayer == entity->GetType())
@@ -88,7 +84,7 @@ bool jh_content::GameWorld::TryEnqueueTimerAction(TimerAction&& timerAction)
 		return false;
 	}
 
-	_timerActionQueue.push(std::move(timerAction));
+	m_timerActionQueue.push(std::move(timerAction));
 
 	return true;
 }
@@ -99,9 +95,9 @@ void jh_content::GameWorld::ProcessTimerActions()
 
 	ULONGLONG now = jh_utility::GetTimeStamp();
 	{
-		while (_timerActionQueue.size() > 0)
+		while (m_timerActionQueue.size() > 0)
 		{
-			const TimerAction& action = _timerActionQueue.top();
+			const TimerAction& action = m_timerActionQueue.top();
 
 			//printf("[ now : %llu ___ top TimerAction execution Tick : %llu \n",now, action.executeTick);
 			if (now < action.executeTick)
@@ -109,7 +105,7 @@ void jh_content::GameWorld::ProcessTimerActions()
 
 			timerActions.push_back(action);
 
-			_timerActionQueue.pop();
+			m_timerActionQueue.pop();
 		}
 	}
 
@@ -130,6 +126,11 @@ void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 
 }
 
+GamePlayerPtr jh_content::GameWorld::CreateGamePlayer()
+{
+	return GamePlayerPtr();
+}
+
 void jh_content::GameWorld::AddEntity(EntityPtr entityPtr)
 {
 	m_aliveEntityDic.insert(std::make_pair(entityPtr->GetEntityId(), entityPtr));
@@ -139,7 +140,7 @@ void jh_content::GameWorld::AddEntity(EntityPtr entityPtr)
 	m_aliveEntityToVectorIdxDic.insert(std::make_pair(entityPtr, index));
 
 	Sector sector = entityPtr->GetCurrentSector();
-	_sectorManager->AddEntity(sector.z, sector.x, entityPtr);
+	m_pSectorManager->AddEntity(sector.m_iZ, sector.m_iX, entityPtr);
 }
 
 void jh_content::GameWorld::RemoveEntity(ULONGLONG entityId)
@@ -194,7 +195,7 @@ void jh_content::GameWorld::RemoveEntity(ULONGLONG entityId)
 
 	PacketPtr sendBuffer = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entityPtr->GetEntityId());
 
-	if (_sectorManager->DeleteEntity(entityPtr, sendBuffer))
+	if (m_pSectorManager->DeleteEntity(entityPtr, sendBuffer))
 		SendToSpectatorEntities(sendBuffer);
 }
 
@@ -209,7 +210,7 @@ void jh_content::GameWorld::Init(USHORT total, USHORT gamePlayerCount)
 		CreateAI(this);
 	}
 
-	_sectorManager->SendAllEntityInfo();
+	m_pSectorManager->SendAllEntityInfo();
 
 	// 초기화 내용 모두 전송했다는 의미
 	PacketPtr sendBuffer = jh_content::PacketBuilder::BuildGameInitDonePacket();
@@ -227,14 +228,14 @@ void jh_content::GameWorld::SetDSCount(USHORT predMaxCnt)
 
 void jh_content::GameWorld::SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr packet)
 {
-	_sectorManager->SendPacketAroundSector(sector, packet);
+	m_pSectorManager->SendPacketAroundSector(sector, packet);
 
 	SendToSpectatorEntities(packet);
 }
 
 void jh_content::GameWorld::SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr packet)
 {
-	_sectorManager->SendPacketAroundSector(sectorX, sectorZ, packet);
+	m_pSectorManager->SendPacketAroundSector(sectorX, sectorZ, packet);
 
 	SendToSpectatorEntities(packet);
 
@@ -271,6 +272,8 @@ void jh_content::GameWorld::SendToSpectatorEntities(PacketPtr packet)
 
 		if (nullptr != gameSessionPtr)
 			gameSessionPtr->Send(sendBuffer);
+
+
 	}
 }
 

@@ -44,9 +44,6 @@
     <ClInclude Include="Logger.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="CMonitor.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Parser.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -77,32 +74,11 @@
     <ClInclude Include="PacketDefine.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="BufferMaker.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="MemoryPoolqq.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="GlobalInstance.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="MemoryPool.h">
       <Filter>Memory</Filter>
-    </ClInclude>
-    <ClInclude Include="TLSMemoryPool.h">
-      <Filter>Memory</Filter>
-    </ClInclude>
-    <ClInclude Include="LFMemoryPool.h">
-      <Filter>Memory</Filter>
-    </ClInclude>
-    <ClInclude Include="ClearPool.h">
-      <Filter>Memory</Filter>
-    </ClInclude>
-    <ClInclude Include="ClearRefPtr.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="CountingBlock.h">
-      <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Memory.h">
       <Filter>Memory</Filter>
@@ -124,16 +100,10 @@
     <ClCompile Include="LibraryPch.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryPoolqq.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="CrashDump.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="CMonitor.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="Parser.cpp">
@@ -166,26 +136,11 @@
     <ClCompile Include="Session.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="BufferMaker.cpp">
-      <Filter>Network</Filter>
-    </ClCompile>
     <ClCompile Include="GlobalInstance.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="MemoryPool.cpp">
       <Filter>Memory</Filter>
-    </ClCompile>
-    <ClCompile Include="TLSMemoryPool.cpp">
-      <Filter>Memory</Filter>
-    </ClCompile>
-    <ClCompile Include="LFMemoryPool.cpp">
-      <Filter>Memory</Filter>
-    </ClCompile>
-    <ClCompile Include="ClearPool.cpp">
-      <Filter>Memory</Filter>
-    </ClCompile>
-    <ClCompile Include="ClearRefPtr.cpp">
-      <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Define.cpp">
       <Filter>소스 파일</Filter>

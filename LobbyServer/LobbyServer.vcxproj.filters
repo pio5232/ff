@@ -37,7 +37,6 @@
     <ClCompile Include="User.cpp">
       <Filter>Content</Filter>
     </ClCompile>
-    <ClCompile Include="PacketHandler.cpp" />
     <ClCompile Include="LobbySystem.cpp">
       <Filter>Content</Filter>
     </ClCompile>
@@ -72,7 +71,6 @@
     <ClInclude Include="User.h">
       <Filter>Content</Filter>
     </ClInclude>
-    <ClInclude Include="PacketHandler.h" />
     <ClInclude Include="LobbySystem.h">
       <Filter>Content</Filter>
     </ClInclude>

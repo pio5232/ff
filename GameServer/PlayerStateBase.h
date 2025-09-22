@@ -13,13 +13,13 @@ namespace jh_content
 			Idle,
 			Move,
 		};
-		PlayerMoveStateBase(MoveState state) : _moveState(state) {}
+		PlayerMoveStateBase(MoveState state) : m_moveState(state) {}
 
 		virtual void OnStayState(jh_content::Player* player, float delta) = 0;
 
-		MoveState GetType() const { return _moveState; }
+		MoveState GetType() const { return m_moveState; }
 	private:
-		MoveState _moveState;
+		MoveState m_moveState;
 	};
 
 	class PlayerActionStateBase
@@ -32,14 +32,14 @@ namespace jh_content
 			Attacked,
 			Dead,
 		};
-		PlayerActionStateBase(ActionState state) : _actionState(state) {}
+		PlayerActionStateBase(ActionState state) : m_actionState(state) {}
 		virtual void OnEnterState(jh_content::Player* player) = 0;
 		virtual void OnStayState(jh_content::Player* player, float delta) = 0;
 		virtual void OnExitState(jh_content::Player* player) = 0;
 
 		virtual float GetDuration() const { return 0; }
-		ActionState GetType() const { return _actionState; }
+		ActionState GetType() const { return m_actionState; }
 	private:
-		ActionState _actionState;
+		ActionState m_actionState;
 	};
 }

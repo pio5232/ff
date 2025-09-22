@@ -2,11 +2,10 @@
 #include <random>
 #include "AIPlayer.h"
 #include "UserManager.h"
-#include "BufferMaker.h"
 #include "PlayerStateController.h"
 #include "PlayerState.h"
 #include "GameWorld.h"
-jh_content::AIPlayer::AIPlayer(GameWorld* worldPtr) : Player(worldPtr, EntityType::AIPlayer, posUpdateInterval), _movementUpdateInterval(0)
+jh_content::AIPlayer::AIPlayer(GameWorld* worldPtr) : Player(worldPtr, EntityType::AIPlayer, posUpdateInterval), m_fMovementUpdateInterval(0)
 {
 }
 
@@ -15,24 +14,24 @@ void jh_content::AIPlayer::Update(float delta)
 	if (IsDead())
 		return;
 
-	_movementUpdateInterval -= delta;
-	//_posUpdateInterval -= delta;
+	m_fMovementUpdateInterval -= delta;
+	//m_fPosUpdateInterval -= delta;
 
-	if (_movementUpdateInterval <= 0)
+	if (m_fMovementUpdateInterval <= 0)
 	{
-		_movementUpdateInterval = static_cast<float>(GetRandDouble(1.0, 6.0, 3));
+		m_fMovementUpdateInterval = static_cast<float>(GetRandDouble(1.0, 6.0, 3));
 
 		UpdateAIMovement();
 	}
 
-	//if (_posUpdateInterval <= 0)
+	//if (m_fPosUpdateInterval <= 0)
 	//{
-	//	_posUpdateInterval = posUpdateInterval;
+	//	m_fPosUpdateInterval = posUpdateInterval;
 
 	//	SendPositionUpdate();
 	//}
 
-	//_stateController->Update(delta);
+	//m_pStateController->Update(delta);
 
 	Player::Update(delta);
 }
@@ -41,12 +40,12 @@ void jh_content::AIPlayer::UpdateAIMovement()
 {
 	if (CheckChance(70))
 	{
-		_transformComponent.SetRandomDirection();
-		_stateController->ChangeState(&jh_content::PlayerMoveState::GetInstance());
+		m_transformComponent.SetRandomDirection();
+		m_pStateController->ChangeState(&jh_content::PlayerMoveState::GetInstance());
 	}
 	else
 	{
-		_stateController->ChangeState(&jh_content::PlayerIdleState::GetInstance());
+		m_pStateController->ChangeState(&jh_content::PlayerIdleState::GetInstance());
 	}
 
 	BroadcastMoveState();

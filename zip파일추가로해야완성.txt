@@ -17,3 +17,5 @@ Sector 단위로 주위 Sector에 존재하는 유저에게 섹터정보를 보�
 서버의 ip가 0.0.0.0 (inaddr_any의 형태)가 아닌 경우는 상관이 없지만, ip가 0.0.0.0이라면 접속할 수 있는 ip 목록을 얻어와야함. 그 함수를 제작하고 호출하는 과정이 없기 때문에 만들어야한다. Port의 경우 Port가 0이 되었더라도 bind 시 포트 번호가 결정나기때문에 getSockName(리슨소켓)... -> 포트번호 얻어오면 동적할당된 포트 번호가 저장이 되지만 ip의 경우는 그렇지 않다 (0저장하면 getsockname으로 읽어도 0) 그러니까 ===> ip,port 제대로 얻어오도록 만들고 호출도 해주어햠
 
 3.GameServer의 User의 경우 로비에서는 그냥 나갔지만 GameServer는 User에게 GamePlayer가 달려있기 때문에 User의 GamePlayer확인 -> GamePlayer 삭제 (User와 추가될 예정임 GameWorld에서의 Entity...) 후 User삭제하도록 해야함
+
+4. 현재 SyncPacket아니고 Update패킷에서 주기적으로 보내는듯함 ? 확인해봐야됨

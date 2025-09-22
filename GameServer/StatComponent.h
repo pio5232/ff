@@ -8,19 +8,19 @@ public:
 
 	bool IsDead() const
 	{
-		return _curHp == 0;
+		return m_usCurHp == 0;
 	}
 
 	void TakeDamage(USHORT damage);
 
-	USHORT GetHp() const { return _curHp; }
-	USHORT GetAttackDamage() const { return _attackDamage; }
-	float GetAttackRange() const { return _attackRange; }
+	USHORT GetHp() const { return m_usCurHp; }
+	USHORT GetAttackDamage() const { return m_usAttackDamage; }
+	float GetAttackRange() const { return m_fAttackRange; }
 private:
 
-	USHORT _curHp;
-	USHORT _maxHp;
+	USHORT m_usCurHp;
+	USHORT m_usMaxHp;
 
-	USHORT _attackDamage;
-	float _attackRange;
+	USHORT m_usAttackDamage;
+	float m_fAttackRange;
 };

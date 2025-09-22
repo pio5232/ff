@@ -1,15 +1,14 @@
 #include "pch.h"
 #include "PacketBuilder.h"
-#include "BufferMaker.h"
 #include "Memory.h"
 PacketPtr jh_content::PacketBuilder::BuildAttackNotifyPacket(ULONGLONG entityId)
 {
 	jh_network::AttackNotifyPacket attackNotifyPacket;
-	attackNotifyPacket.entityId = entityId;
+	//attackNotifyPacket.entityId = entityId;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(attackNotifyPacket));
 
-	*sendBuffer << attackNotifyPacket.size << attackNotifyPacket.type << attackNotifyPacket.entityId;
+	*sendBuffer << attackNotifyPacket.size << attackNotifyPacket.type << entityId;
 
 	return sendBuffer;
 }
@@ -17,12 +16,12 @@ PacketPtr jh_content::PacketBuilder::BuildAttackNotifyPacket(ULONGLONG entityId)
 PacketPtr jh_content::PacketBuilder::BuildAttackedNotifyPacket(ULONGLONG entityId, USHORT currentHp)
 {
 	jh_network::AttackedNotifyPacket attackedNotifyPacket;
-	attackedNotifyPacket.entityId = entityId;
-	attackedNotifyPacket.currentHp = currentHp;
+	//attackedNotifyPacket.entityId = entityId;
+	//attackedNotifyPacket.currentHp = currentHp;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(attackedNotifyPacket));
 
-	*sendBuffer << attackedNotifyPacket.size << attackedNotifyPacket.type << attackedNotifyPacket.entityId << attackedNotifyPacket.currentHp;
+	*sendBuffer << attackedNotifyPacket.size << attackedNotifyPacket.type << entityId << currentHp;
 
 	return sendBuffer;
 }
@@ -31,12 +30,12 @@ PacketPtr jh_content::PacketBuilder::BuildMakeMyCharacterPacket(ULONGLONG entity
 {
 	jh_network::MakeMyCharacterPacket makeMyCharacterPacket;
 
-	makeMyCharacterPacket.entityId = entityId;
-	makeMyCharacterPacket.pos = position;
+	//makeMyCharacterPacket.entityId = entityId;
+	//makeMyCharacterPacket.pos = position;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(makeMyCharacterPacket));
 
-	*sendBuffer << makeMyCharacterPacket.size << makeMyCharacterPacket.type << makeMyCharacterPacket.entityId << makeMyCharacterPacket.pos;
+	*sendBuffer << makeMyCharacterPacket.size << makeMyCharacterPacket.type << entityId << position;
 
 	return sendBuffer;
 }
@@ -45,12 +44,12 @@ PacketPtr jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(ULONGLONG ent
 {
 	jh_network::MakeOtherCharacterPacket makeOtherCharacterPacket;
 
-	makeOtherCharacterPacket.entityId = entityId;
-	makeOtherCharacterPacket.pos = position;
+	//makeOtherCharacterPacket.entityId = entityId;
+	//makeOtherCharacterPacket.pos = position;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(makeOtherCharacterPacket));
 
-	*sendBuffer << makeOtherCharacterPacket.size << makeOtherCharacterPacket.type << makeOtherCharacterPacket.entityId << makeOtherCharacterPacket.pos;
+	*sendBuffer << makeOtherCharacterPacket.size << makeOtherCharacterPacket.type << entityId << position;
 
 	return sendBuffer;
 }
@@ -69,24 +68,24 @@ PacketPtr jh_content::PacketBuilder::BuildGameInitDonePacket()
 PacketPtr jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(ULONGLONG entityId)
 {
 	jh_network::DeleteOtherCharacterPacket deleteOtherCharacterPacket;
-	deleteOtherCharacterPacket.entityId = entityId;
+	//deleteOtherCharacterPacket.entityId = entityId;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(deleteOtherCharacterPacket));
 
-	*sendBuffer << deleteOtherCharacterPacket.size << deleteOtherCharacterPacket.type << deleteOtherCharacterPacket.entityId;
+	*sendBuffer << deleteOtherCharacterPacket.size << deleteOtherCharacterPacket.type << entityId;
 	return sendBuffer;
 }
 
 PacketPtr jh_content::PacketBuilder::BuildMoveStartNotifyPacket(ULONGLONG entityId, const Vector3& pos, float rotY)
 {
 	jh_network::MoveStartNotifyPacket moveStartNotifyPacket;
-	moveStartNotifyPacket.entityId = entityId;
-	moveStartNotifyPacket.pos = pos;
-	moveStartNotifyPacket.rotY = rotY;
+	//moveStartNotifyPacket.entityId = entityId;
+	//moveStartNotifyPacket.pos = pos;
+	//moveStartNotifyPacket.rotY = rotY;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(moveStartNotifyPacket));
 
-	*sendBuffer << moveStartNotifyPacket.size << moveStartNotifyPacket.type << moveStartNotifyPacket.entityId << moveStartNotifyPacket.pos << moveStartNotifyPacket.rotY;
+	*sendBuffer << moveStartNotifyPacket.size << moveStartNotifyPacket.type << entityId << pos << rotY;
 
 	return sendBuffer;
 }
@@ -110,15 +109,14 @@ PacketPtr jh_content::PacketBuilder::BuildUpdateTransformPacket(ULONGLONG timeSt
 {
 	jh_network::UpdateTransformPacket updatePacket;
 
-	updatePacket.timeStamp = timeStamp;
-	updatePacket.entityId = entityId;
-	updatePacket.pos = pos;
-	updatePacket.rot = rot;
+	//updatePacket.timeStamp = timeStamp;
+	//updatePacket.entityId = entityId;
+	//updatePacket.pos = pos;
+	//updatePacket.rot = rot;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(updatePacket));
 
-	*sendBuffer << updatePacket.size << updatePacket.type << updatePacket.timeStamp << updatePacket.entityId << updatePacket.pos
-		<< updatePacket.rot;
+	*sendBuffer << updatePacket.size << updatePacket.type << timeStamp << entityId << pos << rot;
 
 	return sendBuffer;
 }
@@ -126,11 +124,11 @@ PacketPtr jh_content::PacketBuilder::BuildUpdateTransformPacket(ULONGLONG timeSt
 PacketPtr jh_content::PacketBuilder::BuildDieNotifyPacket(ULONGLONG entityId)
 {
 	jh_network::DieNotifyPacket dieNotifyPacket;
-	dieNotifyPacket.entityId = entityId;
+	//dieNotifyPacket.entityId = entityId;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(dieNotifyPacket));
 
-	*sendBuffer << dieNotifyPacket.size << dieNotifyPacket.type << dieNotifyPacket.entityId;
+	*sendBuffer << dieNotifyPacket.size << dieNotifyPacket.type << entityId;
 
 	return sendBuffer;
 }
@@ -173,12 +171,12 @@ PacketPtr jh_content::PacketBuilder::BuildUpdateWinnerNotifyPacket(ULONGLONG use
 {
 	jh_network::UpdateWinnerNotifyPacket updateWinnerNotifyPacket;
 
-	updateWinnerNotifyPacket.userId = userId;
-	updateWinnerNotifyPacket.expectedTimeStamp = expectedTimeStamp;
+	//updateWinnerNotifyPacket.userId = userId;
+	//updateWinnerNotifyPacket.expectedTimeStamp = expectedTimeStamp;
 
 	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(updateWinnerNotifyPacket));
 
-	*sendBuffer << updateWinnerNotifyPacket.size << updateWinnerNotifyPacket.type << updateWinnerNotifyPacket.userId << updateWinnerNotifyPacket.expectedTimeStamp;
+	*sendBuffer << updateWinnerNotifyPacket.size << updateWinnerNotifyPacket.type << userId << expectedTimeStamp;
 
 	return sendBuffer;
 }
@@ -203,6 +201,17 @@ PacketPtr jh_content::PacketBuilder::BuildWinnerInfoNotifyPacket()
 
 	*sendBuffer << winnerInfoNotifyPacket.size << winnerInfoNotifyPacket.type;
 
+	return sendBuffer;
+}
+
+PacketPtr jh_content::PacketBuilder::BuildCharacterSyncPacket(ULONGLONG entityId, const Vector3& syncPos, const Vector3& syncRot)
+{
+	jh_network::CharacterPositionSyncPacket syncPacket;
+
+	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(syncPacket));
+
+	*sendBuffer << syncPacket.size << syncPacket.type << entityId << syncPos << syncRot;
+	
 	return sendBuffer;
 }
 

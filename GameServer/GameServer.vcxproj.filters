@@ -36,13 +36,7 @@
     <ClInclude Include="StatComponent.h">
       <Filter>아직정리안됨</Filter>
     </ClInclude>
-    <ClInclude Include="GameMonitor.h">
-      <Filter>아직정리안됨</Filter>
-    </ClInclude>
     <ClInclude Include="LanClient.h">
-      <Filter>아직정리안됨</Filter>
-    </ClInclude>
-    <ClInclude Include="PacketHandler.h">
       <Filter>아직정리안됨</Filter>
     </ClInclude>
     <ClInclude Include="PlayerStateController.h">
@@ -107,13 +101,7 @@
     <ClCompile Include="TransformComponent.cpp">
       <Filter>아직정리안됨</Filter>
     </ClCompile>
-    <ClCompile Include="GameMonitor.cpp">
-      <Filter>아직정리안됨</Filter>
-    </ClCompile>
     <ClCompile Include="LanClient.cpp">
-      <Filter>아직정리안됨</Filter>
-    </ClCompile>
-    <ClCompile Include="PacketHandler.cpp">
       <Filter>아직정리안됨</Filter>
     </ClCompile>
     <ClCompile Include="Sector.h">

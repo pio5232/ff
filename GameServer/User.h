@@ -5,7 +5,7 @@ namespace jh_content
 	class User
 	{
 	public:
-		User(ULONGLONG sessionId, ULONGLONG userId) : m_ullUserId(userId), m_ullSessionId(sessionId)
+		User(ULONGLONG sessionId, ULONGLONG userId) : m_ullUserId(userId), m_ullSessionId(sessionId), m_pGamePlayer(nullptr)
 		{
 			InterlockedIncrement64((LONGLONG*)&m_ullAliveLobbyUserCount);
 		}

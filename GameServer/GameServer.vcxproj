@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClInclude Include="AIPlayer.h" />
     <ClInclude Include="Entity.h" />
-    <ClInclude Include="GameMonitor.h" />
     <ClInclude Include="GamePlayer.h" />
     <ClInclude Include="GameServer.h" />
     <ClInclude Include="GameServerDefine.h" />
@@ -30,7 +29,6 @@
     <ClInclude Include="LanClient.h" />
     <ClInclude Include="LanClientSession.h" />
     <ClInclude Include="PacketBuilder.h" />
-    <ClInclude Include="PacketHandler.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="User.h" />
@@ -46,7 +44,6 @@
   <ItemGroup>
     <ClCompile Include="AIPlayer.cpp" />
     <ClCompile Include="Entity.cpp" />
-    <ClCompile Include="GameMonitor.cpp" />
     <ClCompile Include="GamePlayer.cpp" />
     <ClCompile Include="GameServer.cpp" />
     <ClCompile Include="GameServerDefine.cpp" />
@@ -56,7 +53,6 @@
     <ClCompile Include="LanClientSession.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PacketBuilder.cpp" />
-    <ClCompile Include="PacketHandler.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
