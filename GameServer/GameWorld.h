@@ -7,8 +7,6 @@ namespace jh_content
 	{
 	public:
 
-		using SendPacketFunc = std::function<void(ULONGLONG, PacketPtr&)>; // sessionId
-
 		GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc);
 		~GameWorld();
 
@@ -32,15 +30,27 @@ namespace jh_content
 		void SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr packet);
 
 		void CleanUpSpectatorEntities();
-		void SendToSpectatorEntities(PacketPtr packet);
+		void SendToSpectatorEntities(PacketPtr& packet);
 
 		void SetSpectator(EntityPtr entity);
 		const class SectorManager* GetSectorManagerConst() const { return m_pSectorManager.get(); }
 
-		void HandleAttackPacket(GamePlayerPtr attacker, const jh_network::AttackRequestPacket& packet);
+		void ProcessAttack(GamePlayerPtr attacker);
 
 		void CreateAI(class jh_content::GameWorld* worldPtr);
 		GamePlayerPtr CreateGamePlayer();
+
+		void SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr)
+		{
+			UserPtr userPtr = m_pUserManager->GetUserByEntityId(entityId);
+
+			if (nullptr == userPtr)
+				return;
+
+			ULONGLONG sessionId = userPtr->GetSessionId();
+
+			m_sendPacketFunc(sessionId, packetPtr);
+		}
 
 	public:
 		void CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr);

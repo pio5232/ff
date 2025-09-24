@@ -39,7 +39,6 @@
     <ClInclude Include="SectorManager.h" />
     <ClInclude Include="StatComponent.h" />
     <ClInclude Include="TransformComponent.h" />
-    <ClInclude Include="WorldChat.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AIPlayer.cpp" />
@@ -69,7 +68,6 @@
     <ClCompile Include="SectorManager.cpp" />
     <ClCompile Include="StatComponent.cpp" />
     <ClCompile Include="TransformComponent.cpp" />
-    <ClCompile Include="WorldChat.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

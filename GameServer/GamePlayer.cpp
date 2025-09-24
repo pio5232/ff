@@ -9,9 +9,9 @@
 #include "PacketBuilder.h"
 #include "GameWorld.h"
 
-std::atomic<int> jh_content::GamePlayer::m_aliveGamePlayerCount;
-
 using namespace jh_network;
+alignas(64) std::atomic<int> jh_content::GamePlayer::m_aliveGamePlayerCount = 0;
+
 jh_content::GamePlayer::GamePlayer(UserPtr ownerUser, GameWorld* worldPtr) : Player(worldPtr, EntityType::GamePlayer, posUpdateInterval), m_ownerUser(ownerUser),m_bWasInVictoryZone(false)
 {
 	m_aliveGamePlayerCount.fetch_add(1);
@@ -33,7 +33,7 @@ void jh_content::GamePlayer::Update(float delta)
 void jh_content::GamePlayer::MoveStart(const Vector3& clientMoveStartPos, float clientMoveStartRotY)
 {
 	//printf("Process Move Start [%0.3f, %0.3f, %0.3f] RotY : %f\n", clientPacket.pos.m_iX, clientPacket.pos.y, clientPacket.pos.m_iZ, clientPacket.rotY);
-	SyncPos(clientMoveStartPos);
+	//SyncPos(clientMoveStartPos);
 
 	m_transformComponent.SetDirection(clientMoveStartRotY);
 
@@ -63,8 +63,8 @@ void jh_content::GamePlayer::SetAttackState()
 }
 
 
-void jh_content::GamePlayer::SyncPos(const Vector3& clientPos)
-{
+//void jh_content::GamePlayer::SyncPos(const Vector3& clientPos)
+//{
 //	const Vector3& serverPos = m_transformComponent.GetPosConst();
 //
 //	//if (abs(serverPos.m_iX - clientPos.m_iX) < defaultErrorRange && abs(serverPos.m_iZ - clientPos.m_iZ) < defaultErrorRange)

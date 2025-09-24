@@ -19,3 +19,5 @@ Sector 단위로 주위 Sector에 존재하는 유저에게 섹터정보를 보�
 3.GameServer의 User의 경우 로비에서는 그냥 나갔지만 GameServer는 User에게 GamePlayer가 달려있기 때문에 User의 GamePlayer확인 -> GamePlayer 삭제 (User와 추가될 예정임 GameWorld에서의 Entity...) 후 User삭제하도록 해야함
 
 4. 현재 SyncPacket아니고 Update패킷에서 주기적으로 보내는듯함 ? 확인해봐야됨
+
+5. GameSystem의 ProcessLanRequest 부분 switch - case 및 처리 완성

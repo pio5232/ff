@@ -415,7 +415,7 @@ void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, Pack
 	if (true == gamePlayer->IsDead())
 		return;
 
-	m_pGameWorld->HandleAttackPacket(gamePlayer);
+	m_pGameWorld->Attack(gamePlayer);
 
 	return;
 }

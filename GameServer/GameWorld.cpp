@@ -9,10 +9,28 @@
 #include "GamePlayer.h"
 #include <algorithm>
 #include "Memory.h"
+#include "UserManager.h"
+#include "User.h"
 
 jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc) : m_bIsGameRunning(true), m_bIsUpdateRunning(false), m_fDeltaSum(0), m_pUserManager(userManager), m_sendPacketFunc(sendPacketFunc)
 {
-	m_pSectorManager = std::make_unique<jh_content::SectorManager>();
+	// entity ID를 통해서 Send를 가능하게 하는 작업을 전달한다.
+	auto sectorSendFunc = [this](ULONGLONG entityId, PacketPtr& packetPtr) {
+		UserPtr userPtr = m_pUserManager->GetUserByEntityId(entityId);
+
+		if (nullptr == userPtr)
+		{
+			_LOG(L"GameWorld", LOG_LEVEL_SYSTEM, L"[SectorManager - sendPacket] - entityID : [%llu]에 해당하는 유저가 존재하지 않습니다", entityId);
+
+			return;
+		}
+
+		ULONGLONG sessionId = userPtr->GetSessionId();
+
+		m_sendPacketFunc(sessionId, packetPtr);
+		};
+
+	m_pSectorManager = std::make_unique<jh_content::SectorManager>(sectorSendFunc);
 
 	srand(GetCurrentThreadId());
 
@@ -256,7 +274,7 @@ void jh_content::GameWorld::CleanUpSpectatorEntities()
 	TryEnqueueTimerAction(std::move(timerAction));
 }
 
-void jh_content::GameWorld::SendToSpectatorEntities(PacketPtr packet)
+void jh_content::GameWorld::SendToSpectatorEntities(PacketPtr& packet)
 {
 	// 일정 시간 간격으로 clear해주기 때문에
 	// 연결이 끊겼을 경우 참조카운트가 0인 weakPtr 존재할 수 있음.
@@ -268,12 +286,9 @@ void jh_content::GameWorld::SendToSpectatorEntities(PacketPtr packet)
 		if (nullptr == entityPtr)
 			continue;
 
-		GameSessionPtr gameSessionPtr = std::static_pointer_cast<GamePlayer>(entityPtr)->GetOwnerSession();
-
-		if (nullptr != gameSessionPtr)
-			gameSessionPtr->Send(sendBuffer);
-
-
+		ULONGLONG entityId = entityPtr->GetEntityId();
+		
+		SendToEntity(entityId, packet);
 	}
 }
 
@@ -282,31 +297,34 @@ void jh_content::GameWorld::SetSpectator(EntityPtr entity)
 	{
 		m_spectatorEntityArr.push_back(entity);
 
-		GameSessionPtr gameSessionPtr = static_pointer_cast<jh_content::GamePlayer>(entity)->GetOwnerSession();
+		ULONGLONG entityId = entity->GetEntityId();
 
-		// 하나씩 보내는 과정을 압축해서 보내게 할 수 있다.
-		if (nullptr != gameSessionPtr)
+		PacketPtr spectatorInitPkt = PacketBuilder::BuildSpectatorInitPacket();
+		
+		SendToEntity(entityId, spectatorInitPkt);
+
+		// 모든 유닛의 정보를 전송한다.
+		for (const EntityPtr& aliveEntityPtr : m_aliveEntityArr)
 		{
-			PacketPtr buffer = PacketBuilder::BuildSpectatorInitPacket();
-			gameSessionPtr->Send(buffer);
+			if (aliveEntityPtr->IsDead())
+				continue;
 
-			for (const EntityPtr& aliveEntityPtr : m_aliveEntityArr)
+			ULONGLONG aliveEntityId = aliveEntityPtr->GetEntityId();
+			const Vector3& aliveEntityPos = aliveEntityPtr->GetPosition();
+			const Vector3& aliveEntityRot = aliveEntityPtr->GetRotation();
+
+			PacketPtr makeOtherCharacterPkt = PacketBuilder::BuildMakeOtherCharacterPacket(aliveEntityId, aliveEntityPos);
+
+			SendToEntity(entityId, makeOtherCharacterPkt);
+
+			if (aliveEntityPtr->IsMoving())
 			{
-				if (aliveEntityPtr->IsDead())
-					continue;
+				PacketPtr MoveStartNotifyPkt = PacketBuilder::BuildMoveStartNotifyPacket(aliveEntityId, aliveEntityPos, aliveEntityRot.y);
 
-				PacketPtr makePacketBuffer = PacketBuilder::BuildMakeOtherCharacterPacket(aliveEntityPtr->GetEntityId(), aliveEntityPtr->GetPosition());
-
-				gameSessionPtr->Send(makePacketBuffer);
-
-				if (aliveEntityPtr->IsMoving())
-				{
-					PacketPtr movePacketBuffer = PacketBuilder::BuildMoveStartNotifyPacket(aliveEntityPtr->GetEntityId(), aliveEntityPtr->GetPosition(), aliveEntityPtr->GetRotation().y);
-
-					gameSessionPtr->Send(movePacketBuffer);
-				}
+				SendToEntity(entityId, MoveStartNotifyPkt);
 			}
 		}
+		
 	}
 }
 
@@ -319,22 +337,32 @@ bool jh_content::GameWorld::IsInVictoryZone(const Vector3& pos) const
 void jh_content::GameWorld::CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr)
 {
 	bool wasInVictoryZone = gamePlayerPtr->GetWasInVictoryZone();
-
 	bool isInVictoryZone = IsInVictoryZone(gamePlayerPtr->GetPosition());
 
-	if (m_ullExpectedWinnerId != gamePlayerPtr->GetUserId() &&
+	UserPtr userPtr = gamePlayerPtr->GetOwnerUser();
+
+	if (nullptr == userPtr)
+	{
+		_LOG(L"GameWorld", LOG_LEVEL_SYSTEM, L"[CheckVictoryZoneEntry] - entityID : [%llu]에 해당하는 유저가 존재하지 않습니다", gamePlayerPtr->GetEntityId());
+
+		return;
+	}
+
+	ULONGLONG userId = userPtr->GetUserId();
+
+	if (m_ullExpectedWinnerId != userId &&
 		false == wasInVictoryZone && isInVictoryZone)
 	{
 		// OnEnter
-		printf("[Victory Zone Entry... User %llu]\n", gamePlayerPtr->GetUserId());
+		printf("[Victory Zone Entry... User %llu]\n", userId);
 
-		m_ullExpectedWinnerId = gamePlayerPtr->GetUserId();
+		m_ullExpectedWinnerId = userId;
 		m_ullExpectedWinTime = jh_utility::GetTimeStamp() + victoryZoneCheckDuration;
 
 		// UpdateWinner Packet 전송.
 		PacketPtr sendBuffer = jh_content::PacketBuilder::BuildUpdateWinnerNotifyPacket(m_ullExpectedWinnerId, m_ullExpectedWinTime);
 
-		m_pUserManger->Broadcast(sendBuffer);
+		m_pUserManager->Broadcast(sendBuffer);
 		//UserManager::GetInstance().SendToAllPlayer(sendBuffer);
 	}
 
@@ -354,7 +382,7 @@ void jh_content::GameWorld::CheckWinner()
 		// 게임 종료 패킷 전송
 		PacketPtr sendBuffer = jh_content::PacketBuilder::BuildGameEndNotifyPacket();
 
-		m_pUserMangaer->Broadcast(sendBuffer);
+		m_pUserManager->Broadcast(sendBuffer);
 		//UserManager::GetInstance().SendToAllPlayer(sendBuffer);
 
 		m_bIsGameRunning = false;
@@ -388,7 +416,7 @@ void jh_content::GameWorld::InvalidateWinner(ULONGLONG userId)
 	}
 }
 
-void jh_content::GameWorld::HandleAttackPacket(GamePlayerPtr attacker, const jh_network::AttackRequestPacket& packet)
+void jh_content::GameWorld::ProcessAttack(GamePlayerPtr attacker)
 {
 	printf("\t\t\tProcessAttackPacket!!!!\n");
 
@@ -399,7 +427,7 @@ void jh_content::GameWorld::HandleAttackPacket(GamePlayerPtr attacker, const jh_
 	SendPacketAroundSectorNSpectators(attacker->GetCurrentSector(), buffer);
 
 	// 2. 데미지 판정. 공격당할 녀석을 얻어온다.
-	EntityPtr victimTarget = _sectorManager->GetMinEntityInRange(attacker, attacker->GetAttackRange());
+	EntityPtr victimTarget = m_pSectorManager->GetMinEntityInRange(attacker, attacker->GetAttackRange());
 	if (victimTarget == nullptr)
 	{
 		printf("-------------------------- VicTimTarget is Null -------------------\n");

@@ -45,9 +45,6 @@
     <ClInclude Include="SectorManager.h">
       <Filter>아직정리안됨</Filter>
     </ClInclude>
-    <ClInclude Include="WorldChat.h">
-      <Filter>아직정리안됨</Filter>
-    </ClInclude>
     <ClInclude Include="AIPlayer.h">
       <Filter>아직정리안됨</Filter>
     </ClInclude>
@@ -129,9 +126,6 @@
       <Filter>아직정리안됨</Filter>
     </ClCompile>
     <ClCompile Include="PlayerStateBase.cpp">
-      <Filter>아직정리안됨</Filter>
-    </ClCompile>
-    <ClCompile Include="WorldChat.cpp">
       <Filter>아직정리안됨</Filter>
     </ClCompile>
     <ClCompile Include="GameServer.cpp">

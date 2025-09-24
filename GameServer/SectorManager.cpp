@@ -1,12 +1,10 @@
 #include "pch.h"
 #include "SectorManager.h"
 #include "Entity.h"
-#include "BufferMaker.h"
 #include "UserManager.h"
 #include "GamePlayer.h"
 #include "PacketBuilder.h"
-#include "GameSession.h"
-
+#include "Memory.h"
 
 bool jh_content::SectorManager::AddEntity(int sectorZ, int sectorX, EntityPtr entity)
 {
@@ -69,7 +67,7 @@ void jh_content::SectorManager::SendAllEntityInfo()
 				aroundEntityInfos.push_back(entity);
 			}
 
-			jh_network::SharedSendBuffer sendBuffer = jh_network::BufferMaker::MakeSendBuffer(sizeof(jh_network::MakeOtherCharacterPacket) * aroundEntityInfos.size());
+			PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(jh_network::MakeOtherCharacterPacket) * aroundEntityInfos.size());
 
 			for (const EntityPtr& entity : aroundEntityInfos)
 			{
@@ -118,45 +116,45 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 
 	// Player가 아니어도 작동해야함.
 	// 1. 삭제되어야할 섹터에 존재하는 플레이어에게 삭제 패킷을 보낸다. (나를 삭제해라!!)
-	PacketPtr sendBuffer = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entity->GetEntityId());
-
-	for (int i = 0; i < removeAroundSector.sectorCount; i++)
 	{
-		//printf("1_UpdateSector [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(),removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
-		SendPacket_Sector(removeAroundSector.sectors[i], sendBuffer);
+		PacketPtr delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entity->GetEntityId());
+
+		for (int i = 0; i < removeAroundSector.sectorCount; i++)
+		{
+			//printf("1_UpdateSector [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(),removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
+			SendPacket_Sector(removeAroundSector.sectors[i], delOtherCharacterPkt);
+		}
 	}
 
 
 
 	// Player가 아니더라도 작동해야한다.
 	// 3. 추가되어야할 섹터에 나를 생성 패킷을 보낸다. (나를 만들어라!!!)
-	PacketPtr makeBuffer = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(entity->GetEntityId(), entity->GetPosition());
-	PacketPtr moveStartBuffer = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(entity->GetEntityId(), entity->GetPosition(), entity->GetRotation().y);
-
-	for (int i = 0; i < addAroundSector.sectorCount; i++)
 	{
-		//printf("2_UpdateSector [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(), removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
+		PacketPtr makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(entity->GetEntityId(), entity->GetPosition());
+		PacketPtr moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(entity->GetEntityId(), entity->GetPosition(), entity->GetRotation().y);
 
-		SendPacket_Sector(addAroundSector.sectors[i], makeBuffer);
-
-		// 만약 내가 이동중이면 이동중인 것까지 보내야한다.
-		if (entity->IsMoving())
+		for (int i = 0; i < addAroundSector.sectorCount; i++)
 		{
-			//printf("2_UpdateSector Move [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(), removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
-			SendPacket_Sector(addAroundSector.sectors[i], moveStartBuffer);
+			//printf("2_UpdateSector [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(), removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
+
+			SendPacket_Sector(addAroundSector.sectors[i], makeOtherCharacterPkt);
+
+			// 만약 내가 이동중이면 이동중인 것까지 보내야한다.
+			if (entity->IsMoving())
+			{
+				//printf("2_UpdateSector Move [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(), removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
+				SendPacket_Sector(addAroundSector.sectors[i], moveStartNotifyPkt);
+			}
 		}
 	}
 
 	if (entity->GetType() != jh_content::Entity::EntityType::GamePlayer)
 		return;
 
-	GameSessionPtr gameSessionPtr = std::static_pointer_cast<GamePlayer>(entity)->GetOwnerSession();
+	GamePlayerPtr gamePlayerPtr = std::static_pointer_cast<GamePlayer>(entity);
 
-	if (nullptr == gameSessionPtr)
-	{
-		printf("[Update Sector : GameSessionPtr is Nullptr ]\n");
-		return;
-	}
+	ULONGLONG entityId = gamePlayerPtr->GetEntityId();
 	// Player일 때만 작동.
 	// 2. 내가 바라보는.. (Player) 삭제되어야하는 섹터에 존재하는 entity들을 삭제.
 	// entity가 플레이어가 아니라면 보낼 필요 없다. (내가 삭제하겠어!!!)
@@ -164,13 +162,9 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	{
 		for (const auto& removeEntity : m_sectorSet[removeAroundSector.sectors[i].m_iZ][removeAroundSector.sectors[i].m_iX])
 		{
-			jh_network::SharedSendBuffer buffer = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(removeEntity->GetEntityId());
+			PacketPtr delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(removeEntity->GetEntityId());
 
-			//printf("Hey Remove!! Update Sector 3 : %llu\n", entity->GetEntityId());
-
-			gameSessionPtr->Send(buffer);
-
-			//jh_content::UserManager::GetInstance().SendToPlayer(buffer, userId);
+			m_sendPacketFunc(entityId, delOtherCharacterPkt);
 		}
 	}
 
@@ -184,16 +178,15 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 			if (addEntity->IsDead())
 				continue;
 
-			PacketPtr makeBuffer = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(addEntity->GetEntityId(), addEntity->GetPosition());
+			PacketPtr makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(addEntity->GetEntityId(), addEntity->GetPosition());
 
-			gameSessionPtr->Send(makeBuffer);
+			m_sendPacketFunc(entityId, makeOtherCharacterPkt);
 
 			if (addEntity->IsMoving())
 			{
-				PacketPtr moveStartBuffer = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(addEntity->GetEntityId(), addEntity->GetPosition(), addEntity->GetRotation().y);
+				PacketPtr moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(addEntity->GetEntityId(), addEntity->GetPosition(), addEntity->GetRotation().y);
 
-				gameSessionPtr->Send(moveStartBuffer);
-
+				m_sendPacketFunc(entityId, moveStartNotifyPkt);
 			}
 		}
 	}
@@ -271,7 +264,7 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	//}
 }
 
-void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPtr& sendBuffer)
+void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPtr& packet)
 {
 	if (false == IsValidSector(sector.m_iX, sector.m_iZ) || 0 == m_usAliveGamePlayerCount[sector.m_iZ][sector.m_iX])
 	{
@@ -283,10 +276,9 @@ void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPt
 	{
 		if (entity->GetType() == jh_content::Entity::EntityType::GamePlayer)
 		{
-			GameSessionPtr gameSessionPtr = std::static_pointer_cast<GamePlayer>(entity)->GetOwnerSession();
-
-			if (nullptr != gameSessionPtr)
-				gameSessionPtr->Send(sendBuffer);
+			ULONGLONG entityId = entity->GetEntityId();
+			
+			m_sendPacketFunc(entityId, packet);
 
 			//ULONGLONG userId = std::static_pointer_cast<GamePlayer>(entity)->GetUserId();
 
@@ -295,7 +287,7 @@ void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPt
 	}
 }
 
-void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, PacketPtr& sendBuffer)
+void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, PacketPtr& packet)
 {
 	if (false == IsValidSector(sector.m_iX, sector.m_iZ))
 		return;
@@ -312,11 +304,11 @@ void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, Pac
 
 	for (int i = 0; i < aroundSector.sectorCount; i++)
 	{
-		SendPacket_Sector(aroundSector.sectors[i], sendBuffer);
+		SendPacket_Sector(aroundSector.sectors[i], packet);
 	}
 }
 
-void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ, PacketPtr& sendBuffer)
+void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ, PacketPtr& packet)
 {
 	if (false == IsValidSector(sectorX, sectorZ))
 		return;
@@ -333,7 +325,7 @@ void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ,
 
 	for (int i = 0; i < aroundSector.sectorCount; i++)
 	{
-		SendPacket_Sector(aroundSector.sectors[i], sendBuffer);
+		SendPacket_Sector(aroundSector.sectors[i], packet);
 	}
 }
 

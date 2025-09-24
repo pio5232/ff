@@ -26,10 +26,14 @@ namespace jh_content
 
 		bool GetWasInVictoryZone() const { return m_bWasInVictoryZone; }
 		void SetWasInVictoryZone(bool value) { m_bWasInVictoryZone = value; }
-	private:
-		static std::atomic<int> m_aliveGamePlayerCount;
 
-		void SyncPos(const Vector3& clientPos);
+		UserPtr GetOwnerUser() const { return m_ownerUser.lock(); }
+		
+		static alignas(64) std::atomic<int> m_aliveGamePlayerCount;
+	private:
+		//static std::atomic<int> m_aliveGamePlayerCount;
+
+		//void SyncPos(const Vector3& clientPos);
 		std::weak_ptr<class jh_content::User> m_ownerUser;
 
 		bool m_bWasInVictoryZone;

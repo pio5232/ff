@@ -269,7 +269,7 @@ void jh_content::GameServer::EndAction()
 //		if (gamePlayerPtr->IsDead())
 //			return;
 //
-//		_gameWorld->HandleAttackPacket(gamePlayerPtr, packet);
+//		_gameWorld->ProcessAttack(gamePlayerPtr, packet);
 //
 //		});
 //}

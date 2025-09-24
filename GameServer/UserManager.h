@@ -7,7 +7,6 @@ namespace jh_content
 	class UserManager //: public jh_utility::JobQueue
 	{
 	public:
-		using SendPacketFunc = std::function<void(ULONGLONG, PacketPtr&)>; // sessionId
 
 		UserManager(SendPacketFunc sendPacketFunc) : m_sendPacketFunc(sendPacketFunc) {}
 		UserManager(const UserManager&) = delete;

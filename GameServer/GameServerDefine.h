@@ -15,6 +15,8 @@ namespace jh_network
 
 #define GAME_USER_MANAGER_SAVE_FILE_NAME L"UserManager"
 
+using SendPacketFunc = std::function<void(ULONGLONG, PacketPtr&)>; // sessionId
+
 using GameSessionPtr = std::shared_ptr<jh_network::GameSession>;
 
 using LanClientSessionPtr = std::shared_ptr<jh_network::LanClientSession>;
