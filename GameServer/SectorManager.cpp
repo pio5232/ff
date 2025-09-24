@@ -39,7 +39,7 @@ bool jh_content::SectorManager::DeleteEntity(EntityPtr entity, PacketPtr& sendBu
 		return false;
 	}
 	if (entity->GetType() == jh_content::Entity::EntityType::GamePlayer)
-		m_aliveGamePlayerCount[sectorZ][sectorX]--;
+		aliveGamePlayerCount[sectorZ][sectorX]--;
 
 	SendPacketAroundSector(sectorX, sectorZ, sendBuffer);*/
 
@@ -91,7 +91,7 @@ void jh_content::SectorManager::SendAllEntityInfo()
 //	{
 //		for (int dx = -1; dx <= 1; dx++)
 //		{
-//			if (0 == m_aliveGamePlayerCount[delEntitySector.m_iZ + dz][delEntitySector.m_iX + dx])
+//			if (0 == aliveGamePlayerCount[delEntitySector.m_iZ + dz][delEntitySector.m_iX + dx])
 //				continue;
 //
 //			for (const auto& entity : m_sectorSet[delEntitySector.m_iZ + dz][delEntitySector.m_iX + dx])
@@ -386,6 +386,18 @@ EntityPtr jh_content::SectorManager::GetMinEntityInRange(EntityPtr targetEntity,
 	}
 
 	return minEntity;
+}
+
+void jh_content::SectorManager::Clear()
+{
+	for (int z = startZSectorPos; z < endZSectorPos; z++)
+	{
+		for (int x = startXSectorPos; x < endXSectorPos; x++)
+		{
+			m_sectorSet[z][x].clear();
+			m_usAliveGamePlayerCount[z][x] = 0;
+		}
+	}
 }
 
 bool jh_content::SectorManager::IsValidSector(int sectorXPos, int sectorZPos)

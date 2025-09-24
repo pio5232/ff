@@ -26,8 +26,7 @@
     <ClInclude Include="GameServerDefine.h" />
     <ClInclude Include="GameSystem.h" />
     <ClInclude Include="GameWorld.h" />
-    <ClInclude Include="LanClient.h" />
-    <ClInclude Include="LanClientSession.h" />
+    <ClInclude Include="GameLanClient.h" />
     <ClInclude Include="PacketBuilder.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Player.h" />
@@ -48,8 +47,7 @@
     <ClCompile Include="GameServerDefine.cpp" />
     <ClCompile Include="GameSystem.cpp" />
     <ClCompile Include="GameWorld.cpp" />
-    <ClCompile Include="LanClient.cpp" />
-    <ClCompile Include="LanClientSession.cpp" />
+    <ClCompile Include="GameLanClient.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PacketBuilder.cpp" />
     <ClCompile Include="pch.cpp">

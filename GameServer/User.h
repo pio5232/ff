@@ -7,12 +7,12 @@ namespace jh_content
 	public:
 		User(ULONGLONG sessionId, ULONGLONG userId) : m_ullUserId(userId), m_ullSessionId(sessionId), m_pGamePlayer(nullptr)
 		{
-			m_aliveLobbyUserCount.fetch_add(1);
+			aliveLobbyUserCount.fetch_add(1);
 		}
 
 		~User()
 		{
-			m_aliveLobbyUserCount.fetch_sub(1);
+			aliveLobbyUserCount.fetch_sub(1);
 
 			m_pGamePlayer.reset();
 		}
@@ -26,7 +26,7 @@ namespace jh_content
 
 		ULONGLONG GetUserId() const { return m_ullUserId; }
 		ULONGLONG GetSessionId() const { return m_ullSessionId; }
-		static alignas(64) std::atomic<int> m_aliveLobbyUserCount;
+		static alignas(64) std::atomic<int> aliveLobbyUserCount;
 	private:
 		const ULONGLONG m_ullSessionId;
 		const ULONGLONG m_ullUserId;

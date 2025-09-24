@@ -40,6 +40,8 @@ jh_content::GameWorld::~GameWorld()
 {
 	m_aliveEntityDic.clear();
 	m_aliveEntityArr.clear();
+	m_aliveEntityToVectorIdxDic.clear();
+
 }
 
 void jh_content::GameWorld::StartGame()
@@ -59,6 +61,15 @@ void jh_content::GameWorld::StartGame()
 
 void jh_content::GameWorld::Stop()
 {
+	m_aliveEntityDic.clear();
+	m_aliveEntityArr.clear();
+	m_aliveEntityToVectorIdxDic.clear();
+	m_spectatorEntityArr.clear();
+
+	std::priority_queue<TimerAction> t;
+	m_timerActionQueue.swap(t);
+
+	m_pSectorManager->Clear();
 }
 
 void jh_content::GameWorld::Update(float deltaTime)

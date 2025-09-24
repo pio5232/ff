@@ -1,5 +1,5 @@
 #include "pch.h"
 #include "User.h"
 
-alignas(64) ULONGLONG jh_content::User::m_ullAliveLobbyUserCount = 0;
+alignas(64) std::atomic<int> jh_content::User::aliveLobbyUserCount = 0;
 

@@ -30,6 +30,8 @@ namespace jh_content
 		void PrintSectorInfo() const;
 		EntityPtr GetMinEntityInRange(EntityPtr targetEntity, float range);
 
+		void Clear();
+
 	private:
 		bool IsValidSector(int sectorXPos, int sectorZPos);
 		// 주위 9섹터 얻어오기.

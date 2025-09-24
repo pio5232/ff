@@ -9,7 +9,7 @@ namespace jh_content
 	{
 	public:
 		GamePlayer(UserPtr ownerUser, GameWorld* worldPtr); // User.
-		~GamePlayer() { m_aliveGamePlayerCount.fetch_sub(1); }
+		~GamePlayer() { aliveGamePlayerCount.fetch_sub(1); }
 
 		virtual void Update(float delta);
 
@@ -22,16 +22,16 @@ namespace jh_content
 		void MoveStop(const Vector3& clientMoveStopPos, float clientMoveStopRotY);
 
 		void SetAttackState();
-		static int GetAliveGamePlayerCount() { return m_aliveGamePlayerCount.load(); }
+		static int GetAliveGamePlayerCount() { return aliveGamePlayerCount.load(); }
 
 		bool GetWasInVictoryZone() const { return m_bWasInVictoryZone; }
 		void SetWasInVictoryZone(bool value) { m_bWasInVictoryZone = value; }
 
 		UserPtr GetOwnerUser() const { return m_ownerUser.lock(); }
 		
-		static alignas(64) std::atomic<int> m_aliveGamePlayerCount;
+		static alignas(64) std::atomic<int> aliveGamePlayerCount;
 	private:
-		//static std::atomic<int> m_aliveGamePlayerCount;
+		//static std::atomic<int> aliveGamePlayerCount;
 
 		//void SyncPos(const Vector3& clientPos);
 		std::weak_ptr<class jh_content::User> m_ownerUser;

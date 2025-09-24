@@ -20,7 +20,7 @@ jh_network::IocpServer::IocpServer(const WCHAR* serverName) : m_hCompletionPort(
 	m_dwConcurrentWorkerThreadCount = 0;
 	m_lingerOption = {};
 	m_dwMaxSessionCnt = 0;
-	m_wPort = 0;
+	m_usPort = 0;
 	m_ullTimeOutLimit = 0;
 
 	//_sessionLog = new SessionLog[sessionLogMax];
@@ -48,22 +48,10 @@ jh_network::IocpServer::~IocpServer()
 		delete[] m_pSessionArray;
 		m_pSessionArray = nullptr;
 	}
-
-
-	WSACleanup();
 }
 
-ErrorCode jh_network::IocpServer::Start()
+bool jh_network::IocpServer::Start()
 {
-	WSAData wsa;
-
-	int iRet = WSAStartup(MAKEWORD(2, 2), &wsa);
-
-	if (iRet)
-	{
-		return ErrorCode::WSA_START_UP_ERROR;
-	}
-
 	DWORD concurrentThreadCnt = m_dwConcurrentWorkerThreadCount;
 
 	if (0 == concurrentThreadCnt)
@@ -82,7 +70,7 @@ ErrorCode jh_network::IocpServer::Start()
 	{
 		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"IOCP Handle is Null");
 
-		return 	ErrorCode::CREATE_COMPLETION_PORT_FAILED;
+		return false;
 	}
 
 	m_workerThreads.reserve(concurrentThreadCnt);
@@ -97,7 +85,7 @@ ErrorCode jh_network::IocpServer::Start()
 	{
 		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"ListenSocket is Invalid");
 
-		return ErrorCode::CREATE_SOCKET_FAILED;
+		return false;
 	}
 
 	DWORD setLingerRet = setsockopt(m_listenSock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
@@ -106,12 +94,12 @@ ErrorCode jh_network::IocpServer::Start()
 		int getLastError = WSAGetLastError();
 		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Set Linger Failed GetLastError : %i",getLastError);
 		
-		return ErrorCode::SET_SOCK_OPT_FAILED;
+		return false;
 	}
 	
 	SOCKADDR_IN sockaddrIn;
 	sockaddrIn.sin_family = AF_INET;
-	sockaddrIn.sin_port = htons(m_wPort);
+	sockaddrIn.sin_port = htons(m_usPort);
 	sockaddrIn.sin_addr = NetAddress::IpToAddr(m_wszIp);
 
 	DWORD bindRet = bind(m_listenSock, (SOCKADDR*)&sockaddrIn, sizeof(SOCKADDR_IN));
@@ -122,7 +110,7 @@ ErrorCode jh_network::IocpServer::Start()
 
 		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Bind is Failed %d",getLastError);
 
-		return ErrorCode::BIND_FAILED;
+		return false;
 
 	}
 
@@ -131,7 +119,7 @@ ErrorCode jh_network::IocpServer::Start()
 
 	BeginAction();
 
-	return ErrorCode::NONE;
+	return true;
 }
 
 void jh_network::IocpServer::Listen()
@@ -147,7 +135,7 @@ void jh_network::IocpServer::Listen()
 	}
 }
 
-ErrorCode jh_network::IocpServer::Stop()
+void jh_network::IocpServer::Stop()
 {
 	EndAction();
 
@@ -171,7 +159,7 @@ ErrorCode jh_network::IocpServer::Stop()
 	
 	CloseHandle(m_hCompletionPort);
 
-	return ErrorCode::NONE;
+	return;
 }
 
 
@@ -252,7 +240,7 @@ void jh_network::IocpServer::DecreaseIoCount(Session* sessionPtr)
 void jh_network::IocpServer::InitServerConfig(WCHAR* ip, WORD port, DWORD concurrentWorkerThreadCount, WORD lingerOnOff, WORD lingerTime, ULONGLONG timeOut)
 {
 	wcscpy_s(m_wszIp, ip);
-	m_wPort = port;
+	m_usPort = port;
 	m_dwConcurrentWorkerThreadCount = concurrentWorkerThreadCount;
 	m_lingerOption.l_onoff = lingerOnOff;
 	m_lingerOption.l_linger = lingerTime;
@@ -354,14 +342,10 @@ void jh_network::IocpServer::WorkerThreadFunc()
 		{
 			if (&sessionPtr->m_recvOverlapped == lpOverlapped)
 			{
-				//sessionJob = SessionJob::RECV;
-
 				ProcessRecv(sessionPtr, transferredBytes);
 			}
 			else if (&sessionPtr->m_sendOverlapped == lpOverlapped)
 			{
-				//sessionJob = SessionJob::SEND;
-				//std::cout << "[WorkerThread] SessionID : " << sessionPtr->m_ullSessionId << " Send Completed Bytes : " << transferredBytes << "\n";
 				ProcessSend(sessionPtr, transferredBytes);
 			}
 		}
@@ -492,10 +476,7 @@ void jh_network::IocpServer::Disconnect(ULONGLONG sessionId, const WCHAR* reason
 	Session* sessionPtr = TryAcquireSession(sessionId, PROF_WFUNC);
 
 	if (nullptr == sessionPtr)
-	{
-		_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"Disconnect - TryAcquireSession Failed");
 		return;
-	}
 
 	if(true == isCritical)
 	_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"Enter Disconnect Log - %s",reason);
@@ -693,8 +674,17 @@ void jh_network::IocpServer::CheckHeartbeatTimeout(ULONGLONG now)
 	m_activeSessionManager.ProcessAllSessions(func);
 }
 
+// 0이 리턴되는 경우는 잘못된 경우
+USHORT jh_network::IocpServer::GetPort() const
+{
+	if (0 != m_usPort && INVALID_SOCKET != m_listenSock)
+		return m_usPort;
+
+	return jh_network::NetAddress::GetPort(m_listenSock);
+}
+
 //void jh_network::IocpServer::SendPacket(LONGLONG sessionId, jh_utility::SerializationBuffer* packet)
-void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, PacketPtr packet)
+void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
 	Session* sessionPtr = TryAcquireSession(sessionId, PROF_WFUNC);
 
@@ -820,450 +810,613 @@ jh_network::Session* jh_network::IocpServer::CreateSession(SOCKET sock, const SO
 
 // ----------------- IocpClient ----------------------
 
-//jh_network::IocpClient::IocpClient(const NetAddress& m_targetNetAddr) : m_hCompletionPort(nullptr), _clientSession(nullptr),m_targetNetAddr(m_targetNetAddr)
-//{
-//	WSAData wsa;
-//
-//	int iRet = WSAStartup(MAKEWORD(2, 2), &wsa);
-//
-//	if (iRet)
-//	{
-//		_LOG(L"IocpClient", LOG_LEVEL_WARNING, L"[WSAStartUp Error !!]");
-//		return;
-//	}
-//
-//	SYSTEM_INFO sys;
-//	GetSystemInfo(&sys);
-//
-//	DWORD concurrentThreadCnt = 1;
-//
-//	m_hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, concurrentThreadCnt);
-//
-//	if (m_hCompletionPort == NULL)
-//	{
-//		_LOG(L"IocpClient", LOG_LEVEL_WARNING, L"[Create IOCP Handle is Failed!!]");
-//		
-//		return;
-//	}
-//
-//
-//	_workerThread = std::thread([this]() {this->WorkerThread(); });
-//
-//	SOCKET clientSock = socket(AF_INET, SOCK_STREAM, 0);
-//	if (clientSock == INVALID_SOCKET)
-//	{
-//		_LOG(L"IocpClient", LOG_LEVEL_WARNING, L"[ClientSocket is INVALID]");
-//
-//		return;
-//	}
-//
-//	_clientSession = new Session();
-//	
-//	static LONGLONG sessionIdGen = 0;
-//	_clientSession->sessionIndex = 0;
-//	_clientSession->m_llSessionId = ++sessionIdGen;
-//	_clientSession->Init(clientSock, &m_targetNetAddr.GetSockAddr());
-//
-//	LINGER linger;
-//	linger.l_linger = 0;
-//	linger.l_onoff = 0;
-//
-//	DWORD setLingerRet = setsockopt(_clientSession->m_socket, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof(linger));
-//	if (setLingerRet == SOCKET_ERROR)
-//	{
-//		DWORD getlast = GetLastError();
-//
-//		_LOG(L"IocpClient", LOG_LEVEL_WARNING, L"Set Linger Failed GetLastError : %u", getlast);
-//
-//		return;
-//	}
-//}
-//
-//jh_network::IocpClient::~IocpClient()
-//{
-//	if (INVALID_SESSION_INDEX != _clientSession->sessionIndex)
-//	{
-//		closesocket(_clientSession->m_socket);
-//		_clientSession->Reset();
-//	}
-//	if(m_hCompletionPort != nullptr)
-//	CloseHandle(m_hCompletionPort);
-//
-//	if (_workerThread.joinable())
-//		_workerThread.join();
-//
-//	WSACleanup();
-//}
-//
-//bool jh_network::IocpClient::Connect()
-//{
-//	if (_clientSession->m_socket == INVALID_SOCKET)
-//	{
-//		printf("[Socket is Invalid]");
-//		return false;
-//	}
-//
-//	int connectRet = connect(_clientSession->m_socket, (sockaddr*)&m_targetNetAddr.GetSockAddr(), sizeof(SOCKADDR_IN));
-//
-//	if (connectRet == SOCKET_ERROR)
-//	{
-//		printf("[Client Connect Error - %d", GetLastError());;
-//		return false;
-//	}
-//
-//	HANDLE RegistIocpRet = CreateIoCompletionPort((HANDLE)_clientSession->m_socket, m_hCompletionPort, NULL, NULL);
-//
-//	if (nullptr == RegistIocpRet)
-//	{
-//		printf("[Regist Session Handle Failed]\n");
-//		return false;
-//	}
-//
-//	OnConnected();
-//
-//	PostRecv();
-//	//PostRecv();
-//
-//	return true;
-//}
-//
-//
-//bool jh_network::IocpClient::Disconnect(const WCHAR* reason, bool isCritical = false)
-//{
-//	char isDisconnected = InterlockedExchange(&_clientSession->_isDisconnected, 1);
-//
-//	if (0 == isDisconnected)
-//	{
-//		if (_clientSession->m_socket != INVALID_SOCKET)
-//		{
-//			if (true == isCritical)
-//				_LOG(_clientName, LOG_LEVEL_WARNING, L"Critical Disconnect Session %llu, Reason : %s", _clientSession->m_llSessionId, reason);
-//			else
-//				_LOG(_clientName, LOG_LEVEL_INFO, L"Disconnect Session %llu, Reason : %s", _clientSession->m_llSessionId, reason);
-//
-//			closesocket(_clientSession->m_socket);
-//
-//			_clientSession->m_socket = INVALID_SOCKET;
-//		}
-//
-//		OnDisconnected();
-//	}
-//
-//	return false;
-//}
-//
-//void jh_network::IocpClient::Send(jh_network::SerializationBufferPtr buffer)
-//{
-//	if (nullptr == _clientSession)
-//	{
-//		_LOG(_clientName, LOG_LEVEL_WARNING, L"Send - ClientSession is Null");
-//		return;
-//	}
-//	
-//	{
-//		SRWLockGuard lockGuard(&_clientSession->sendBufferLock);
-//		_clientSession->sendBufferQ.push(buffer);
-//	}
-//
-//	PostSend();
-//}
-//
-//bool jh_network::IocpClient::ProcessIO(DWORD timeOut)
-//{
-//	IocpEvent* iocpEvent;
-//	DWORD transferredBytes;
-//	ULONG_PTR key;
-//	// Session*를 Key로 등록해서 가지는 형태도 사용할 수 있지만.
-//	// 현재 작업 (IocpEvent)에 자신의 소유자 (Session*)가 등록되어 있기 때문에 Key는 사용하지 않는다.
-//
-//	iocpEvent = nullptr;
-//	transferredBytes = 0;
-//
-//	key = 0;
-//
-//	bool gqcsRet = GetQueuedCompletionStatus(m_hCompletionPort, &transferredBytes,
-//		&key, reinterpret_cast<LPOVERLAPPED*>(&iocpEvent), timeOut);
-//
-//	if (!iocpEvent)
-//	{
-//		DWORD wsaErr = WSAGetLastError();
-//
-//		printf("IocpEvent is NULL\n");
-//		if (wsaErr == WSA_WAIT_TIMEOUT)
-//			return true;
-//
-//		PostQueuedCompletionStatus(m_hCompletionPort, 0, 0, nullptr);
-//		return false;
-//	}
-//
-//	Dispatch(iocpEvent, transferredBytes);
-//
-//	return true;
-//}
-//
-//
-//void jh_network::IocpClient::Dispatch(IocpEvent* iocpEvent, DWORD transferredBytes)
-//{
-//	switch (iocpEvent->iocpEventType)
-//	{
-//	case IocpEventType::Recv:
-//	{
-//		ProcessRecv(transferredBytes);
-//
-//		break;
-//	}
-//
-//	case IocpEventType::Send:
-//	{
-//		ProcessSend(transferredBytes);
-//
-//		break;
-//	}
-//	default:break;
-//	}
-//}
-//
-//void jh_network::IocpClient::WorkerThread()
-//{
-//	while (1)
-//	{
-//		if (false == ProcessIO())
-//			break;
-//	}
-//
-//}
-//
-//void jh_network::IocpClient::PostSend()
-//{
-//	if (InterlockedExchange8(&sessionPtr->sendFlag, 1) == 1)
-//		return;
-//
-//	// 앞에서 막는 것만으로는 모두 막을 수 없음.
-//	// 0개가 아님을 확인하고 들어오는 순간에 0개가 될 수 있음.
-//	if (sessionPtr->m_sendQ.GetUseSize() == 0)
-//	{
-//		InterlockedExchange8(&sessionPtr->sendFlag, 0);
-//		return;
-//	}
-//
-//	//int wsabufCount = 1;
-//	//WSABUF wsabuf[2];
-//
-//	//int totalUseSize = sessionPtr->m_sendBuffer.GetUseSize();
-//	//int directUseSize = sessionPtr->m_sendBuffer.DirectDequeueSize();
-//
-//	//wsabuf[0].buf = sessionPtr->m_sendBuffer.GetFrontBufferPtr();
-//	//wsabuf[0].len = directUseSize;
-//
-//	//if (totalUseSize - directUseSize > 0)
-//	//{
-//	//	wsabuf[1].buf = sessionPtr->m_sendBuffer.GetStartBufferPtr();
-//	//	wsabuf[1].len = totalUseSize - directUseSize;
-//	//	++wsabufCount;
-//	//}
-//
-//	int popCount = sessionPtr->m_sendQ.PopAll(sessionPtr->m_sendOverlapped.m_pendingList);
-//
-//	std::vector<WSABUF> wsaBufs;
-//
-//	wsaBufs.reserve(popCount);
-//
-//	for (PacketPtr& packet : sessionPtr->m_sendOverlapped.m_pendingList)
-//	{
-//		wsaBufs.push_back({ static_cast<ULONG>(packet->GetDataSize()), packet->GetFrontPtr() });
-//		//wsaBufs[idx].buf = packet->GetFrontPtr();
-//		//wsaBufs[idx].len = packet->GetDataSize();
-//		//++idx;
-//	}
-//
-//	InterlockedIncrement(&sessionPtr->ioCount);
-//
-//	int sendRet = WSASend(sessionPtr->m_socket, wsaBufs.data(), popCount, nullptr, 0, reinterpret_cast<LPWSAOVERLAPPED>(&sessionPtr->m_sendOverlapped), nullptr);
-//
-//	if (sendRet == SOCKET_ERROR)
-//	{
-//		DWORD wsaErr = WSAGetLastError();
-//
-//		// 등록에 실패한 상황
-//		if (wsaErr != WSA_IO_PENDING)
-//		{
-//			//session->m_sendOverlapped.ownerSession = nullptr;
-//
-//			switch (wsaErr)
-//			{
-//			case 10053:;
-//
-//				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다.  WSAECONNRESET
-//			case 10054:;
-//				break;
-//			default:
-//				_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"  SEND POST FAILED .. WSAERROR : %u, 0x%08x", wsaErr, sessionPtr->m_ullSessionId);
-//				break;
-//			}
-//
-//			//DecreaseIoCount(sessionPtr, SessionJob::SEND);
-//			DecreaseIoCount(sessionPtr);
-//
-//			return;
-//		}
-//		InterlockedIncrement(&m_lAsyncSendCount);
-//	}
-//	InterlockedIncrement(&m_lTotalSendCount);
-//}
-//
-//void jh_network::IocpClient::PostRecv()
-//{
-//	//if (1 != InterlockedAnd8(&sessionPtr->useFlag, 1))
-//	//{
-//	//	return;
-//	//}
-//
-//	WSABUF buf[2];
-//
-//	int directEnqueueSize = sessionPtr->m_recvBuffer.DirectEnqueueSize();
-//	int remainderSize = sessionPtr->m_recvBuffer.GetFreeSize() - directEnqueueSize;
-//	int wsabufSize = 1;
-//
-//	buf[0].buf = sessionPtr->m_recvBuffer.GetFrontBufferPtr();
-//	buf[0].len = directEnqueueSize;
-//
-//	if (remainderSize > 0)
-//	{
-//		++wsabufSize;
-//		buf[1].buf = sessionPtr->m_recvBuffer.GetStartBufferPtr();
-//		buf[1].len = remainderSize;
-//	}
-//
-//	DWORD flag = 0;
-//
-//	//if (false == TryIncreaseIoCount(sessionPtr))
-//	//	return;
-//
-//	InterlockedIncrement(&sessionPtr->ioCount);
-//
-//	int recvRet = WSARecv(sessionPtr->m_socket, buf, wsabufSize, nullptr, &flag, reinterpret_cast<LPWSAOVERLAPPED>(&sessionPtr->m_recvOverlapped), nullptr);
-//
-//	if (recvRet == SOCKET_ERROR)
-//	{
-//		int wsaErr = WSAGetLastError();
-//
-//		if (wsaErr != WSA_IO_PENDING)
-//		{
-//			switch (wsaErr)
-//			{
-//				//
-//			case 10053:
-//				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다. WSAECONNRESET
-//			case 10054:
-//				break;
-//			default:
-//				_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"RECV POST FAILED .. WSAERROR : %u, 0x%08x", wsaErr, sessionPtr->m_ullSessionId);
-//				break;
-//			}
-//
-//			//DecreaseIoCount(sessionPtr, SessionJob::RECV);
-//			DecreaseIoCount(sessionPtr);
-//
-//			return;
-//		}
-//
-//		InterlockedIncrement(&m_lAsyncRecvCount);
-//	}
-//	InterlockedIncrement(&m_lTotalRecvCount);
-//}
-//
-//ErrorCode jh_network::IocpClient::ProcessRecv(DWORD transferredBytes)
-//{
-//	_clientSession->m_recvOverlapped.ownerSession = nullptr;
-//
-//	if (transferredBytes == 0)
-//	{
-//		Disconnect(L"TransferredBytes 0");
-//
-//		return ErrorCode::NONE; // 정상 종료로 판단.
-//	}
-//
-//	if (false == _clientSession->m_recvBuffer.MoveRearRetBool(transferredBytes))
-//	{
-//		Disconnect(L"ProcessRecv - Recv Buffer Overflow", true);
-//
-//		return ErrorCode::RECV_BUF_OVERFLOW;
-//	}
-//
-//	jh_utility::SerializationBuffer m_pPacket(3000);
-//
-//	while (1)
-//	{
-//		m_pPacket.Clear();
-//
-//		int bufferSize = _clientSession->m_recvBuffer.GetUseSize();
-//
-//		// packetheader보다 작은 상태
-//
-//
-//
-//#ifdef ECHO
-//		if (bufferSize < sizeof(PacketHeader::size))
-//			break;
-//#else
-//		if (bufferSize < sizeof(PacketHeader))
-//			break;
-//#endif
-//
-//		PacketHeader header;
-//
-//		_clientSession->m_recvBuffer.PeekRetBool(reinterpret_cast<char*>(&header), sizeof(PacketHeader));
-//
-//#ifdef ECHO
-//		if (bufferSize < (sizeof(PacketHeader::size) + header.size))
-//			break;
-//#else
-//		if (bufferSize < (sizeof(PacketHeader) + header.size))
-//			break;
-//#endif
-//
-//#ifdef ECHO
-//		_recvBuffer.MoveFront(sizeof(header.size));
-//#else
-//		_clientSession->m_recvBuffer.MoveFront(sizeof(header));
-//#endif
-//
-//		if (false == _clientSession->m_recvBuffer.DequeueRetBool(m_pPacket.GetRearPtr(), header.size))
-//		{
-//			Disconnect(L"ProcessRecv - Recv Buffer Deque Failed", true);
-//
-//			return ErrorCode::RECV_BUF_DEQUE_FAILED;
-//		}
-//
-//		m_pPacket.MoveRearPos(header.size);
-//
-//#ifdef ECHO
-//		OnRecv(m_pPacket, 0);
-//#else
-//		OnRecv(m_pPacket, header.type);
-//#endif
-//	}
-//
-//	PostRecv();
-//
-//	return ErrorCode::NONE;
-//}
-//
-//ErrorCode jh_network::IocpClient::ProcessSend(DWORD transferredBytes)
-//{
-//	_clientSession->m_sendOverlapped.ownerSession = nullptr;
-//	_clientSession->m_sendOverlapped._pendingBuffs.clear();
-//
-//	InterlockedExchange8(&_clientSession->m_bSendFlag, 0);
-//
-//	if (transferredBytes == 0)
-//	{
-//		Disconnect(L"Send Transferred Bytes is 0", true);
-//
-//		return ErrorCode::SEND_LEN_ZERO;
-//	}
-//
-//	PostSend();
-//
-//	return ErrorCode::NONE;
-//}
+void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredBytes)
+{
+	if (false == sessionPtr->m_recvBuffer.MoveRearRetBool(transferredBytes))
+	{
+		Disconnect(sessionPtr->m_ullSessionId);
+
+		return;
+	}
+
+	while (1)
+	{
+		int bufferSize = sessionPtr->m_recvBuffer.GetUseSize();
+
+#ifdef ECHO
+		if (bufferSize < sizeof(PacketHeader::size))
+			break;
+
+		USHORT header;
+
+		sessionPtr->m_recvBuffer.PeekRetBool(reinterpret_cast<char*>(&header), sizeof(header));
+
+		if (bufferSize < (sizeof(header) + header))
+			break;
+
+		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
+
+		PacketPtr packet = MakeSharedBuffer(g_memAllocator, header);
+
+		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
+		{
+			Disconnect(sessionPtr->m_ullSessionId);
+
+			return;
+		}
+
+		packet->MoveRearPos(header);
+
+		OnRecv(sessionPtr->m_ullSessionId, packet, 0);
+
+#else
+		if (bufferSize < sizeof(PacketHeader))
+			break;
+
+		PacketHeader header;
+
+		sessionPtr->m_recvBuffer.PeekRetBool(reinterpret_cast<char*>(&header), sizeof(PacketHeader));
+
+		if (bufferSize < (sizeof(PacketHeader) + header.size))
+			break;
+
+		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
+
+		PacketPtr packet = MakeSharedBuffer(g_memAllocator, header.size);
+
+		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
+		{
+			Disconnect(sessionPtr->m_ullSessionId);
+
+			return;
+		}
+
+		packet->MoveRearPos(header.size);
+
+		OnRecv(sessionPtr->m_ullSessionId, packet, header.type);
+#endif
+	}
+
+	PostRecv(sessionPtr);
+}
+
+void jh_network::IocpClient::ProcessSend(Session* sessionPtr, DWORD transferredBytes)
+{
+	sessionPtr->m_sendOverlapped.ClearPendingList();
+
+	InterlockedExchange8(&sessionPtr->m_bSendFlag, 0);
+
+	PostSend(sessionPtr);
+
+	return;
+}
+
+void jh_network::IocpClient::Disconnect(ULONGLONG sessionId)
+{
+	Session* sessionPtr = TryAcquireSession(sessionId);
+
+	if (nullptr == sessionPtr)
+		return;
+
+	// 연결 끊긴 상태가 아닌, 먼저 연결을 끊는 상황에서
+	// 모두 완료 통지가 들어왔을 때 Disconnect()가 호출된다면
+	// 그다음 완료 통지를 처리할 때 i/o 등록을 막는다.
+	InterlockedExchange8(&sessionPtr->m_bConnectedFlag, 0);
+
+	// recv, send가 등록되었다면 둘 다 io 취소한다.
+	CancelIoEx(reinterpret_cast<HANDLE>(sessionPtr->m_socket), nullptr);
+
+	DecreaseIoCount(sessionPtr);
+}
+
+void jh_network::IocpClient::PostSend(Session* sessionPtr)
+{
+	if (InterlockedAnd8(&sessionPtr->m_bConnectedFlag, 1) == 0)
+		return;
+
+	if (InterlockedExchange8(&sessionPtr->m_bSendFlag, 1) == 1)
+		return;
+
+	// 앞에서 막는 것만으로는 모두 막을 수 없음.
+	// 0개가 아님을 확인하고 들어오는 순간에 0개가 될 수 있음.
+	if (sessionPtr->m_sendQ.GetUseSize() == 0)
+	{
+		InterlockedExchange8(&sessionPtr->m_bSendFlag, 0);
+		return;
+	}
+
+	int popCount = sessionPtr->m_sendQ.PopAll(sessionPtr->m_sendOverlapped.m_pendingList);
+
+	std::vector<WSABUF> wsaBufs;
+
+	wsaBufs.reserve(popCount);
+
+	for (PacketPtr& packet : sessionPtr->m_sendOverlapped.m_pendingList)
+	{
+		wsaBufs.push_back({ static_cast<ULONG>(packet->GetDataSize()), packet->GetFrontPtr() });
+	}
+
+	InterlockedIncrement(&sessionPtr->m_lIoCount);
+
+	int sendRet = WSASend(sessionPtr->m_socket, wsaBufs.data(), popCount, nullptr, 0, reinterpret_cast<LPWSAOVERLAPPED>(&sessionPtr->m_sendOverlapped), nullptr);
+
+	if (sendRet == SOCKET_ERROR)
+	{
+		DWORD wsaErr = WSAGetLastError();
+
+		// 등록에 실패한 상황
+		if (wsaErr != WSA_IO_PENDING)
+		{
+			switch (wsaErr)
+			{
+			case 10053:;
+
+				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다.  WSAECONNRESET
+			case 10054:;
+				break;
+			default:
+				_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"  SEND POST FAILED .. WSAERROR : %u, 0x%08x", wsaErr, sessionPtr->m_ullSessionId);
+				break;
+			}
+
+			DecreaseIoCount(sessionPtr);
+
+			return;
+		}
+		InterlockedIncrement(&m_lAsyncSendCount);
+	}
+	InterlockedIncrement(&m_lTotalSendCount);
+}
+
+void jh_network::IocpClient::PostRecv(Session* sessionPtr)
+{
+	if (InterlockedAnd8(&sessionPtr->m_bConnectedFlag, 1) == 0)
+		return;
+
+	WSABUF buf[2];
+
+	int directEnqueueSize = sessionPtr->m_recvBuffer.DirectEnqueueSize();
+	int remainderSize = sessionPtr->m_recvBuffer.GetFreeSize() - directEnqueueSize;
+	int wsabufSize = 1;
+
+	buf[0].buf = sessionPtr->m_recvBuffer.GetFrontBufferPtr();
+	buf[0].len = directEnqueueSize;
+
+	if (remainderSize > 0)
+	{
+		++wsabufSize;
+		buf[1].buf = sessionPtr->m_recvBuffer.GetStartBufferPtr();
+		buf[1].len = remainderSize;
+	}
+
+	DWORD flag = 0;
+
+	//if (false == TryIncreaseIoCount(sessionPtr))
+	//	return;
+
+	InterlockedIncrement(&sessionPtr->m_lIoCount);
+
+	int recvRet = WSARecv(sessionPtr->m_socket, buf, wsabufSize, nullptr, &flag, reinterpret_cast<LPWSAOVERLAPPED>(&sessionPtr->m_recvOverlapped), nullptr);
+
+	if (recvRet == SOCKET_ERROR)
+	{
+		int wsaErr = WSAGetLastError();
+
+		if (wsaErr != WSA_IO_PENDING)
+		{
+			switch (wsaErr)
+			{
+				//
+			case 10053:
+				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다. WSAECONNRESET
+			case 10054:
+				break;
+			default:
+				_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[RecvPost] 실패 WSAERROR : %u, 0x%08x", wsaErr, sessionPtr->m_ullSessionId);
+				break;
+			}
+
+			//DecreaseIoCount(sessionPtr, SessionJob::RECV);
+			DecreaseIoCount(sessionPtr);
+
+			return;
+		}
+
+		InterlockedIncrement(&m_lAsyncRecvCount);
+	}
+	InterlockedIncrement(&m_lTotalRecvCount);
+}
+
+void jh_network::IocpClient::SendPacket(ULONGLONG sessionId, PacketPtr& packet)
+{
+	Session* sessionPtr = TryAcquireSession(sessionId);
+
+	if (nullptr == sessionPtr)
+		return;
+
+	sessionPtr->m_sendQ.Push(packet);
+
+	PostSend(sessionPtr);
+
+	DecreaseIoCount(sessionPtr);
+}
+
+unsigned WINAPI jh_network::IocpClient::WorkerThreadFunc(LPVOID lparam)
+{
+	IocpClient* instance = reinterpret_cast<IocpClient*>(lparam);
+
+	instance->WorkerThread();
+
+	return 0;
+}
+
+void jh_network::IocpClient::WorkerThread()
+{
+	while (1)
+	{
+		LPOVERLAPPED lpOverlapped = nullptr;
+		DWORD transferredBytes = 0;
+		ULONG_PTR key = 0;
+
+		Session* sessionPtr = nullptr;
+
+		bool gqcsRet = GetQueuedCompletionStatus(m_hCompletionPort, &transferredBytes,
+			reinterpret_cast<PULONG_PTR>(&sessionPtr), &lpOverlapped, INFINITE);
+
+		// 
+		if (nullptr == lpOverlapped)
+		{
+			// gqcsRet == true -> pqcs로 보낸 lpOverlapped 가 nullptr
+			// gqcsRet == false -> completionPort가 closeHandle된 상태.
+			if (false == gqcsRet)
+			{
+				int wsaErr = WSAGetLastError();
+
+				_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"ProcessIO  Close Completion port [WSAERROR : %d]", wsaErr);
+			}
+			break;
+		}
+
+		// lpOverlapped != nullptr, gqcsRet == false
+		// 작업 도중 연결이 끊겼을 때의 상황이다.
+		if (false == gqcsRet)
+		{
+			Disconnect(sessionPtr->m_ullSessionId);
+
+			DecreaseIoCount(sessionPtr);
+
+			continue;
+		}
+
+		if (&sessionPtr->m_connectOverlapped == lpOverlapped)
+		{
+			OnConnected(sessionPtr->m_ullSessionId);
+
+			// api사용을 위해 소켓 정보 초기화
+			setsockopt(sessionPtr->m_socket, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0);
+
+		}
+		else if (transferredBytes != 0)
+		{
+			if (&sessionPtr->m_recvOverlapped == lpOverlapped)
+			{
+				ProcessRecv(sessionPtr, transferredBytes);
+			}
+			else if (&sessionPtr->m_sendOverlapped == lpOverlapped)
+			{
+				ProcessSend(sessionPtr, transferredBytes);
+			}
+		}
+
+		DecreaseIoCount(sessionPtr);
+	}
+}
+
+jh_network::Session* jh_network::IocpClient::TryAcquireSession(ULONGLONG sessionId)
+{
+	if (sessionId == INVALID_SESSION_ID)
+	{
+		_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[TryAcquireSession] - 유효하지 않은 세션입니다. Session ID [0x%0x]", sessionId);
+		return nullptr;
+	}
+
+	LONGLONG sessionIdx = sessionId >> SESSION_IDX_SHIFT_BIT;
+
+	Session* sessionPtr = &m_pClientSessionArr[sessionIdx];
+	// 세션을 그냥 얻어가면 줬을 때 내가 준 세션이 해제되었을 수 있다. 그래서 ID 확인 후 건네주도록 한다.
+	if (sessionId != sessionPtr->m_ullSessionId)
+	{
+		// 이미 해제된 세션에 접근하는 것은 아주 정상적인 상태.
+		_LOG(m_pcwszClientName, LOG_LEVEL_DEBUG, L"[TryAcquireSession] - 접근한 세션의 ID가 다릅니다. SessionID : [%lld], SessionIdx : [%lld]", sessionId, sessionIdx);
+
+		return nullptr;
+	}
+
+	// 받은 후에도. 받은 세션에 대해서 사용하기 전에 이 녀석이 정리중인가 아닌가를 확인하는 과정이 필요하다.
+	if (0 != (SESSION_DELETE_FLAG & InterlockedIncrement(&sessionPtr->m_lIoCount)))
+	{
+		DecreaseIoCount(sessionPtr);
+
+		return nullptr;
+	}
+
+	return sessionPtr;
+}
+
+void jh_network::IocpClient::DecreaseIoCount(Session* sessionPtr)
+{
+	// Log
+	LONG ioCount = InterlockedDecrement(&sessionPtr->m_lIoCount);
+
+	if (0 == ioCount)
+		DeleteSession(sessionPtr->m_ullSessionId);
+
+}
+
+
+jh_network::Session* jh_network::IocpClient::CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr)
+{
+	// 여기부터 세션빼서 내껄로 사용하는거 적기,
+	DWORD availableIndex = UINT_MAX;
+
+	if (false == m_sessionIndexStack.TryPop(availableIndex))
+	{
+		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L"[CreateSession] 사용할 수 있는 세션이 없습니다. 현재 세션 수 : [%u]", m_lSessionCount);
+
+		return nullptr;
+	}
+
+	// 세션 수를 증가하고.
+	InterlockedIncrement(&m_lSessionCount);
+
+	Session* sessionPtr = &m_pClientSessionArr[availableIndex];
+
+	// 세션 초기화
+	static ULONG sessionIdGen = 0;
+
+	//sessionPtr->m_socket = sock;
+	//sessionPtr->m_targetNetAddr = *pSockAddr;
+	//sessionPtr->m_ullLastTimeStamp = jh_utility::GetTimeStamp();
+
+	// Session에 등록할 id
+	// [16 idx ][48 id]
+
+	ULONGLONG id = (static_cast<ULONGLONG>(availableIndex) << SESSION_IDX_SHIFT_BIT) | ((++sessionIdGen) & SESSION_ID_MASKING_BIT);
+
+	//sessionPtr->m_ullSessionId = id;
+
+	sessionPtr->Activate(sock, pSockAddr, id);
+
+	_LOG(L"Session", LOG_LEVEL_DETAIL, L"CreateSession -  Session Index : 0x%08x, Session ID : 0x%08x ", availableIndex, id);
+
+	// 세션 등록 실패
+	HANDLE ret = CreateIoCompletionPort(reinterpret_cast<HANDLE>(sock), m_hCompletionPort, reinterpret_cast<ULONG_PTR>(sessionPtr), 0);
+	if (nullptr == ret)
+	{
+		m_sessionIndexStack.Push(availableIndex);
+
+		InterlockedDecrement(&m_lSessionCount);
+
+		_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"CreateSession - Session Register Failed");
+
+		return nullptr;
+	}
+
+	InterlockedIncrement64(&m_llTotalConnectedSessionCount);
+
+	return sessionPtr;
+
+}
+
+void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
+{
+	if (sessionId == INVALID_SESSION_ID)
+	{
+		_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[DeleteSession] - 유효하지 않은 세션입니다. Session Id : [%llu]",sessionId);
+		return;
+	}
+
+	LONGLONG sessionIdx = sessionId >> SESSION_IDX_SHIFT_BIT;
+
+	Session* sessionPtr = &m_pClientSessionArr[sessionIdx];
+	// 세션을 그냥 얻어가면 줬을 때 내가 준 세션이 해제되었을 수 있다. 그래서 ID 확인 후 건네주도록 한다.
+	if (sessionId != sessionPtr->m_ullSessionId)
+	{
+		_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[DeleteSession] - 접근한 세션의 ID가 다릅니다. SessionID : [%lld], SessionIdx : [%lld]", sessionId, sessionIdx);
+
+		return;
+	}
+
+	int a;
+	if (int a = InterlockedCompareExchange(&sessionPtr->m_lIoCount, SESSION_DELETE_FLAG, 0) != 0)
+	{
+		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L" [DeleteSession] - 사용중인 세션입니다. SessionId : [%llu]", sessionId);
+		return;
+	}
+
+	//OnDisconnected(sessionId);
+
+	closesocket(sessionPtr->m_socket);
+
+	sessionPtr->Reset();
+
+	m_sessionIndexStack.Push(sessionIdx);
+
+	InterlockedDecrement(&m_lSessionCount);
+	_LOG(L"Session", LOG_LEVEL_DETAIL, L"Delete PushStack SessionIdx, SessionID : 0x%08x, SessionIdx : 0x%08x", sessionId, sessionIdx);
+
+	// Delete는 얻어온 세션에 대해서 ioCount를 새로 밀어버리기 때문에 정리하지 않도록 한다..
+	return;
+}
+
+void jh_network::IocpClient::InitClientConfig(WCHAR* ip, WORD port, DWORD concurrentWorkerThreadCount, WORD lingerOnOff, WORD lingerTime, ULONGLONG timeOut)
+{
+	wcscpy_s(m_wszTargetIp, ip);
+	m_usTargetPort = port;
+	m_dwConcurrentWorkerThreadCount = concurrentWorkerThreadCount;
+	m_lingerOption.l_onoff = lingerOnOff;
+	m_lingerOption.l_linger = lingerTime;
+
+	m_ullTimeOutLimit = timeOut;
+}
+
+bool jh_network::IocpClient::InitSessionArray(DWORD maxSessionCount)
+{
+	if (m_pClientSessionArr != nullptr)
+		return false;
+
+	m_dwMaxSessionCnt = maxSessionCount;
+	m_pClientSessionArr = new Session[m_dwMaxSessionCnt];
+
+	m_sessionIndexStack.Reserve(m_dwMaxSessionCnt);
+
+	for (int i = 0; i < m_dwMaxSessionCnt; i++)
+	{
+		m_sessionIndexStack.Push(i);
+	}
+
+	return true;
+}
+
+jh_network::IocpClient::IocpClient(const WCHAR* clientName) : m_pcwszClientName(clientName), m_hCompletionPort(nullptr), m_hWorkerThreads(nullptr), m_wszTargetIp{}, m_pClientSessionArr(nullptr), m_lingerOption{}
+{
+	m_dwConcurrentWorkerThreadCount = 0;
+	m_dwMaxSessionCnt = 0;
+	m_usTargetPort = 0;
+	m_ullTimeOutLimit = 0;
+
+	//_sessionLog = new SessionLog[sessionLogMax];
+
+	m_lSessionCount = 0;
+	m_llTotalConnectedSessionCount = 0;
+
+	m_lAsyncRecvCount = 0;
+	m_lAsyncSendCount = 0;
+	m_lTotalRecvCount = 0;
+	m_lTotalSendCount = 0;
+}
+jh_network::IocpClient::~IocpClient()
+{
+
+}
+
+bool jh_network::IocpClient::Start()
+{
+	m_hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, m_dwConcurrentWorkerThreadCount);
+
+	if (m_hCompletionPort == NULL)
+	{
+		_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Start] IOCP Handle이 Null입니다.");
+
+		return false;
+	}
+
+	DWORD workerCount = m_dwConcurrentWorkerThreadCount * 1.5;
+
+	m_hWorkerThreads = new HANDLE[workerCount];
+
+	for (int i = 0; i < workerCount; i++)
+	{
+		m_hWorkerThreads[i] = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, IocpClient::WorkerThreadFunc, this, 0, nullptr));
+
+		if (nullptr == m_hWorkerThreads[i])
+		{
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Start] WorkerThread %d 가 존재하지 않습니다.", i);
+
+			jh_utility::CrashDump::Crash();
+		}
+	}
+
+	Connect();
+
+	return true;
+}
+
+void jh_network::IocpClient::Stop()
+{
+	if (nullptr != m_hWorkerThreads)
+	{
+		delete[] m_hWorkerThreads;
+		
+		m_hWorkerThreads = nullptr;
+	}
+}
+
+void jh_network::IocpClient::Connect()
+{
+	SOCKET sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED);
+
+	if (INVALID_SOCKET == sock)
+	{
+		int getLastError = WSAGetLastError();
+
+		_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] 유효하지 않은 소켓입니다. GetLastError : [%d]", getLastError);
+
+		closesocket(sock);
+		return;
+	}
+	DWORD setLingerRet = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
+
+	if (SOCKET_ERROR == setLingerRet)
+	{
+		int getLastError = WSAGetLastError();
+
+		_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] SetLingerOpt 실패. GetLastError : [%d]", getLastError);
+
+		closesocket(sock);
+		return;
+	}
+	// connectEx 사용 시 bind 필요
+	sockaddr_in clientAddr{};
+	clientAddr.sin_family = AF_INET;
+	clientAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	clientAddr.sin_port = 0;
+	bind(sock, (sockaddr*)&clientAddr, sizeof(clientAddr));
+
+	DWORD bindRet = bind(sock, (SOCKADDR*)&clientAddr, sizeof(SOCKADDR_IN));
+
+	if (SOCKET_ERROR == bindRet)
+	{
+		int getLastError = WSAGetLastError();
+
+		_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] Bind 실패. GetLastError : [%d]", getLastError);
+
+		closesocket(sock);
+
+		return;
+	}
+
+	SOCKADDR_IN serverAddr;
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(m_usTargetPort);
+	serverAddr.sin_addr = NetAddress::IpToAddr(m_wszTargetIp);
+
+	Session* session = CreateSession(sock, &serverAddr);
+
+	if (nullptr == session)
+	{
+		closesocket(sock);
+
+		return;
+	}
+
+	//connect에 대한 ioCount 따로 등록
+	InterlockedIncrement(&session->m_lIoCount);
+	
+	bool retConnectEx = jh_network::NetAddress::lpfnConnectEx(sock, (SOCKADDR*)&serverAddr, sizeof(serverAddr), nullptr, 0, nullptr, &session->m_connectOverlapped);
+
+	if (false == retConnectEx)
+	{
+		int wsaGetLastError = WSAGetLastError();
+
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] ConnectEx 실패. Session ID : [%llu]", session->m_ullSessionId);
+
+			DecreaseIoCount(session);
+		}
+	}
+
+	//if(jh_network::NetAddress::lpfnConnectEx)
+	// TODO_
+}

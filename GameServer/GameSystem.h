@@ -69,7 +69,7 @@ namespace jh_content
 		void HandleAttackRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
 
 		// LAN
-		void HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketPtr& packet, jh_network::IocpServer* lanServer);
+		void HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketPtr& packet, jh_network::IocpClient* lanClient);
 	private:
 		GameServerInfo m_gameInfo;
 

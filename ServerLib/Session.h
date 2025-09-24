@@ -116,6 +116,7 @@ namespace jh_network
 
 		RecvOverlapped m_recvOverlapped;
 		SendOverlapped m_sendOverlapped;
+		ConnectOverlapped m_connectOverlapped; // 클라이언트
 
 		alignas(64) LONG m_lIoCount;
 		alignas(64) char m_bSendFlag; // Use - 1, unUse - 0

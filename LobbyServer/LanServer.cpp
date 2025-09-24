@@ -81,8 +81,14 @@ void jh_content::LobbyLanServer::OnDisconnected(ULONGLONG sessionId)
 
 }
 
+void jh_content::LobbyLanServer::Init()
+{
+	m_pLobbyLanSystem->Init();
+}
+
 void jh_content::LobbyLanServer::EndAction()
 {
+	m_pLobbyLanSystem->Stop();
 }
 
 void jh_content::LobbyLanServer::SetLobbySystem(jh_content::LobbySystem* lobbySystem)

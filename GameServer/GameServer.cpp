@@ -6,6 +6,7 @@
 #include "Memory.h"
 #include "Job.h"
 #include "GameSystem.h"
+#include "GameLanClient.h"
 
 jh_content::GameServer::GameServer() : jh_network::IocpServer(GAME_SERVER_SAVE_FILE_NAME)
 {
@@ -59,6 +60,8 @@ jh_content::GameServer::GameServer() : jh_network::IocpServer(GAME_SERVER_SAVE_F
 
 	m_pGameSystem->Init();
 
+	m_pGameLanClient->SetGameSystem(m_pGameSystem.get());
+
 }
 
 //jh_network::GameServer::GameServer(const NetAddress& netAddr, uint maxSessionCnt, jh_network::SessionCreator creator) : ServerBase(netAddr, maxSessionCnt, creator), _gameInfo{}, _isRunning(false), _loadCompletedCnt(0)
@@ -78,10 +81,6 @@ jh_content::GameServer::GameServer() : jh_network::IocpServer(GAME_SERVER_SAVE_F
 
 jh_content::GameServer::~GameServer()
 {
-	_canCheckHeartbeat = false;
-
-	if (_heartbeatCheckThread.joinable())
-		_heartbeatCheckThread.join();
 }
 
 //void jh_content::GameServer::Init(uint16 roomNumber, uint16 requiredUsers, uint16 m_usMaxUserCnt)
@@ -111,7 +110,7 @@ void jh_content::GameServer::OnError(int errCode, WCHAR* cause)
 void jh_content::GameServer::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
 {
 	JobPtr job = MakeShared<jh_utility::Job>(g_memAllocator, sessionId, type, packet);
-	
+
 	m_pGameSystem->EnqueueJob(job);
 }
 

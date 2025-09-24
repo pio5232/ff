@@ -78,7 +78,7 @@ void jh_content::UserManager::Broadcast(PacketPtr& packet)
 //
 //	_idToAiDic.erase(userId);
 //
-//	m_aliveGamePlayerCount.fetch_sub(1);
+//	aliveGamePlayerCount.fetch_sub(1);
 //
 //	return ErrorCode::NONE;
 //}

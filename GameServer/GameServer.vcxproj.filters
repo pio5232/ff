@@ -21,9 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="LanClientSession.h">
-      <Filter>아직정리안됨</Filter>
-    </ClInclude>
     <ClInclude Include="TransformComponent.h">
       <Filter>아직정리안됨</Filter>
     </ClInclude>
@@ -36,7 +33,7 @@
     <ClInclude Include="StatComponent.h">
       <Filter>아직정리안됨</Filter>
     </ClInclude>
-    <ClInclude Include="LanClient.h">
+    <ClInclude Include="GameLanClient.h">
       <Filter>아직정리안됨</Filter>
     </ClInclude>
     <ClInclude Include="PlayerStateController.h">
@@ -83,9 +80,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LanClientSession.cpp">
-      <Filter>아직정리안됨</Filter>
-    </ClCompile>
     <ClCompile Include="GameServerDefine.cpp">
       <Filter>아직정리안됨</Filter>
     </ClCompile>
@@ -98,7 +92,7 @@
     <ClCompile Include="TransformComponent.cpp">
       <Filter>아직정리안됨</Filter>
     </ClCompile>
-    <ClCompile Include="LanClient.cpp">
+    <ClCompile Include="GameLanClient.cpp">
       <Filter>아직정리안됨</Filter>
     </ClCompile>
     <ClCompile Include="Sector.h">

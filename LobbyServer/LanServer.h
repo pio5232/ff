@@ -19,6 +19,7 @@ namespace jh_content
 		void OnConnected(ULONGLONG sessionId) override;
 		void OnDisconnected(ULONGLONG sessionId) override;
 
+		void Init();
 		void EndAction() override;
 
 		void SetLobbySystem(class jh_content::LobbySystem* lobbySystem);

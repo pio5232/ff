@@ -7,7 +7,7 @@
 #include "Memory.h"
 //#include "LobbySession.h"
 
-std::atomic<USHORT> jh_content::Room::s_usAliveRoomCount = 0;
+std::atomic<USHORT> jh_content::Room::aliveRoomCount = 0;
 
 jh_content::RoomInfo jh_content::Room::GetRoomInfo() const
 {
@@ -26,7 +26,7 @@ jh_content::RoomInfo jh_content::Room::GetRoomInfo() const
 jh_content::Room::Room(ULONGLONG ownerId, USHORT maxUserCnt, USHORT roomNum, WCHAR* roomName) : m_roomInfo{ .m_ullOwnerId = ownerId,.m_usRoomNum = roomNum,
 .m_usCurUserCnt = 0, .m_usMaxUserCnt = maxUserCnt,.m_wszRoomName{} }, m_usReadyCnt(0), m_sendPacketFunc{}
 {
-	s_usAliveRoomCount.fetch_add(1);
+	aliveRoomCount.fetch_add(1);
 
 	wmemcpy_s(m_roomInfo.m_wszRoomName, ROOM_NAME_MAX_LEN, roomName, ROOM_NAME_MAX_LEN);
 
@@ -38,7 +38,7 @@ jh_content::Room::~Room()
 {
 	printf("¹æ ÆøÆÄ\n");
 
-	s_usAliveRoomCount.fetch_sub(1);
+	aliveRoomCount.fetch_sub(1);
 }
 
 jh_content::Room::RoomEnterResult jh_content::Room::TryEnterRoom(UserPtr userPtr)

@@ -25,8 +25,7 @@ namespace jh_content
 
 		static unsigned WINAPI StaticLogicProxy(LPVOID lparam);
 		void LobbyLanLogic();
-		void Stop() { m_bRunningFlag = false; }
-
+		void Stop();
 		ErrorCode HandleLanInfoNotifyPacket(ULONGLONG sessionId, PacketPtr& packet);
 		ErrorCode HandleGameSettingRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
 
@@ -41,7 +40,7 @@ namespace jh_content
 
 		jh_utility::LockQueue<JobPtr> m_netJobQueue;
 
-		bool m_bRunningFlag;
+		std::atomic<bool> m_bRunningFlag;
 		HANDLE m_hLogicThread;
 
 

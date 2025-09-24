@@ -8,8 +8,7 @@ jh_content::LobbyLanSystem::~LobbyLanSystem()
 {
 	if (nullptr != m_hLogicThread)
 	{
-		CloseHandle(m_hLogicThread);
-		m_hLogicThread = nullptr;
+		Stop();
 	}
 }
 
@@ -46,7 +45,7 @@ unsigned __stdcall jh_content::LobbyLanSystem::StaticLogicProxy(LPVOID lparam)
 
 void jh_content::LobbyLanSystem::LobbyLanLogic()
 {
-	while (true == m_bRunningFlag)
+	while (true == m_bRunningFlag.load())
 	{
 		// Packet 관련 작업 처리
 		ProcessNetJob();
@@ -55,6 +54,28 @@ void jh_content::LobbyLanSystem::LobbyLanLogic()
 	}
 }
 
+void jh_content::LobbyLanSystem::Stop()
+{
+	m_bRunningFlag.store(false);
+
+	if (nullptr != m_hLogicThread)
+	{
+		DWORD ret = WaitForSingleObject(m_hLogicThread, 0);
+
+		if (ret != WAIT_OBJECT_0)
+		{
+			DWORD getLastError = GetLastError();
+
+			_LOG(L"LobbyLanSystem", LOG_LEVEL_WARNING, L"[LobbyLanSystem - Stop] 로직 스레드 종료 오류 GetLastError : [%u]", getLastError);
+
+			jh_utility::CrashDump::Crash();
+		}
+
+		CloseHandle(m_hLogicThread);
+
+		m_hLogicThread = nullptr;
+	}
+}
 
 void jh_content::LobbyLanSystem::Init()
 {

@@ -7,11 +7,14 @@ namespace jh_network
 }
 
 #define GAME_SERVER_CONFIG_FILE L"GameServer.cfg"
+#define GAME_LAN_CLIENT_CONFIG_FILE L"GameLanClient.cfg"
 
 #define GAME_CATEGORY_NAME L"GameServer"
+#define GAME_LAN_CATEGORY_NAME L"GameLanClient"
 
 #define GAME_SERVER_SAVE_FILE_NAME L"GameServer"
 #define GAME_SYSTEM_SAVE_FILE_NAME L"GameSystem"
+#define GAME_LAN_CLIENT_SAVE_FILE_NAME L"GameLanClient"
 
 #define GAME_USER_MANAGER_SAVE_FILE_NAME L"UserManager"
 
@@ -111,7 +114,7 @@ enum class GameLanRequestMsgType
 
 struct GameLanRequest
 {
-	explicit GameLanRequest(ULONGLONG lanSessionId, GameLanRequestMsgType msgType, PacketPtr packet, jh_network::IocpServer* lanServer) : m_ullSessionId(lanSessionId), m_gameLanRequestMsgType(msgType), m_pPacket(packet), m_pLanServer(lanServer) {}
+	explicit GameLanRequest(ULONGLONG lanSessionId, GameLanRequestMsgType msgType, PacketPtr packet, jh_network::IocpClient* lanClient) : m_ullSessionId(lanSessionId), m_gameLanRequestMsgType(msgType), m_pPacket(packet), m_pLanServer(lanClient) {}
 	~GameLanRequest()
 	{
 		m_ullSessionId = INVALID_SESSION_ID;
@@ -129,7 +132,7 @@ struct GameLanRequest
 	ULONGLONG m_ullSessionId;
 	GameLanRequestMsgType m_gameLanRequestMsgType;
 	PacketPtr m_pPacket;
-	jh_network::IocpServer* m_pLanServer;
+	jh_network::IocpClient* m_pLanServer;
 };
 
 using GameLanRequestPtr = std::shared_ptr<GameLanRequest>;

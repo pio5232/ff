@@ -45,14 +45,14 @@ namespace jh_content
 		// 게임 시작 여부를 반환. true - 게임 실행
 		bool UpdateUserReadyStatus(UserPtr userWptr, bool isReady, bool sendOpt);
 
-		static int GetAliveRoomCount() { return s_usAliveRoomCount; }
+		static int GetAliveRoomCount() { return aliveRoomCount; }
 
 		void SetSendPacketFunc(SendPacketFunc sendPacketFunc) { m_sendPacketFunc = sendPacketFunc; }
 
 		void BroadCast(PacketPtr& packet, ULONGLONG excludedId = 0); // 패킷, 방번호, 제외할 UserID (없으면 0)
 		void Unicast(PacketPtr& packet, ULONGLONG sessionId);
 	private:
-		static std::atomic<USHORT> s_usAliveRoomCount;
+		static std::atomic<USHORT> aliveRoomCount;
 
 		RoomInfo m_roomInfo;
 		RoomState m_roomState = RoomState::IDLE;

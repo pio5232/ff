@@ -30,13 +30,25 @@ void jh_content::GameSystem::Stop()
 {
 	m_bIsRunning.store(false);
 
-	m_pGameWorld->Stop();
-
 	if (nullptr != m_hLogicThread)
 	{
+		DWORD ret = WaitForSingleObject(m_hLogicThread, 0);
+
+		if (ret != WAIT_OBJECT_0)
+		{
+			DWORD getLastError = GetLastError();
+
+			_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GameSystem - Stop] 로직 스레드 종료 오류 GetLastError : [%u]", getLastError);
+
+			jh_utility::CrashDump::Crash();
+		}
+
 		CloseHandle(m_hLogicThread);
+
 		m_hLogicThread = nullptr;
 	}
+
+	m_pGameWorld->Stop();
 }
 
 jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThread(nullptr), m_bIsRunning(true), m_dwLoadCompletedCnt(0), m_pOwner(owner), m_gameInfo{}
@@ -102,16 +114,16 @@ void jh_content::GameSystem::GameLogic()
 			deltaTime = limitDeltaTime;
 
 		
-		// 패킷 처리
+		// 패킷 처리.
 		ProcessNetJob();
 
-		// 연결 처리
+		// 연결 처리.
 		ProcessSessionConnectionEvent();
 
-		// Lan 요청 처리
+		// Lan 요청 처리.
 		ProcessLanRequest();
 
-		// 타이머 작업 처리
+		// 타이머 작업 처리.
 		m_pGameWorld->ProcessTimerActions();
 
 		deltaSum += deltaTime;
@@ -415,7 +427,7 @@ void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, Pack
 	if (true == gamePlayer->IsDead())
 		return;
 
-	m_pGameWorld->Attack(gamePlayer);
+	m_pGameWorld->ProcessAttack(gamePlayer);
 
 	return;
 }
@@ -423,7 +435,7 @@ void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, Pack
 
 // 처음 시작할 때 Lan 연결 후 게임과 관련된 정보를 요청하는 패킷에 대한 답장이 왔을 때 답장을 처리하는 함수. Lan 에서 넘겨준다.
 
-void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketPtr& packets, jh_network::IocpServer* lanServer)
+void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketPtr& packets, jh_network::IocpClient* lanClient)
 {
 	//jh_network::GameServerSettingResponsePacket responsePacket;
 
@@ -443,12 +455,12 @@ void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lan
 	ULONGLONG xorAfterValue = GetToken() ^ xorTokenKey;
 
 	// TODO : 서버가 0.0.0.0으로 설정되었을 때 ip,port값을 제대로 얻어올 수 있도록 세팅 필요.
-	const std::wstring ip =  gameServer->GetNetAddr().GetIpAddress();
-	USHORT port = Port...;
+	const std::wstring ip = m_pOwner->GetIp();
+	USHORT port = m_pOwner->GetPort();
 
 	PacketPtr gameServerLanInfoPkt = jh_content::PacketBuilder::BuildGameServerLanInfoPacket(ip.c_str(), port, roomNum, m_gameInfo.m_ullEnterToken);
 
-	lanServer->SendPacket(lanSessionId, gameServerLanInfoPkt);
+	lanClient->SendPacket(lanSessionId, gameServerLanInfoPkt);
 	
 	printf("ClientJoined Success\n");
 

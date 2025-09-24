@@ -44,7 +44,19 @@ void jh_content::LobbySystem::Stop()
 
 	if (nullptr != m_hLogicThread)
 	{
+		DWORD ret = WaitForSingleObject(m_hLogicThread, 0);
+
+		if (ret != WAIT_OBJECT_0)
+		{
+			DWORD getLastError = GetLastError();
+
+			_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[LobbySystem - Stop] 로직 스레드 종료 오류 GetLastError : [%u]",getLastError);
+
+			jh_utility::CrashDump::Crash();
+		}
+
 		CloseHandle(m_hLogicThread);
+		
 		m_hLogicThread = nullptr;
 	}
 

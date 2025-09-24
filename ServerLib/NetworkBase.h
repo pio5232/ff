@@ -7,7 +7,6 @@
 #include "PacketDefine.h"
 #include "CMonitor.h"
 
-
 namespace jh_network
 {
 	/*-----------------------
@@ -39,9 +38,9 @@ namespace jh_network
 		IocpServer(const WCHAR* serverName);
 		virtual ~IocpServer() = 0;
 
-		ErrorCode Start();
+		bool Start();
 		void Listen();
-		ErrorCode Stop();
+		void Stop();
 
 		// TODO : 함수 이름 변경하자
 		// 각각의 함수들은 Start() / Stop()가 실행됐을 때
@@ -69,22 +68,23 @@ namespace jh_network
 		void PostRecv(Session* sessionPtr);
 
 		//void SendPacket(LONGLONG sessionId, jh_utility::SerializationBuffer* sendBuf);
-		void SendPacket(ULONGLONG sessionId, PacketPtr sendBuf);
+		void SendPacket(ULONGLONG sessionId, PacketPtr& packet);
 
 		void UpdateHeartbeat(ULONGLONG sessionId, ULONGLONG now);
 		void CheckHeartbeatTimeout(ULONGLONG now);
 
 		const WCHAR* const GetServerName() const { return m_pcwszServerName; }
 
-
-
 		LONG GetSessionCount() const { return m_lSessionCount; }
+
+		const WCHAR* GetIp() const { return m_wszIp; }
+
+		USHORT GetPort() const;
 	protected:
 		SOCKET GetListenSock() { return m_listenSock; }
 		
 		// session 수를 제외한 다른 옵션들을 설정.
 		void InitServerConfig(WCHAR* ip, WORD port, DWORD concurrentWorkerThreadCount, WORD lingerOnOff, WORD lingerTime, ULONGLONG timeOut);
-		
 		bool InitSessionArray(DWORD maxSessionCount);
 		
 		Session* TryAcquireSession(ULONGLONG sessionId, const WCHAR* caller); // sessionPtr을 사용할 때마다 해제중인지 확인하고, 참조 카운트를 증가시킨다.
@@ -103,7 +103,7 @@ namespace jh_network
 
 																// 설정 값
 		WCHAR m_wszIp[IP_STRING_LEN]; // 원본 20				// ip
-		USHORT m_wPort;											// 포트 번호
+		USHORT m_usPort;											// 포트 번호
 		DWORD m_dwMaxSessionCnt;								// 한번에 접속가능한 최대 세션 수
 		DWORD m_dwConcurrentWorkerThreadCount;					// iocp에 등록할 worker 수
 		LINGER m_lingerOption;									// TIME_OUT 옵션 설정 (GRACEFUL_SHUTDOWN 하지 않게 설정 위해.)
@@ -138,49 +138,78 @@ namespace jh_network
 		//SessionLog* _sessionLog;
 	};
 
-	//class IocpClient
-	//{
-	//public:
-	//	IocpClient(const NetAddress& m_targetNetAddr);
-	//	virtual ~IocpClient() = 0;
+	class IocpClient
+	{
+	public:
+		IocpClient(const WCHAR* clientName);
+		virtual ~IocpClient() = 0;
 
-	//	void Init();
+		bool Start();
+		void Stop();
+	
+		void Connect();
+		virtual void OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type) = 0;
 
+		virtual void OnConnected(ULONGLONG sessionId) = 0;
+		//virtual void OnDisconnected(ULONGLONG sessionId) = 0;
 
+		void ProcessRecv(Session* sessionPtr, DWORD transferredBytes);
+		void ProcessSend(Session* sessionPtr, DWORD transferredBytes);
 
+		void Disconnect(ULONGLONG sessionId);
 
+		void PostSend(Session* sessionPtr);
+		void PostRecv(Session* sessionPtr);
 
+		//void SendPacket(LONGLONG sessionId, jh_utility::SerializationBuffer* sendBuf);
+		void SendPacket(ULONGLONG sessionId, PacketPtr& packet);
 
-	//	bool Connect();
-	//	bool Disconnect(const WCHAR* reason, bool isCritical);
-	//	
-	//	void Send(jh_network::SerializationBufferPtr buffer);
+		static unsigned WINAPI WorkerThreadFunc(LPVOID lparam);
 
-	//	bool ProcessIO(DWORD timeOut = INFINITE);
+		void WorkerThread();
 
-	//private:
-	//	virtual void OnConnected() = 0;
-	//	virtual void OnDisconnected() = 0;
+		Session* CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr);
+		void DeleteSession(ULONGLONG sessionId);
+		
+		void InitClientConfig(WCHAR* ip, WORD port, DWORD concurrentWorkerThreadCount, WORD lingerOnOff, WORD lingerTime, ULONGLONG timeOut);
+		
+		bool InitSessionArray(DWORD maxSessionCount);
 
-	//	void Dispatch(IocpEvent* iocpEvent, DWORD transferredBytes);
-	//	void WorkerThread();
+	private:
+		// 설정 값
+		WCHAR m_wszTargetIp[IP_STRING_LEN]; // 원본 20				// ip
+		USHORT m_usTargetPort;											// 포트 번호
+		DWORD m_dwMaxSessionCnt;								// 한번에 접속가능한 최대 세션 수
+		DWORD m_dwConcurrentWorkerThreadCount;					// iocp에 등록할 worker 수
+		LINGER m_lingerOption;									// TIME_OUT 옵션 설정 (GRACEFUL_SHUTDOWN 하지 않게 설정 위해.)
+		ULONGLONG m_ullTimeOutLimit;							// HEARTBEAT
+	private:
+		Session* TryAcquireSession(ULONGLONG sessionId); // sessionPtr을 사용할 때마다 해제중인지 확인하고, 참조 카운트를 증가시킨다.
+		
+		void DecreaseIoCount(Session* sessionPtr);
+		void DeleteSession(ULONGLONG sessionId);
 
-	//	void PostSend();
-	//	void PostRecv();
+		const WCHAR* const m_pcwszClientName;
+		
+		Session* m_pClientSessionArr; // Client의 session은 IocpClient 인스턴스가 사라질 때 사라짐.
+		jh_utility::LockStack<DWORD> m_sessionIndexStack;
 
-	//	virtual void OnRecv(jh_utility::SerializationBuffer& buffer, WORD type) = 0;
+		const NetAddress m_targetNetAddr;
 
-	//	ErrorCode ProcessRecv(DWORD transferredBytes);
-	//	ErrorCode ProcessSend(DWORD transferredBytes);
-	//private:
-	//	const WCHAR* const _clientName;
-	//	Session* _clientSession; // Client의 session은 IocpClient 인스턴스가 사라질 때 사라짐.
+		HANDLE m_hCompletionPort;
+		HANDLE* m_hWorkerThreads;
 
-	//	const NetAddress m_targetNetAddr;
+		alignas(64) LONG m_lSessionCount;						// 현재 연결된 Session의 수.
+		alignas(64) LONGLONG m_llTotalConnectedSessionCount;		// 시작부터 연결된 세션의 개수 
 
-	//	HANDLE m_hCompletionPort;
-	//	std::thread _workerThread;
-	//};
+		alignas(64) LONG m_lTotalRecvCount;						// 1초 동기 + 비동기 RECV 수
+		alignas(64) LONG m_lTotalSendCount;						// 1초 동기 + 비동기 SEND 수
+		alignas(64) LONG m_lAsyncRecvCount;						// 1초 비동기 RECV 수
+		alignas(64) LONG m_lAsyncSendCount;						// 1초 비동기 SEND 수
+
+	private:
+
+	};
 
 	
 }

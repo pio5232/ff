@@ -60,7 +60,7 @@ namespace jh_content
 		void ProxyAttackPacket(GameSessionPtr gameSession, AttackRequestPacket packet);
 
 	private:
-		std::shared_ptr<class LanClient> m_pLanClient;
+		std::shared_ptr<class LanClient> m_pLanServer;
 
 		std::unique_ptr<class jh_content::GameWorld> _gameWorld;
 		GameServerInfo _gameInfo;

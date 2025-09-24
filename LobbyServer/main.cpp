@@ -34,7 +34,7 @@ int main()
 
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
-	if (ErrorCode::NONE != lobbyServer.Start())
+	if (false == lobbyServer.Start())
 	{
 		_LOG(L"Main", LOG_LEVEL_WARNING, L"Server Begin != ErrorCode::NONE");
 		return 0;
@@ -128,6 +128,5 @@ int main()
 
 	lobbyServer.Stop();
 	
-	_CrtDumpMemoryLeaks();
 }
 

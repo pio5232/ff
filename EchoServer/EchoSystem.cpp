@@ -28,7 +28,7 @@ void jh_content::EchoSystem::Init()
 	LPVOID param = this;
 	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, EchoSystem::LogicFunc, param, 0, nullptr));
 
-	if (NULL == m_hLogicThread)
+	if (nullptr == m_hLogicThread)
 	{
 		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"Echo System - Logic Handle is NULL");
 		jh_utility::CrashDump::Crash();
@@ -36,7 +36,7 @@ void jh_content::EchoSystem::Init()
 
 }
 
-unsigned __stdcall jh_content::EchoSystem::LogicFunc(LPVOID lparam)
+unsigned WINAPI jh_content::EchoSystem::LogicFunc(LPVOID lparam)
 {
 	EchoSystem* instance = reinterpret_cast<EchoSystem*>(lparam);
 

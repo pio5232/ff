@@ -1,5 +1,7 @@
 #pragma once
+
 #include <MSWSock.h>
+
 namespace jh_network
 {
 	enum : DWORD
@@ -17,6 +19,9 @@ namespace jh_network
 	class NetAddress
 	{
 	public:
+		static void Init();
+		static void Clear();
+
 		NetAddress(SOCKADDR_IN sockAddr);
 		NetAddress(std::wstring ip, USHORT port);
 		NetAddress(const NetAddress& other);
@@ -33,6 +38,8 @@ namespace jh_network
 
 		static IN_ADDR IpToAddr(const WCHAR* ip);
 		static USHORT GetPort(SOCKET sock);
+
+		static LPFN_CONNECTEX lpfnConnectEx;
 	private:
 		SOCKADDR_IN _sockAddr = {};
 	};

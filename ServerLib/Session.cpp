@@ -36,7 +36,8 @@ void jh_network::Session::Reset()
 
 	m_recvOverlapped.Reset();
 	m_sendOverlapped.Reset();
-	
+	m_connectOverlapped.Reset();
+
 	InterlockedExchange8(&m_bSendFlag, 1);
 	InterlockedExchange(&m_lIoCount, SESSION_DELETE_FLAG);
 	InterlockedExchange8(&m_bConnectedFlag, 0);

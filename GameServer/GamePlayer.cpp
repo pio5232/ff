@@ -10,11 +10,11 @@
 #include "GameWorld.h"
 
 using namespace jh_network;
-alignas(64) std::atomic<int> jh_content::GamePlayer::m_aliveGamePlayerCount = 0;
+alignas(64) std::atomic<int> jh_content::GamePlayer::aliveGamePlayerCount = 0;
 
 jh_content::GamePlayer::GamePlayer(UserPtr ownerUser, GameWorld* worldPtr) : Player(worldPtr, EntityType::GamePlayer, posUpdateInterval), m_ownerUser(ownerUser),m_bWasInVictoryZone(false)
 {
-	m_aliveGamePlayerCount.fetch_add(1);
+	aliveGamePlayerCount.fetch_add(1);
 }
 
 void jh_content::GamePlayer::Update(float delta)

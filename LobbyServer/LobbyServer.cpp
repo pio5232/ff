@@ -71,6 +71,7 @@ jh_content::LobbyServer::LobbyServer() : IocpServer(LOBBY_SERVER_SAVE_FILE_NAME)
 	m_pLobbySystem->Init();
 	
 	m_pLanServer->SetLobbySystem(m_pLobbySystem.get());
+	m_pLanServer->Init();
 	
 }
 
