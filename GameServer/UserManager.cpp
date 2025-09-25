@@ -16,13 +16,13 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userI
 	if (sessionIt != m_sessionIdToUserUMap.end())
 	{
 		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[CreateUser] - 중복된 세션입니다. SessionId : [%llu]", sessionId);
-		return;
+		return nullptr;
 	}
 
 	if (userIt != m_userIdToUserUMap.end())
 	{
 		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[CreateUser] - 중복된 유저ID입니다. UserId : [%llu]", userId);
-		return;
+		return nullptr;
 	}
 
 	UserPtr userPtr = MakeShared<jh_content::User>(g_memAllocator, sessionId, userId);
@@ -30,6 +30,7 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userI
 	m_sessionIdToUserUMap.insert({ sessionId, userPtr });
 	m_userIdToUserUMap.insert({ userId, userPtr });
 	
+	return userPtr;
 	//GamePlayerPtr gamePlayerPtr = std::make_shared<GamePlayer>(gameSessionPtr, worldPtr);
 
 	//m_userIdToPlayerDic.insert({ gameSessionPtr->GetUserId(), gamePlayerPtr });
@@ -40,7 +41,7 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userI
 
 
 
-ErrorCode jh_content::UserManager::RemoveUser(ULONGLONG sessionId)
+void jh_content::UserManager::RemoveUser(ULONGLONG sessionId)
 {
 	UserPtr userPtr = GetUserBySessionId(sessionId);
 

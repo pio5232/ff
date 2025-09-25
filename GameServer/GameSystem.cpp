@@ -256,12 +256,16 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 	}
 
 	// TODO : 0916 컨텐츠에서 접속의 관리를 하는 클래스가 sessionid, userid, player를 관리해야하는 방법에 대해서 생각
-
+	UserPtr newUser = m_pUserManager->CreateUser(sessionId, userId);
+	
+	if (nullptr == newUser)
+	{
+		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[HandleEnterGameRequestPacket] - 세션 또는 유저의 중복으로 인해 유저가 생성되지 않았습니다.", userId);
+		return;
+	}
 	PacketPtr enterGameResponsePkt = jh_content::PacketBuilder::BuildEnterGameResponsePacket();
 	m_pOwner->SendPacket(sessionId, enterGameResponsePkt);
 
-	UserPtr newUser = m_pUserManager->CreateUser(sessionId, userId);
-	
 	GamePlayerPtr newPlayer = m_pGameWorld->CreateGamePlayer();
 
 	newUser->SetPlayer(newPlayer);

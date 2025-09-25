@@ -1,6 +1,20 @@
 #include "pch.h"
 #include "PacketBuilder.h"
 #include "Memory.h"
+
+PacketPtr jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode errorCode)
+{
+	jh_network::ErrorPacket errorPacket;
+
+	errorPacket.packetErrorCode = errorCode;
+
+	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(errorPacket));
+
+	*buffer << errorPacket.size << errorPacket.type << errorPacket.packetErrorCode;
+
+	return buffer;
+}
+
 PacketPtr jh_content::PacketBuilder::BuildAttackNotifyPacket(ULONGLONG entityId)
 {
 	jh_network::AttackNotifyPacket attackNotifyPacket;

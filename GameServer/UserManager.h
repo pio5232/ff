@@ -13,7 +13,7 @@ namespace jh_content
 		UserManager& operator=(const UserManager&) = delete;
 
 		UserPtr CreateUser(ULONGLONG sessionId, ULONGLONG userId);
-		ErrorCode RemoveUser(ULONGLONG userId);
+		void RemoveUser(ULONGLONG userId);
 		//ErrorCode DeleteAI(ULONGLONG userId);
 
 		//ErrorCode SendToPlayer(PacketPtr packet, ULONGLONG userId);

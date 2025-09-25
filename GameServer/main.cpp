@@ -95,25 +95,51 @@ jh_network::NetAddress lanServerAddr(std::wstring(L"127.0.0.1"), SERVERPORT);
 
 int main()
 {
-	//gameServer = std::make_unique<jh_network::GameServer>(jh_network::NetAddress(std::wstring(L"127.0.0.1"), 0), 500,roomNumber,requiredUsers,m_usMaxUserCnt);
+	SET_LOG_LEVEL(LOG_LEVEL_INFO);
 
-	std::shared_ptr<jh_network::GameServer> gameServer = std::make_shared<jh_network::GameServer>(jh_network::NetAddress(std::wstring(L"127.0.0.1"), 0), 0,
-		[]() { return std::static_pointer_cast<jh_network::Session>(std::make_shared<jh_network::GameSession>()); });
+	jh_content::GameServer gameServer;
 
-	//printf("[ GameServer Room Num : %d]", roomNumber);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
-	gameServer->Begin();
-
-	gameServer->LanClientConnect(lanServerAddr);
-
+	if (false == gameServer.Start())
+	{
+		_LOG(L"Main", LOG_LEVEL_WARNING, L"Server Begin != ErrorCode::NONE");
+		return 0;
+	}
 	while (1)
 	{
+		if (_kbhit())
+		{
+			char c = _getch();
 
+			if (c == 'Q' || c == 'q')
+				break;
+		}
 	}
 
-	gameServer->LanClientDisconnect();
-	gameServer->End();
-
-
-	return 0;
+	gameServer.Stop();
 }
+//int main()
+//{
+//	//gameServer = std::make_unique<jh_network::GameServer>(jh_network::NetAddress(std::wstring(L"127.0.0.1"), 0), 500,roomNumber,requiredUsers,m_usMaxUserCnt);
+//
+//	std::shared_ptr<jh_network::GameServer> gameServer = std::make_shared<jh_network::GameServer>(jh_network::NetAddress(std::wstring(L"127.0.0.1"), 0), 0,
+//		[]() { return std::static_pointer_cast<jh_network::Session>(std::make_shared<jh_network::GameSession>()); });
+//
+//	//printf("[ GameServer Room Num : %d]", roomNumber);
+//
+//	gameServer->Begin();
+//
+//	gameServer->LanClientConnect(lanServerAddr);
+//
+//	while (1)
+//	{
+//
+//	}
+//
+//	gameServer->LanClientDisconnect();
+//	gameServer->End();
+//
+//
+//	return 0;
+//}

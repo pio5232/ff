@@ -11,6 +11,7 @@
 #include "Memory.h"
 #include "UserManager.h"
 #include "User.h"
+#include "SectorManager.h"
 
 jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc) : m_bIsGameRunning(true), m_bIsUpdateRunning(false), m_fDeltaSum(0), m_pUserManager(userManager), m_sendPacketFunc(sendPacketFunc)
 {

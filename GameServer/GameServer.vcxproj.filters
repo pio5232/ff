@@ -78,6 +78,7 @@
     <ClInclude Include="User.h">
       <Filter>Contents</Filter>
     </ClInclude>
+    <ClInclude Include="Sector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameServerDefine.cpp">
@@ -93,9 +94,6 @@
       <Filter>아직정리안됨</Filter>
     </ClCompile>
     <ClCompile Include="GameLanClient.cpp">
-      <Filter>아직정리안됨</Filter>
-    </ClCompile>
-    <ClCompile Include="Sector.h">
       <Filter>아직정리안됨</Filter>
     </ClCompile>
     <ClCompile Include="PlayerStateController.cpp">
@@ -143,5 +141,6 @@
     <ClCompile Include="User.cpp">
       <Filter>Contents</Filter>
     </ClCompile>
+    <ClCompile Include="Sector.cpp" />
   </ItemGroup>
 </Project>

@@ -3,11 +3,12 @@
 
 namespace jh_content
 {
+	class UserManager;
 	class GameWorld
 	{
 	public:
-
-		GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc);
+		
+		GameWorld(class jh_content::UserManager* userManager, SendPacketFunc sendPacketFunc);
 		~GameWorld();
 
 		void StartGame();
