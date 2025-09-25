@@ -28,6 +28,8 @@ namespace jh_content
 		void BeginAction() override;
 		void EndAction() override;
 
+
+		void Monitor();
 	private:
 		std::unique_ptr<class jh_content::GameSystem> m_pGameSystem;
 		std::unique_ptr<class jh_content::GameLanClient> m_pGameLanClient;

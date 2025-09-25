@@ -153,6 +153,8 @@ void jh_content::LobbySystem::ProcessSessionConnectionEvent()
 
 	for (SessionConnectionEventPtr& sessionConnEvent : sessionConnEventList)
 	{
+		ULONGLONG sessionId = sessionConnEvent->m_ullSessionId;
+
 		switch (sessionConnEvent->m_msgType)
 		{
 		case jh_utility::SessionConnectionEventType::CONNECT:
@@ -162,7 +164,35 @@ void jh_content::LobbySystem::ProcessSessionConnectionEvent()
 		break;
 		case jh_utility::SessionConnectionEventType::DISCONNECT:
 		{
-			m_pUserManager->RemoveUser(sessionConnEvent->m_llSessionId);
+			UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
+
+			if (nullptr == userPtr)
+			{
+				_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L" [ProcessSessionConnectionEvent] - 유저 정보가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+
+				break;
+			}
+
+			auto [isJoined, roomNum] = userPtr->TryGetRoomId();
+
+			if (false == isJoined)
+				break;
+		
+			RoomPtr roomPtr = m_pRoomManager->GetRoom(roomNum);
+
+			if (nullptr == roomPtr)
+			{
+				_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[ProcessSessionConnectionEvent] - 유저와 RoomManager가 관리하는 방 정보가 다릅니다. 방 번호 : [%hu]", roomNum);
+			}
+			else
+			{
+				bool isRoomEmpty = roomPtr->LeaveRoom(userPtr);
+
+				if (isRoomEmpty == true)
+					m_pRoomManager->DestroyRoom(roomPtr->GetRoomNum());
+			}
+
+			m_pUserManager->RemoveUser(sessionConnEvent->m_ullSessionId);
 		}
 		break;
 		default:break;
@@ -313,17 +343,19 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 
 	RoomPtr newRoomPtr = m_pRoomManager->CreateRoom(userPtr, roomName);
 
-	ErrorCode ret = ErrorCode::NONE;
-
 	jh_network::MakeRoomResponsePacket makeRoomResponsePacket;
 
 	if (newRoomPtr == nullptr)
 	{
 		makeRoomResponsePacket.isMade = false;
+		PacketPtr packetBuffer = MakeSharedBuffer(g_memAllocator, sizeof(makeRoomResponsePacket));
 
+		*packetBuffer << makeRoomResponsePacket;
+
+		m_pOwner->SendPacket(sessionId, packetBuffer);
 		printf("EnterRoom Response Packet Send -- [bAllow = false]");
-
-		ret = ErrorCode::CREATE_ROOM_FAILED;
+		
+		return ErrorCode::CREATE_ROOM_FAILED;
 	}
 	else
 	{
@@ -341,9 +373,7 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 		makeRoomResponsePacket.roomInfo.m_ullOwnerId = newRoomPtr->GetOwnerId();
 		makeRoomResponsePacket.roomInfo.m_usRoomNum = newRoomPtr->GetRoomNum();
 		wmemcpy_s(makeRoomResponsePacket.roomInfo.m_wszRoomName, ROOM_NAME_MAX_LEN, roomName, ROOM_NAME_MAX_LEN);
-	}
 
-	{
 		PacketPtr packetBuffer = MakeSharedBuffer(g_memAllocator, sizeof(makeRoomResponsePacket));
 
 		*packetBuffer << makeRoomResponsePacket;
@@ -363,7 +393,7 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 		m_pOwner->SendPacket(sessionId, sendBuffer);
 	}
 
-	return ret;
+	return ErrorCode::NONE;
 }
 ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
@@ -503,7 +533,7 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 	if (isRoomEmpty == true)
 		m_pRoomManager->DestroyRoom(roomPtr->GetRoomNum());
 
-	return ErrorCode();
+	return ErrorCode::NONE;
 }
 
 ErrorCode jh_content::LobbySystem::HandleGameReadyRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
@@ -538,7 +568,8 @@ ErrorCode jh_content::LobbySystem::HandleGameReadyRequestPacket(ULONGLONG sessio
 	{
 		//std::wstring path(L"E:\\GameServer\\x64\\Debug\\GameServer.exe");
 		//$(SolutionDir)Exe\$(Configuration)
-		std::wstring path(L"$(SolutionDir)Exe\\$(Configuration)\\GameServer.exe");
+		//std::wstring path(L"$(SolutionDir)Exe\\$(Configuration)\\GameServer.exe");
+		std::wstring path(GAME_FILE_PATH);
 
 
 		//std::wstring args(std::to_wstring(m_usRoomNumber) + L" " + std::to_wstring(GetCurUserCnt()) + L" " + std::to_wstring(GetMaxUserCnt()));

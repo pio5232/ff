@@ -16,6 +16,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LobbyServer", "LobbyServer\
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GameServer", "GameServer\GameServer.vcxproj", "{F1FCE5C9-9D4F-4E66-AB37-82C13861CD0D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{09AE9E6B-F0EF-4274-A552-6F25FD21077A} = {09AE9E6B-F0EF-4274-A552-6F25FD21077A}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

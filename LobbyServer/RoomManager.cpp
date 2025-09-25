@@ -4,7 +4,7 @@
 #include "User.h"
 #include "Memory.h"
 
-jh_content::RoomManager::RoomManager(USHORT maxRoomCnt, USHORT maxRoomUserCnt) : m_usMaxRoomCnt(maxRoomCnt), m_usMaxRoomUserCnt(maxRoomUserCnt), m_usCurRoomCnt(0)
+jh_content::RoomManager::RoomManager(USHORT maxRoomCnt, USHORT maxRoomUserCnt) : m_usMaxRoomCnt(maxRoomCnt), m_usMaxRoomUserCnt(maxRoomUserCnt)
 {
 	m_roomMap.reserve(m_usMaxRoomCnt);
 }
@@ -90,14 +90,12 @@ void jh_content::RoomManager::Init()
 
 RoomPtr jh_content::RoomManager::CreateRoom(UserPtr userPtr, WCHAR* roomName)
 {
-	if (m_usCurRoomCnt == m_usMaxRoomCnt)
+	if (m_roomMap.size() == m_usMaxRoomCnt)
 		return nullptr;
 
 	static volatile USHORT roomNumGen = UINT16_MAX;
 
 	roomNumGen = (roomNumGen % UINT16_MAX) + 1;
-
-	m_usCurRoomCnt++;
 
 	RoomPtr roomPtr = MakeShared<jh_content::Room>(g_memAllocator, userPtr->GetUserId(), m_usMaxRoomUserCnt, roomNumGen, roomName);
 
@@ -108,10 +106,8 @@ RoomPtr jh_content::RoomManager::CreateRoom(UserPtr userPtr, WCHAR* roomName)
 
 void jh_content::RoomManager::DestroyRoom(USHORT roomNum)
 {
-	size_t delSize = 0;
-	{
-		delSize = m_roomMap.erase(roomNum);
-	}
+	size_t delSize = m_roomMap.erase(roomNum);
+	
 	if (0 == delSize)
 	{
 		_LOG(L"RoomManager", LOG_LEVEL_WARNING, L"[DestroyRoom] 요청한 방이 존재하지 않음 [%us]", roomNum);

@@ -65,7 +65,7 @@ bool jh_content::Room::LeaveRoom(UserPtr userPtr)
 
 	ULONGLONG userId = userPtr->GetUserId();
 
-	userPtr->SetRoom(RoomPtr(nullptr));
+	userPtr->SetRoom(nullptr);
 
 	m_userMap.erase(userId);
 	

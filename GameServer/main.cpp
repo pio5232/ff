@@ -6,10 +6,12 @@
 #include "NetworkBase.h"
 #include <crtdbg.h>
 #include "GameServer.h"
+#include "GamePlayer.h"
+#include "User.h"
+
 #define SERVERPORT 8768
 
 jh_utility::CrashDump dump;
-jh_network::NetAddress lanServerAddr(std::wstring(L"127.0.0.1"), SERVERPORT);
 //std::unique_ptr<jh_network::GameServer> gameServer = nullptr;
 // 
 //
@@ -115,6 +117,20 @@ int main()
 			if (c == 'Q' || c == 'q')
 				break;
 		}
+
+		wprintf(L"=================================================\n");
+		wprintf(L"               SERVER MONITORING\n");
+		wprintf(L"=================================================\n");
+		wprintf(L" Press 'q' to shut down\n");
+		wprintf(L"-------------------------------------------------\n");
+
+		gameServer.Monitor();
+		wprintf(L"-------------------------------------------------\n");
+		wprintf(L" [Content] Total Users : %llu\n", jh_content::GamePlayer::GetAliveGamePlayerCount());
+		wprintf(L" [Content] Total Rooms : %d\n", jh_content::User::GetAliveGameUserCount());
+		wprintf(L"=================================================\n\n\n");
+
+		Sleep(1000);
 	}
 
 	gameServer.Stop();

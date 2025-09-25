@@ -10,6 +10,14 @@ namespace jh_content
 
 		UserManager(SendPacketFunc sendPacketFunc) : m_sendPacketFunc(sendPacketFunc) {}
 		UserManager(const UserManager&) = delete;
+
+		~UserManager() 
+		{
+			m_sessionIdToUserUMap.clear();
+			m_userIdToUserUMap.clear();
+			m_entityIdToUserUMap.clear();
+		}
+
 		UserManager& operator=(const UserManager&) = delete;
 
 		UserPtr CreateUser(ULONGLONG sessionId, ULONGLONG userId);
@@ -31,12 +39,7 @@ namespace jh_content
 			return m_userIdToUserUMap;
 		}
 
-		~UserManager() 
-		{
-			m_sessionIdToUserUMap.clear();
-			m_userIdToUserUMap.clear();
-			m_entityIdToUserUMap.clear();
-		}
+		USHORT GetUserCount() { return m_sessionIdToUserUMap.size(); }
 		
 		void RegisterEntityIdToUser(ULONGLONG entityId, UserPtr userPtr);
 		void DeleteEntityIdToUser(ULONGLONG entityId);

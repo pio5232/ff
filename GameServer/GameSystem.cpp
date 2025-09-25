@@ -52,7 +52,7 @@ void jh_content::GameSystem::Stop()
 	m_pGameWorld->Stop();
 }
 
-jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThread(nullptr), m_bIsRunning(true), m_dwLoadCompletedCnt(0), m_pOwner(owner), m_gameInfo{}
+jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThread(nullptr), m_bIsRunning(false), m_dwLoadCompletedCnt(0), m_pOwner(owner), m_gameInfo{}
 {
 	auto sendPacketFunc = [this](ULONGLONG sessionId, PacketPtr& _packet)
 		{
@@ -83,10 +83,6 @@ void jh_content::GameSystem::SetGameInfo(USHORT roomNumber, USHORT requiredUsers
 	m_gameInfo.m_usRequiredUserCnt = requiredUsers;
 
 	m_pUserManager->ReserveUMapSize(requiredUsers, maxUsers);
-
-
-	// TODO : 이 부분은 더 고민해봐야함. 변경해야함
-	m_pGameWorld->Init(maxUsers, requiredUsers);
 }
 
 
@@ -94,6 +90,7 @@ unsigned jh_content::GameSystem::StaticLogicProxy(LPVOID lparam)
 {
 	jh_content::GameSystem* gameInstance = static_cast<GameSystem*>(lparam);
 
+	gameInstance->m_bIsRunning = true;
 	gameInstance->GameLogic();
 
 	return 0;
@@ -173,7 +170,7 @@ void jh_content::GameSystem::ProcessSessionConnectionEvent()
 
 	for (SessionConnectionEventPtr& sessionConnEvent : sessionConnEventList)
 	{
-		ULONGLONG sessionId = sessionConnEvent->m_llSessionId;
+		ULONGLONG sessionId = sessionConnEvent->m_ullSessionId;
 		switch (sessionConnEvent->m_msgType)
 		{
 		case jh_utility::SessionConnectionEventType::CONNECT:
@@ -281,6 +278,12 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 	PacketPtr makeMyCharacterPkt = jh_content::PacketBuilder::BuildMakeMyCharacterPacket(entityId, pos);
 
 	m_pOwner->SendPacket(sessionId, makeMyCharacterPkt);
+
+	
+	if (m_gameInfo.m_usRequiredUserCnt == m_pUserManager->GetUserCount())
+	{
+		m_pGameWorld->Init(m_gameInfo.m_usMaxUserCnt, m_gameInfo.m_usRequiredUserCnt);
+	}
 
 	return;
 }
@@ -459,6 +462,12 @@ void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lan
 	SetGameInfo(roomNum, requiredUsers, maxUsers);
 
 	ULONGLONG xorAfterValue = GetToken() ^ xorTokenKey;
+
+	if (false == m_pOwner->InitSessionArray(maxSessionCnt))
+	{
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyServer()] - maxSession 초기화 실패");
+		jh_utility::CrashDump::Crash();
+	}
 
 	// TODO : 서버가 0.0.0.0으로 설정되었을 때 ip,port값을 제대로 얻어올 수 있도록 세팅 필요.
 	const std::wstring ip = m_pOwner->GetIp();

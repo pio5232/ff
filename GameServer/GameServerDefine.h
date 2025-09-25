@@ -6,6 +6,7 @@ namespace jh_network
 	class LanClientSession;
 }
 
+
 #define GAME_SERVER_CONFIG_FILE L"GameServer.cfg"
 #define GAME_LAN_CLIENT_CONFIG_FILE L"GameLanClient.cfg"
 

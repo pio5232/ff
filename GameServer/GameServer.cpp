@@ -46,19 +46,17 @@ jh_content::GameServer::GameServer() : jh_network::IocpServer(GAME_SERVER_SAVE_F
 
 	// 기본 설정 셋팅
 	InitServerConfig(ip, port, concurrentWorkerThreadCount, lingerOnOff, lingerTime, timeOut);
-	if (false == InitSessionArray(maxSessionCnt))
-	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyServer()] - maxSession 초기화 실패");
-		jh_utility::CrashDump::Crash();
-	}
-	
+	//if (false == InitSessionArray(maxSessionCnt))
+	//{
+	//	_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyServer()] - maxSession 초기화 실패");
+	//	jh_utility::CrashDump::Crash();
+	//}
+	//
 	// GameSystem 생성
 	m_pGameSystem = std::make_unique<jh_content::GameSystem>(this);
 
 	// LanClient 생성
 	m_pGameLanClient = std::make_unique<jh_content::GameLanClient>();
-
-	m_pGameSystem->Init();
 
 	m_pGameLanClient->SetGameSystem(m_pGameSystem.get());
 
@@ -130,11 +128,21 @@ void jh_content::GameServer::OnDisconnected(ULONGLONG sessionId)
 
 void jh_content::GameServer::BeginAction()
 {
+	m_pGameSystem->Init();
+
+	m_pGameLanClient->Start();
 }
 
 void jh_content::GameServer::EndAction()
 {
 	m_pGameSystem->Stop();
+
+	m_pGameLanClient->Stop();
+}
+
+void jh_content::GameServer::Monitor()
+{
+	wprintf(L" [Game Server] Sessions : %d\n", GetSessionCount());
 }
 
 

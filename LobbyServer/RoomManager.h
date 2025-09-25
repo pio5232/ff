@@ -40,7 +40,6 @@ namespace jh_content
 	private:
 		USHORT m_usMaxRoomCnt;
 		USHORT m_usMaxRoomUserCnt; // room당 최대 user 수
-		USHORT m_usCurRoomCnt;
 
 		// room을 만들어놓고 vector로 쓰자 그냥.??
 		std::unordered_map<USHORT, RoomPtr> m_roomMap; // [roomNum, roomPtr]

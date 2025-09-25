@@ -34,6 +34,15 @@ namespace jh_content
 #define ROOM_MANAGER_SAVE_FILE_NAME L"RoomManager"
 #define USER_MANAGER_SAVE_FILE_NAME L"UserManager"
 
+#ifdef _DEBUG
+	#define MODE L"Debug"
+#else
+	#define MODE L"Release"
+#endif // DEBUG	
+
+#define GAME_FILE_PATH L"C:\\Users\\정후\\OneDrive\\바탕 화면\\0925정후의섭\\Exe\\Debug\\GameServer.exe"
+//#define GAME_FILE_PATH L"..\\Exe\\" MODE "\\GameServer.exe"
+
 enum class LanRequestMsgType : byte
 {
 	NONE = 0,

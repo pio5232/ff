@@ -13,7 +13,7 @@
 // ParseMuchData, ParseData 함수 wprint 실행 매크로
 //#define PRINT_DATA
 
-#define UP_DIR(path) L"../" path
+#define UP_DIR(path) L"..\\" path
 
 namespace jh_utility
 {

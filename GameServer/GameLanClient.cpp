@@ -5,7 +5,7 @@
 #include "GameSystem.h"
 
 
-jh_content::GameLanClient::GameLanClient() : jh_network::IocpClient(GAME_LAN_CLIENT_SAVE_FILE_NAME)
+jh_content::GameLanClient::GameLanClient() : jh_network::IocpClient(GAME_LAN_CLIENT_SAVE_FILE_NAME), m_pGameSystem(nullptr)
 {
 	jh_utility::Parser parser;
 
@@ -44,7 +44,7 @@ jh_content::GameLanClient::GameLanClient() : jh_network::IocpClient(GAME_LAN_CLI
 
 	if (false == InitSessionArray(maxSessionCnt))
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyLanServer()] - maxSession 초기화 실패");
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[GameLanClient()] - maxSession 초기화 실패");
 		jh_utility::CrashDump::Crash();
 	}
 }

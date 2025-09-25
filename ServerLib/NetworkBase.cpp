@@ -8,7 +8,7 @@
 #include "Session.h"
 #include "Memory.h"
 
-#define ECHO
+//#define ECHO
 
 #pragma comment (lib, "ws2_32.lib")
 	/*-----------------------
@@ -28,6 +28,11 @@ jh_network::IocpServer::IocpServer(const WCHAR* serverName) : m_hCompletionPort(
 	m_lSessionCount = 0;
 	m_llTotalAcceptedSessionCount = 0;
 
+	m_lAsyncRecvCount = 0;
+	m_lAsyncSendCount = 0;
+	
+	m_lTotalRecvCount = 0;
+	m_lTotalSendCount = 0;
 	//m_packetPool = new jh_utility::LockFreeMemoryPool<jh_utility::SerializationBuffer>(0, true, true);
 
 }

@@ -40,10 +40,10 @@ namespace jh_utility
 
 	struct SessionConnectionEvent
 	{
-		explicit SessionConnectionEvent(ULONGLONG id, jh_utility::SessionConnectionEventType msg) : m_llSessionId(id), m_msgType(msg) {}
+		explicit SessionConnectionEvent(ULONGLONG id, jh_utility::SessionConnectionEventType msg) : m_ullSessionId(id), m_msgType(msg) {}
 		~SessionConnectionEvent()
 		{
-			m_llSessionId = INVALID_SESSION_ID;
+			m_ullSessionId = INVALID_SESSION_ID;
 			m_msgType = SessionConnectionEventType::NONE;
 		}
 
@@ -53,7 +53,7 @@ namespace jh_utility
 		SessionConnectionEvent& operator=(const SessionConnectionEvent& other) = default;
 		SessionConnectionEvent& operator=(SessionConnectionEvent&& other) = default;
 
-		ULONGLONG m_llSessionId; 
+		ULONGLONG m_ullSessionId; 
 		SessionConnectionEventType m_msgType;
 	};
 }
