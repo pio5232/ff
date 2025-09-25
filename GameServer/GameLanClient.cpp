@@ -55,7 +55,7 @@ jh_content::GameLanClient::~GameLanClient()
 
 void jh_content::GameLanClient::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
 {
-	GameLanRequestPtr lanRequest = MakeShared<GameLanRequest>(g_memAllocator, sessionId, type, packet); // MakeJob(sessionId, type, packet);
+	GameLanRequestPtr lanRequest = MakeShared<GameLanRequest>(g_memAllocator, sessionId, type, packet, this); // MakeJob(sessionId, type, packet);
 
 	m_pGameSystem->EnqueueLanRequest(lanRequest);
 }

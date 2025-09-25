@@ -183,10 +183,10 @@ void jh_content::LobbySystem::ProcessLanRequest()
 		if (req->m_ullSessionId == INVALID_SESSION_ID)
 			continue;
 
-		switch (req->m_lanRequestMsgType)
+		switch (req->m_usMsgType)
 		{
-		case LanRequestMsgType::GAME_SETTING_REQUEST: HandleGameSettingRequest(req->m_ullSessionId, req->m_pPacket, req->m_pLanServer); break;
-		case LanRequestMsgType::LAN_INFO_NOTIFY: HandleLanInfoNotify(req->m_ullSessionId, req->m_pPacket, req->m_pLanServer); break;
+		case jh_network::GAME_SERVER_SETTING_REQUEST_PACKET: HandleGameSettingRequest(req->m_ullSessionId, req->m_pPacket, req->m_pLanServer); break;
+		case jh_network::GAME_SERVER_LAN_INFO_PACKET: HandleLanInfoNotify(req->m_ullSessionId, req->m_pPacket, req->m_pLanServer); break;
 
 		default:break;
 		}

@@ -43,11 +43,11 @@ enum class LanRequestMsgType : byte
 
 struct LanRequest
 {
-	explicit LanRequest(ULONGLONG lanSessionId, LanRequestMsgType msgType, PacketPtr packet, jh_network::IocpServer* lanServer) : m_ullSessionId(lanSessionId), m_lanRequestMsgType(msgType), m_pPacket(packet), m_pLanServer(lanServer) {}
+	explicit LanRequest(ULONGLONG lanSessionId, USHORT msgType, PacketPtr packet, jh_network::IocpServer* lanServer) : m_ullSessionId(lanSessionId), m_usMsgType(msgType), m_pPacket(packet), m_pLanServer(lanServer) {}
 	~LanRequest()
 	{
 		m_ullSessionId = INVALID_SESSION_ID;
-		m_lanRequestMsgType = LanRequestMsgType::NONE;
+		m_usMsgType = jh_network::INVALID_PACKET;
 		m_pPacket.reset();
 		m_pLanServer = nullptr;
 	}
@@ -59,7 +59,7 @@ struct LanRequest
 	LanRequest& operator=(LanRequest&& other) = default;
 
 	ULONGLONG m_ullSessionId;
-	LanRequestMsgType m_lanRequestMsgType;
+	USHORT m_usMsgType;
 	PacketPtr m_pPacket;
 	jh_network::IocpServer* m_pLanServer;
 };

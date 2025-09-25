@@ -40,17 +40,7 @@ namespace jh_content
 		void CreateAI(class jh_content::GameWorld* worldPtr);
 		GamePlayerPtr CreateGamePlayer();
 
-		void SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr)
-		{
-			UserPtr userPtr = m_pUserManager->GetUserByEntityId(entityId);
-
-			if (nullptr == userPtr)
-				return;
-
-			ULONGLONG sessionId = userPtr->GetSessionId();
-
-			m_sendPacketFunc(sessionId, packetPtr);
-		}
+		void SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr);
 
 	public:
 		void CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr);
@@ -60,7 +50,7 @@ namespace jh_content
 	private:
 		void SetDSCount(USHORT predMaxCnt);
 		bool IsInVictoryZone(const Vector3& pos) const;
-		
+
 		ULONGLONG m_ullExpectedWinnerId = 0;
 		ULONGLONG m_ullExpectedWinTime = MAXULONGLONG;
 		volatile bool m_bIsGameRunning;

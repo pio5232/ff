@@ -96,7 +96,7 @@ void jh_content::LobbyLanSystem::Init()
 
 ErrorCode jh_content::LobbyLanSystem::HandleLanInfoNotifyPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
-	LanRequestPtr lanRequest = MakeShared<LanRequest>(g_memAllocator, sessionId, LanRequestMsgType::LAN_INFO_NOTIFY, packet, m_pOwner);
+	LanRequestPtr lanRequest = MakeShared<LanRequest>(g_memAllocator, sessionId, jh_network::GAME_SERVER_LAN_INFO_PACKET, packet, m_pOwner);
 
 	m_pLobbySystem->EnqueueLanRequest(lanRequest);
 
@@ -105,7 +105,7 @@ ErrorCode jh_content::LobbyLanSystem::HandleLanInfoNotifyPacket(ULONGLONG sessio
 
 ErrorCode jh_content::LobbyLanSystem::HandleGameSettingRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
-	LanRequestPtr lanRequest = MakeShared<LanRequest>(g_memAllocator, sessionId, LanRequestMsgType::GAME_SETTING_REQUEST, packet, m_pOwner);
+	LanRequestPtr lanRequest = MakeShared<LanRequest>(g_memAllocator, sessionId, jh_network::GAME_SERVER_SETTING_REQUEST_PACKET, packet, m_pOwner);
 
 	m_pLobbySystem->EnqueueLanRequest(lanRequest);
 

@@ -7,6 +7,7 @@
 #include "GamePlayer.h"
 #include "Memory.h"
 #include "User.h"
+#include "GameLanClient.h"
 
 void jh_content::GameSystem::Init()
 {
@@ -223,8 +224,9 @@ void jh_content::GameSystem::ProcessLanRequest()
 		if (req->m_ullSessionId == INVALID_SESSION_ID)
 			continue;
 
-		switch (req->m_gameLanRequestMsgType)
+		switch (req->m_usMsgType)
 		{
+		case jh_network::GAME_SERVER_SETTING_RESPONSE_PACKET:HandleGameServerSettingResponsePacket(req->m_ullSessionId, req->m_pPacket, req->m_pClient); break;
 			// Ãß°¡
 
 		default:break;

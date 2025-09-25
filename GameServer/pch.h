@@ -8,4 +8,4 @@
 
 #include "GameServerDefine.h"
 //using namespace jh_utility;
-#pragma comment (lib,"Libs.lib")
+#pragma comment (lib,"ServerLib.lib")

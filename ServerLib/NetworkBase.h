@@ -169,7 +169,6 @@ namespace jh_network
 		void WorkerThread();
 
 		Session* CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr);
-		void DeleteSession(ULONGLONG sessionId);
 		
 		void InitClientConfig(WCHAR* ip, WORD port, DWORD concurrentWorkerThreadCount, WORD lingerOnOff, WORD lingerTime, ULONGLONG timeOut);
 		

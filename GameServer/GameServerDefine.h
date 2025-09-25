@@ -114,13 +114,13 @@ enum class GameLanRequestMsgType
 
 struct GameLanRequest
 {
-	explicit GameLanRequest(ULONGLONG lanSessionId, GameLanRequestMsgType msgType, PacketPtr packet, jh_network::IocpClient* lanClient) : m_ullSessionId(lanSessionId), m_gameLanRequestMsgType(msgType), m_pPacket(packet), m_pLanServer(lanClient) {}
+	explicit GameLanRequest(ULONGLONG lanSessionId, USHORT msgType, PacketPtr packet, jh_network::IocpClient* lanClient) : m_ullSessionId(lanSessionId), m_usMsgType(msgType), m_pPacket(packet), m_pClient(lanClient) {}
 	~GameLanRequest()
 	{
 		m_ullSessionId = INVALID_SESSION_ID;
-		m_gameLanRequestMsgType = GameLanRequestMsgType::NONE;
+		m_usMsgType = jh_network::INVALID_PACKET;
 		m_pPacket.reset();
-		m_pLanServer = nullptr;
+		m_pClient = nullptr;
 	}
 
 	GameLanRequest(const GameLanRequest& other) = default;
@@ -130,9 +130,9 @@ struct GameLanRequest
 	GameLanRequest& operator=(GameLanRequest&& other) = default;
 
 	ULONGLONG m_ullSessionId;
-	GameLanRequestMsgType m_gameLanRequestMsgType;
+	USHORT m_usMsgType;
 	PacketPtr m_pPacket;
-	jh_network::IocpClient* m_pLanServer;
+	jh_network::IocpClient* m_pClient;
 };
 
 using GameLanRequestPtr = std::shared_ptr<GameLanRequest>;

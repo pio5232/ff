@@ -160,6 +160,18 @@ GamePlayerPtr jh_content::GameWorld::CreateGamePlayer()
 	return GamePlayerPtr();
 }
 
+void jh_content::GameWorld::SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr)
+{
+	UserPtr userPtr = m_pUserManager->GetUserByEntityId(entityId);
+
+	if (nullptr == userPtr)
+		return;
+
+	ULONGLONG sessionId = userPtr->GetSessionId();
+
+	m_sendPacketFunc(sessionId, packetPtr);
+}
+
 void jh_content::GameWorld::AddEntity(EntityPtr entityPtr)
 {
 	m_aliveEntityDic.insert(std::make_pair(entityPtr->GetEntityId(), entityPtr));
