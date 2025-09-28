@@ -40,8 +40,9 @@ namespace jh_content
 	#define MODE L"Release"
 #endif // DEBUG	
 
-#define GAME_FILE_PATH L"C:\\Users\\정후\\OneDrive\\바탕 화면\\0925정후의섭\\Exe\\Debug\\GameServer.exe"
-//#define GAME_FILE_PATH L"..\\Exe\\" MODE "\\GameServer.exe"
+//#define GAME_FILE_PATH L"C:\\Users\\정후\\OneDrive\\바탕 화면\\0925정후의섭\\Exe\\Debug\\GameServer.exe"
+#define GAME_FILE_PATH L"..\\Exe\\" MODE "\\GameServer.exe"
+#define GAME_CUR_DIRECTORY L"..\\Exe\\" MODE
 
 enum class LanRequestMsgType : byte
 {

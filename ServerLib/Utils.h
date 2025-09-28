@@ -165,7 +165,7 @@ namespace jh_utility
 	};
 }
 
-void ExecuteProcess(const std::wstring& path);// , const std::wstring& args);
+void ExecuteProcess(const WCHAR* path, const WCHAR* currentDirectory);// , const std::wstring& args);
 
 // Unity Vector System ÀÌ¿כ
 struct Vector3

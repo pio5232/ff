@@ -3,6 +3,7 @@
 #include "GameServer.h"
 #include "Memory.h"
 #include "GameSystem.h"
+#include "PacketBuilder.h"
 
 
 jh_content::GameLanClient::GameLanClient() : jh_network::IocpClient(GAME_LAN_CLIENT_SAVE_FILE_NAME), m_pGameSystem(nullptr)
@@ -62,4 +63,6 @@ void jh_content::GameLanClient::OnRecv(ULONGLONG sessionId, PacketPtr packet, US
 
 void jh_content::GameLanClient::OnConnected(ULONGLONG sessionId)
 {
+	PacketPtr settingReqPkt = jh_content::PacketBuilder::BuildGameServerSettingRequestPacket();
+	SendPacket(sessionId, settingReqPkt);
 }

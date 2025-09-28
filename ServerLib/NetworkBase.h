@@ -80,12 +80,13 @@ namespace jh_network
 		const WCHAR* GetIp() const { return m_wszIp; }
 
 		USHORT GetPort() const;
+		
+		bool InitSessionArray(DWORD maxSessionCount);
 	protected:
 		SOCKET GetListenSock() { return m_listenSock; }
 		
 		// session 수를 제외한 다른 옵션들을 설정.
 		void InitServerConfig(WCHAR* ip, WORD port, DWORD concurrentWorkerThreadCount, WORD lingerOnOff, WORD lingerTime, ULONGLONG timeOut);
-		bool InitSessionArray(DWORD maxSessionCount);
 		
 		Session* TryAcquireSession(ULONGLONG sessionId, const WCHAR* caller); // sessionPtr을 사용할 때마다 해제중인지 확인하고, 참조 카운트를 증가시킨다.
 

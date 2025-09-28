@@ -1374,9 +1374,8 @@ void jh_network::IocpClient::Connect()
 	// connectEx 사용 시 bind 필요
 	sockaddr_in clientAddr{};
 	clientAddr.sin_family = AF_INET;
-	clientAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	clientAddr.sin_port = 0;
-	bind(sock, (sockaddr*)&clientAddr, sizeof(clientAddr));
+	InetPton(AF_INET,m_wszTargetIp, &clientAddr.sin_addr);
+	clientAddr.sin_port = htons(0);
 
 	DWORD bindRet = bind(sock, (SOCKADDR*)&clientAddr, sizeof(SOCKADDR_IN));
 

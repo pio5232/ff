@@ -239,6 +239,17 @@ PacketPtr jh_content::PacketBuilder::BuildGameStartNotifyPacket()
 	return sendBuffer;
 }
 
+PacketPtr jh_content::PacketBuilder::BuildGameServerSettingRequestPacket()
+{
+	jh_network::GameServerSettingRequestPacket settingRequestPacket;
+
+	PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(settingRequestPacket));
+
+	*sendBuffer << settingRequestPacket.size << settingRequestPacket.type;
+
+	return sendBuffer;
+}
+
 PacketPtr jh_content::PacketBuilder::BuildGameServerLanInfoPacket(const WCHAR* ipStr, USHORT port, USHORT roomNum, ULONGLONG token)
 {
 	jh_network::GameServerLanInfoPacket gameServerLanInfoPacket;

@@ -574,7 +574,7 @@ ErrorCode jh_content::LobbySystem::HandleGameReadyRequestPacket(ULONGLONG sessio
 
 		//std::wstring args(std::to_wstring(m_usRoomNumber) + L" " + std::to_wstring(GetCurUserCnt()) + L" " + std::to_wstring(GetMaxUserCnt()));
 		//wprintf(L"path : %s    args : %s", path, args);
-		ExecuteProcess(path);
+		ExecuteProcess(GAME_FILE_PATH, GAME_CUR_DIRECTORY);
 
 		USHORT gameRoomNum = roomPtr->GetRoomNum();
 		

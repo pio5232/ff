@@ -15,7 +15,8 @@
 //	//}
 //}
 
-void ExecuteProcess(const std::wstring& path)//, const std::wstring& args)
+//void ExecuteProcess(const std::wstring& path, WCHAR* currentDirectory)//, const std::wstring& args)
+void ExecuteProcess(const WCHAR* path, const WCHAR* currentDirectory)//, const std::wstring& args)
 {
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
@@ -24,8 +25,9 @@ void ExecuteProcess(const std::wstring& path)//, const std::wstring& args)
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
 
-	std::wstring commandLine = path;// +L" " + args;
-	bool ret = CreateProcess(NULL, &commandLine[0], NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi);
+	//std::wstring commandLine = path;// +L" " + args;
+	//bool ret = CreateProcess(nullptr, &commandLine[0], nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE, NULL, currentDirectory, &si, &pi);
+	bool ret = CreateProcess(path, nullptr, nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE, NULL, currentDirectory, &si, &pi);
 
 	if (!ret)
 	{

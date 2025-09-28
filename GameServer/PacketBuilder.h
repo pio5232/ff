@@ -30,6 +30,7 @@ namespace jh_content
 		static PacketPtr BuildCharacterSyncPacket(ULONGLONG entityId, const Vector3& syncPos, const Vector3& syncRot);
 		static PacketPtr BuildGameStartNotifyPacket();
 
+		static PacketPtr BuildGameServerSettingRequestPacket();
 		static PacketPtr BuildGameServerLanInfoPacket(const WCHAR* ipStr, USHORT port, USHORT roomNum, ULONGLONG token);
 
 		static PacketPtr BuildChatNotifyPacket(ULONGLONG userId, USHORT messageLen, const char* message);

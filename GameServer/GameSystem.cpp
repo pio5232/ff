@@ -463,9 +463,9 @@ void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lan
 
 	ULONGLONG xorAfterValue = GetToken() ^ xorTokenKey;
 
-	if (false == m_pOwner->InitSessionArray(maxSessionCnt))
+	if (false == m_pOwner->InitSessionArray(maxUsers))
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyServer()] - maxSession 초기화 실패");
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleGameServerSettingResponsePacket] - maxSession 초기화 실패");
 		jh_utility::CrashDump::Crash();
 	}
 
