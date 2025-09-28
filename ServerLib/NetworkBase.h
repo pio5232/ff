@@ -175,6 +175,7 @@ namespace jh_network
 		
 		bool InitSessionArray(DWORD maxSessionCount);
 
+		void ForceStop(); // 강제 종료
 	private:
 		// 설정 값
 		WCHAR m_wszTargetIp[IP_STRING_LEN]; // 원본 20				// ip

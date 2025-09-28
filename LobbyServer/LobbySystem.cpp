@@ -44,7 +44,7 @@ void jh_content::LobbySystem::Stop()
 
 	if (nullptr != m_hLogicThread)
 	{
-		DWORD ret = WaitForSingleObject(m_hLogicThread, 0);
+		DWORD ret = WaitForSingleObject(m_hLogicThread, INFINITE);
 
 		if (ret != WAIT_OBJECT_0)
 		{

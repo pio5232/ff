@@ -162,7 +162,13 @@ void jh_network::IocpServer::Stop()
 			t.join();
 	}
 	
-	CloseHandle(m_hCompletionPort);
+	if (nullptr != m_hCompletionPort)
+	{
+		CloseHandle(m_hCompletionPort);
+
+		m_hCompletionPort = nullptr;
+	}
+
 
 	return;
 }
@@ -721,6 +727,7 @@ void jh_network::IocpServer::AcceptThreadFunc()
 		// Accept 종료
 		if (clientSock == INVALID_SOCKET)
 		{
+			DWORD lastErr = WSAGetLastError();
 			_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"Accpet Thread - Client Socket is INVALID");
 			break;
   		}
@@ -1283,6 +1290,26 @@ bool jh_network::IocpClient::InitSessionArray(DWORD maxSessionCount)
 	return true;
 }
 
+void jh_network::IocpClient::ForceStop()
+{
+	// 정리되지 않은 세션들을 정리
+	for (int i = 0; i < m_dwMaxSessionCnt; i++)
+	{
+		Session* sessionPtr = &m_pClientSessionArr[i];
+
+		if (INVALID_SOCKET == sessionPtr->m_socket)
+			continue;
+
+		LONGLONG sessionIdx = sessionPtr->m_ullSessionId >> SESSION_IDX_SHIFT_BIT;
+
+		closesocket(sessionPtr->m_socket);
+		sessionPtr->Reset();
+		m_sessionIndexStack.Push(sessionIdx);
+
+		InterlockedDecrement(&m_lSessionCount);
+	}
+}
+
 jh_network::IocpClient::IocpClient(const WCHAR* clientName) : m_pcwszClientName(clientName), m_hCompletionPort(nullptr), m_hWorkerThreads(nullptr), m_wszTargetIp{}, m_pClientSessionArr(nullptr), m_lingerOption{}
 {
 	m_dwConcurrentWorkerThreadCount = 0;
@@ -1316,11 +1343,9 @@ bool jh_network::IocpClient::Start()
 		return false;
 	}
 
-	DWORD workerCount = m_dwConcurrentWorkerThreadCount * 1.5;
+	m_hWorkerThreads = new HANDLE[m_dwConcurrentWorkerThreadCount];
 
-	m_hWorkerThreads = new HANDLE[workerCount];
-
-	for (int i = 0; i < workerCount; i++)
+	for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
 	{
 		m_hWorkerThreads[i] = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, IocpClient::WorkerThreadFunc, this, 0, nullptr));
 
@@ -1341,10 +1366,30 @@ void jh_network::IocpClient::Stop()
 {
 	if (nullptr != m_hWorkerThreads)
 	{
-		delete[] m_hWorkerThreads;
+		for(int i =0 ;i< m_dwConcurrentWorkerThreadCount;i++)
+		{
+			PostQueuedCompletionStatus(m_hCompletionPort, 0, 0, nullptr);
+		}
+
+		DWORD ret = WaitForMultipleObjects(m_dwConcurrentWorkerThreadCount, m_hWorkerThreads, true, INFINITE);
 		
+		for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
+		{
+			CloseHandle(m_hWorkerThreads[i]);
+		}
+
+		delete[] m_hWorkerThreads;
 		m_hWorkerThreads = nullptr;
 	}
+
+	if (nullptr != m_hCompletionPort)
+	{
+		CloseHandle(m_hCompletionPort);
+
+		m_hCompletionPort = nullptr;
+	}
+
+	ForceStop();
 }
 
 void jh_network::IocpClient::Connect()
@@ -1413,7 +1458,7 @@ void jh_network::IocpClient::Connect()
 	{
 		int wsaGetLastError = WSAGetLastError();
 
-		if (WSA_IO_PENDING != WSAGetLastError())
+		if (WSA_IO_PENDING != wsaGetLastError)
 		{
 			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] ConnectEx 실패. Session ID : [%llu]", session->m_ullSessionId);
 
