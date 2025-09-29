@@ -12,7 +12,7 @@
 using namespace jh_network;
 alignas(64) std::atomic<int> jh_content::GamePlayer::aliveGamePlayerCount = 0;
 
-jh_content::GamePlayer::GamePlayer(UserPtr ownerUser, GameWorld* worldPtr) : Player(worldPtr, EntityType::GamePlayer, posUpdateInterval), m_ownerUser(ownerUser),m_bWasInVictoryZone(false)
+jh_content::GamePlayer::GamePlayer(std::weak_ptr<class jh_content::User>, GameWorld* worldPtr) : Player(worldPtr, EntityType::GamePlayer, posUpdateInterval), m_ownerUser(ownerUser),m_bWasInVictoryZone(false)
 {
 	aliveGamePlayerCount.fetch_add(1);
 }

@@ -7,7 +7,6 @@
 #include "ws2tcpip.h"
 #include "Session.h"
 #include "Memory.h"
-
 //#define ECHO
 
 #pragma comment (lib, "ws2_32.lib")
@@ -43,13 +42,6 @@ jh_network::IocpServer::~IocpServer()
 
 	if (nullptr != m_pSessionArray)
 	{
-		for (int i = 0; i < m_dwMaxSessionCnt; i++)
-		{
-			if (INVALID_SESSION_ID != m_pSessionArray[i].m_ullSessionId)
-			{
-				Disconnect(m_pSessionArray[i].m_ullSessionId, L"Server Close");
-			}
-		}
 		delete[] m_pSessionArray;
 		m_pSessionArray = nullptr;
 	}
@@ -93,14 +85,6 @@ bool jh_network::IocpServer::Start()
 		return false;
 	}
 
-	DWORD setLingerRet = setsockopt(m_listenSock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
-	if (setLingerRet == SOCKET_ERROR)
-	{
-		int getLastError = WSAGetLastError();
-		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Set Linger Failed GetLastError : %i",getLastError);
-		
-		return false;
-	}
 	
 	SOCKADDR_IN sockaddrIn;
 	sockaddrIn.sin_family = AF_INET;
@@ -116,7 +100,15 @@ bool jh_network::IocpServer::Start()
 		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Bind is Failed %d",getLastError);
 
 		return false;
+	}
 
+	DWORD setLingerRet = setsockopt(m_listenSock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
+	if (setLingerRet == SOCKET_ERROR)
+	{
+		int getLastError = WSAGetLastError();
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Set Linger Failed GetLastError : %i",getLastError);
+		
+		return false;
 	}
 
 	// TODO_
@@ -170,7 +162,30 @@ void jh_network::IocpServer::Stop()
 	}
 
 
+	ForceStop();
+
 	return;
+}
+
+void jh_network::IocpServer::ForceStop()
+{
+	// 정리되지 않은 세션들을 정리
+	for (int i = 0; i < m_dwMaxSessionCnt; i++)
+	{
+		Session* sessionPtr = &m_pSessionArray[i];
+
+		if (INVALID_SOCKET == sessionPtr->m_socket)
+			continue;
+
+		LONGLONG sessionIdx = sessionPtr->m_ullSessionId >> SESSION_IDX_SHIFT_BIT;
+
+		closesocket(sessionPtr->m_socket);
+		sessionPtr->Reset();
+		m_sessionIndexStack.Push(sessionIdx);
+
+		InterlockedDecrement(&m_lSessionCount);
+	}
+	
 }
 
 
@@ -568,9 +583,8 @@ void jh_network::IocpServer::PostSend(Session* sessionPtr)
 
 				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다.  WSAECONNRESET
 			case 10054:;
-				break;
 			default:
-				_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"  SEND POST FAILED .. WSAERROR : %u, 0x%08x", wsaErr, sessionPtr->m_ullSessionId);
+				_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L" [PostSend]	에러 코드 : %u,  세션 ID : [0x%08x]", wsaErr, sessionPtr->m_ullSessionId);
 				break;
 			}
 
@@ -631,9 +645,8 @@ void jh_network::IocpServer::PostRecv(Session* sessionPtr)
 			case 10053:
 				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다. WSAECONNRESET
 			case 10054:
-				break;
 			default:
-				_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"RECV POST FAILED .. WSAERROR : %u, 0x%08x", wsaErr, sessionPtr->m_ullSessionId);
+				_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L" [PostRecv]	에러 코드 : %u,  세션 ID : [0x%08x]", wsaErr, sessionPtr->m_ullSessionId);
 				break;
 			}
 
@@ -742,7 +755,7 @@ void jh_network::IocpServer::AcceptThreadFunc()
 
 		if (nullptr == newSession)
 		{
-			_LOG(m_pcwszServerName, LOG_LEVEL_INFO, L"Created Session is Nullptr");
+			_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"[AcceptThreadFunc] 세션이 nullptr입니다.");
 
 			closesocket(clientSock);
 			continue;
@@ -1093,6 +1106,7 @@ void jh_network::IocpClient::WorkerThread()
 		// 작업 도중 연결이 끊겼을 때의 상황이다.
 		if (false == gqcsRet)
 		{
+			wprintf(L"-----------------------------------------------GQCSRET FALSE --------------------------------------------\n");
 			Disconnect(sessionPtr->m_ullSessionId);
 
 			DecreaseIoCount(sessionPtr);
@@ -1107,6 +1121,7 @@ void jh_network::IocpClient::WorkerThread()
 			// api사용을 위해 소켓 정보 초기화
 			setsockopt(sessionPtr->m_socket, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0);
 
+			PostRecv(sessionPtr);
 		}
 		else if (transferredBytes != 0)
 		{
@@ -1255,7 +1270,10 @@ void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
 	m_sessionIndexStack.Push(sessionIdx);
 
 	InterlockedDecrement(&m_lSessionCount);
-	_LOG(L"Session", LOG_LEVEL_DETAIL, L"Delete PushStack SessionIdx, SessionID : 0x%08x, SessionIdx : 0x%08x", sessionId, sessionIdx);
+
+	_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[DeleteSession] - 세션이 해제되었습니다.. Session ID [0x%0x]", sessionId);
+
+	//_LOG(L"Session", LOG_LEVEL_DETAIL, L"Delete PushStack SessionIdx, SessionID : 0x%08x, SessionIdx : 0x%08x", sessionId, sessionIdx);
 
 	// Delete는 얻어온 세션에 대해서 ioCount를 새로 밀어버리기 때문에 정리하지 않도록 한다..
 	return;
@@ -1452,7 +1470,9 @@ void jh_network::IocpClient::Connect()
 	//connect에 대한 ioCount 따로 등록
 	InterlockedIncrement(&session->m_lIoCount);
 	
-	bool retConnectEx = jh_network::NetAddress::lpfnConnectEx(sock, (SOCKADDR*)&serverAddr, sizeof(serverAddr), nullptr, 0, nullptr, &session->m_connectOverlapped);
+	DWORD bytes;
+
+	bool retConnectEx = jh_network::NetAddress::lpfnConnectEx(sock, (SOCKADDR*)&serverAddr, sizeof(serverAddr), nullptr, 0, &bytes, &session->m_connectOverlapped);
 
 	if (false == retConnectEx)
 	{

@@ -101,7 +101,7 @@ int main()
 
 	jh_content::GameServer gameServer;
 
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	if (false == gameServer.Start())
 	{
@@ -122,6 +122,7 @@ int main()
 		wprintf(L"               SERVER MONITORING\n");
 		wprintf(L"=================================================\n");
 		wprintf(L" Press 'q' to shut down\n");
+		wprintf(L" Port : %hu", gameServer.GetPort());
 		wprintf(L"-------------------------------------------------\n");
 
 		gameServer.Monitor();

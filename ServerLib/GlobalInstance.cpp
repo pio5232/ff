@@ -2,6 +2,7 @@
 #include "GlobalInstance.h"
 #include "Memory.h"
 
+jh_utility::FileLogger* g_logger = nullptr;
 jh_memory::MemoryAllocator* g_memAllocator = nullptr;
 
 //jh_utility::ClearPool<jh_utility::ClearRefPtr<jh_utility::SerializationBuffer>::RefData>* g_packetPool = nullptr;
@@ -15,6 +16,7 @@ public:
 	CGlobalGen()
 	{
 
+		g_logger = new jh_utility::FileLogger();
 		//g_packetPool = new jh_utility::ClearPool<jh_utility::SerializationBuffer>(true);
 		g_memAllocator = new jh_memory::MemoryAllocator();
 

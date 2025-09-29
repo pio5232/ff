@@ -155,12 +155,15 @@ PacketPtr jh_content::PacketBuilder::BuildGameReadyNotifyPacket(ULONGLONG userId
 PacketPtr jh_content::PacketBuilder::BuildLanInfoPacket(WCHAR* ipStr, USHORT port, USHORT roomNum, ULONGLONG tok)
 {
 	jh_network::GameServerLanInfoPacket gameServerLanInfoPacket;
-
+	
 	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(gameServerLanInfoPacket));
+	
+	*buffer << gameServerLanInfoPacket.size << gameServerLanInfoPacket.type;
 
 	buffer->PutData(reinterpret_cast<const char*>(ipStr), IP_STRING_LEN * MESSAGE_SIZE);
+	
+	*buffer << port << roomNum << tok;
 
-	*buffer << gameServerLanInfoPacket.size << gameServerLanInfoPacket.type << port << roomNum << tok;
 
 	return buffer;
 }

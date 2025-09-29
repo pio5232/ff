@@ -57,7 +57,7 @@ jh_content::LobbyLanServer::~LobbyLanServer()
 
 bool jh_content::LobbyLanServer::OnConnectionRequest(const SOCKADDR_IN& clientInfo)
 {
-	return false;
+	return true;
 }
 
 void jh_content::LobbyLanServer::OnError(int errCode, WCHAR* cause)

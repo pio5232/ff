@@ -34,16 +34,19 @@ namespace jh_utility
 #define LOG_LEVEL_WARNING jh_utility::FileLogger::LogLevel::LEVEL_WARNING // 오류 로그
 #define LOG_LEVEL_SYSTEM jh_utility::FileLogger::LogLevel::LEVEL_SYSTEM // 치명적 로그
 
-#define SET_LOG_LEVEL(LOG_LEVEL) jh_utility::FileLogger::GetInstance().SetLogLevel(LOG_LEVEL)
+//#define SET_LOG_LEVEL(LOG_LEVEL) jh_utility::FileLogger::GetInstance().SetLogLevel(LOG_LEVEL)
+#define SET_LOG_LEVEL(LOG_LEVEL) g_logger->SetLogLevel(LOG_LEVEL)
 
+/* jh_utility::FileLogger::GetInstance().WriteLog(logType, logLevelMacro, format L"\n", ##__VA_ARGS__);	\ */
 #define _LOG(logType, logLevelMacro, format, ...)										\
 do {																			\
-	jh_utility::FileLogger::GetInstance().WriteLog(logType, logLevelMacro, format L"\n", ##__VA_ARGS__);	\
+	g_logger->WriteLog(logType, logLevelMacro, format L"\n", ##__VA_ARGS__);	\
 } while(0)
 
+/*jh_utility::FileLogger::GetInstance().WriteLogHex(logType, logLevelMacro, logWstr, buffer, bufferSize);	\*/
 #define _LOGHEX(logType, logLevelMacro, logWstr, buffer, bufferSize)											\
 do {																				\
-	jh_utility::FileLogger::GetInstance().WriteLogHex(logType, logLevelMacro, logWstr, buffer, bufferSize);	\
+	g_logger->WriteLogHex(logType, logLevelMacro, logWstr, buffer, bufferSize);	\
 } while(0)
 
 	class FileLogger
@@ -58,8 +61,9 @@ do {																				\
 			LEVEL_SYSTEM,
 		};
 
-		static FileLogger& GetInstance();
+		//static FileLogger& GetInstance();
 
+		FileLogger();
 		~FileLogger();
 
 		// 로그 관련해서 데이터를 쓸 때는 예외가 발생하는 경우가 없도록 해야한다.
@@ -72,7 +76,6 @@ do {																				\
 		void SetLogLevel(LogLevel logLevel) { m_eLogLevel = logLevel; }
 
 	private:
-		FileLogger();
 		bool CheckNCreateDir(const WCHAR* filePath);
 
 		// 저장할 파일 이름,[type] [날짜 / LogLevel] 같은 정보들 세팅.
@@ -83,7 +86,7 @@ do {																				\
 		WCHAR m_wszCommonFilePath[DEFAULT_FILE_PATH_SIZE];
 
 		//static FileLogger* m_pInstance;
-		static std::once_flag m_onceFlag;
+		//static std::once_flag m_onceFlag;
 
 		LogLevel m_eLogLevel;
 

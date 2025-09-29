@@ -42,6 +42,7 @@ namespace jh_network
 		void Listen();
 		void Stop();
 
+		void ForceStop();
 		// TODO : 함수 이름 변경하자
 		// 각각의 함수들은 Start() / Stop()가 실행됐을 때
 		// 상속받은 함수에서 추가적으로 작업할 것들을 여기에 등록하면 된다.
@@ -176,6 +177,8 @@ namespace jh_network
 		bool InitSessionArray(DWORD maxSessionCount);
 
 		void ForceStop(); // 강제 종료
+	protected:
+		const WCHAR* const m_pcwszClientName;
 	private:
 		// 설정 값
 		WCHAR m_wszTargetIp[IP_STRING_LEN]; // 원본 20				// ip
@@ -190,7 +193,6 @@ namespace jh_network
 		void DecreaseIoCount(Session* sessionPtr);
 		void DeleteSession(ULONGLONG sessionId);
 
-		const WCHAR* const m_pcwszClientName;
 		
 		Session* m_pClientSessionArr; // Client의 session은 IocpClient 인스턴스가 사라질 때 사라짐.
 		jh_utility::LockStack<DWORD> m_sessionIndexStack;

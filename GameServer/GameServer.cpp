@@ -128,6 +128,8 @@ void jh_content::GameServer::OnDisconnected(ULONGLONG sessionId)
 
 void jh_content::GameServer::BeginAction()
 {
+	Listen();
+
 	m_pGameSystem->Init();
 
 	m_pGameLanClient->Start();

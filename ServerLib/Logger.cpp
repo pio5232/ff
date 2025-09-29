@@ -2,17 +2,17 @@
 #include <ctime>
 #include <strsafe.h>
 //jh_utility::FileLogger* jh_utility::FileLogger::m_pInstance = nullptr;
-std::once_flag jh_utility::FileLogger::m_onceFlag{};
+//std::once_flag jh_utility::FileLogger::m_onceFlag{};
 
 
 // 종료 시 메모리 릭이 나지만, 로그는 마지막까지 찍어야 하기에 놔둔다.
-jh_utility::FileLogger& jh_utility::FileLogger::GetInstance()
-{
-	static FileLogger instance;
-	//std::call_once(m_onceFlag, []() {m_pInstance = new FileLogger(); 		});
-
-	return instance;
-}
+//jh_utility::FileLogger& jh_utility::FileLogger::GetInstance()
+//{
+//	static FileLogger instance;
+//	//std::call_once(m_onceFlag, []() {m_pInstance = new FileLogger(); 		});
+//
+//	return instance;
+//}
 
 jh_utility::FileLogger::FileLogger() : m_llLogCounter(0), m_wszCommonFilePath{}
 {

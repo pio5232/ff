@@ -66,7 +66,7 @@ void jh_content::LobbyLanSystem::Stop()
 		{
 			DWORD getLastError = GetLastError();
 
-			_LOG(L"LobbyLanSystem", LOG_LEVEL_WARNING, L"[LobbyLanSystem - Stop] 로직 스레드 종료 오류 GetLastError : [%u]", getLastError);
+			_LOG(LOBBY_LAN_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[LobbyLanSystem - Stop] 로직 스레드 종료 오류 GetLastError : [%u]", getLastError);
 
 			jh_utility::CrashDump::Crash();
 		}
@@ -85,11 +85,11 @@ void jh_content::LobbyLanSystem::Init()
 	m_packetFuncsDic[jh_network::GAME_SERVER_SETTING_REQUEST_PACKET] = &LobbyLanSystem::HandleGameSettingRequestPacket; // completePacket
 
 	LPVOID param = this;
-	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbySystem::StaticLogicProxy, param, 0, nullptr));
+	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbyLanSystem::StaticLogicProxy, param, 0, nullptr));
 
 	if (nullptr == m_hLogicThread)
 	{
-		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"Lobby System - Logic Handle is NULL");
+		_LOG(LOBBY_LAN_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[LobbyLanSystem] - 로직 핸들이 존재하지 않습니다.");
 		jh_utility::CrashDump::Crash();
 	}
 }

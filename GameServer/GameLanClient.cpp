@@ -63,6 +63,8 @@ void jh_content::GameLanClient::OnRecv(ULONGLONG sessionId, PacketPtr packet, US
 
 void jh_content::GameLanClient::OnConnected(ULONGLONG sessionId)
 {
+	_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[Worker - m_connectOverlapped] - 세션이 연결되었습니다. Session ID [0x%0x]", sessionId);
+
 	PacketPtr settingReqPkt = jh_content::PacketBuilder::BuildGameServerSettingRequestPacket();
 	SendPacket(sessionId, settingReqPkt);
 }

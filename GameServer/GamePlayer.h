@@ -8,7 +8,7 @@ namespace jh_content
 	class GamePlayer : public Player
 	{
 	public:
-		GamePlayer(UserPtr ownerUser, GameWorld* worldPtr); // User.
+		GamePlayer(std::weak_ptr<class jh_content::User> ownerUser, GameWorld* worldPtr); // User.
 		~GamePlayer() { aliveGamePlayerCount.fetch_sub(1); }
 
 		virtual void Update(float delta);

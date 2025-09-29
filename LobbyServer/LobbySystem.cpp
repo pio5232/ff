@@ -33,7 +33,7 @@ void jh_content::LobbySystem::Init()
 
 	if (nullptr == m_hLogicThread)
 	{
-		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"Lobby System - Logic Handle is NULL");
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Lobby System] - 로직 핸들이 존재하지 않습니다.");
 		jh_utility::CrashDump::Crash();
 	}
 }
@@ -615,7 +615,7 @@ void jh_content::LobbySystem::HandleLanInfoNotify(ULONGLONG lanSessionId, Packet
 	wprintf(L"Room : [ %d ]\n", roomNum);
 	wprintf(L"xorToken : [ %llu ], After : [%llu]\n", xorToken, xorToken ^ xorTokenKey);
 
-	PacketPtr sendBuffer = jh_content::PacketBuilder::BuildLanInfoPacket(ipStr, port, roomNum, xorToken);// C_Network::BufferMaker::MakeSendBuffer(sizeof(lanInfoPacket));
+	PacketPtr sendBuffer = jh_content::PacketBuilder::BuildLanInfoPacket(ipStr, port, roomNum, xorToken ^ xorTokenKey);// C_Network::BufferMaker::MakeSendBuffer(sizeof(lanInfoPacket));
 
 	RoomPtr roomPtr = m_pRoomManager->GetRoom(roomNum);
 

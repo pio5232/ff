@@ -158,6 +158,17 @@ void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 
 GamePlayerPtr jh_content::GameWorld::CreateGamePlayer()
 {
+	SRWLockGuard lockGuard(&_playerLock);
+
+	GamePlayerPtr gamePlayerPtr = MakeShared<GamePlayer>(gameSessionPtr, this);
+
+	_idToPlayerDic.insert({ gameSessionPtr->GetUserId(), gamePlayerPtr });
+
+	_playerCount.fetch_add(1);
+
+	printf("CreatePlayer - GameSession User ID = [ %llu ]\n ", gameSessionPtr->GetUserId());
+	return gamePlayerPtr;
+
 	return GamePlayerPtr();
 }
 

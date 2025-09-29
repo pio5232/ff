@@ -4,9 +4,11 @@ namespace jh_utility
 	class SerializationBuffer;
 	class Job;
 	class SessionConnectionEvent;
+	class FileLogger;
 }
 
 extern jh_memory::MemoryAllocator* g_memAllocator;
+extern jh_utility::FileLogger* g_logger;
 //extern jh_utility::NodeMemoryPool<jh_utility::SerializationBuffer>* g_packetPool;
 
 // TODO : 에러터진다.. 수정하자
