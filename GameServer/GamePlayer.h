@@ -13,6 +13,7 @@ namespace jh_content
 
 		virtual void Update(float delta);
 
+		static ULONGLONG GetAliveGamePlayerCount() { return aliveGamePlayerCount.load(); }
 		//ULONGLONG GetUserId() const { return _userId; }
 		//GameSessionPtr GetOwnerSession() { return _ownerSession.lock(); }
 
@@ -22,18 +23,16 @@ namespace jh_content
 		void MoveStop(const Vector3& clientMoveStopPos, float clientMoveStopRotY);
 
 		void SetAttackState();
-		static int GetAliveGamePlayerCount() { return aliveGamePlayerCount.load(); }
 
 		bool GetWasInVictoryZone() const { return m_bWasInVictoryZone; }
 		void SetWasInVictoryZone(bool value) { m_bWasInVictoryZone = value; }
 
 		UserPtr GetOwnerUser() const { return m_ownerUser.lock(); }
 		
-		static alignas(64) std::atomic<int> aliveGamePlayerCount;
 	private:
-		//static std::atomic<int> aliveGamePlayerCount;
+		static alignas(64) std::atomic<int> aliveGamePlayerCount;
 
-		//void SyncPos(const Vector3& clientPos);
+		void CheckSync(const Vector3& clientPos);
 		std::weak_ptr<class jh_content::User> m_ownerUser;
 
 		bool m_bWasInVictoryZone;

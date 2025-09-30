@@ -49,7 +49,6 @@ namespace jh_network
 		virtual void BeginAction() {};
 		virtual void EndAction() {};
 
-
 		virtual bool OnConnectionRequest(const SOCKADDR_IN& clientInfo);
 		virtual void OnError(int errCode, WCHAR* cause);
 

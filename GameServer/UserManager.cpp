@@ -110,6 +110,8 @@ UserPtr jh_content::UserManager::GetUserByUserId(ULONGLONG userId)
 	if (iter != m_userIdToUserUMap.end())
 		return iter->second;
 
+	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserByUserId] - 유저 검색 성공. UserId : [%llu]", userId);
+
 	return nullptr;
 }
 
@@ -120,6 +122,8 @@ UserPtr jh_content::UserManager::GetUserBySessionId(ULONGLONG sessionId)
 	if (iter != m_sessionIdToUserUMap.end())
 		return iter->second;
 
+	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserBySessionId] - 세션 검색 성공. SessionId : [%llu]", sessionId);
+
 	return nullptr;
 }
 
@@ -127,8 +131,10 @@ UserPtr jh_content::UserManager::GetUserByEntityId(ULONGLONG entityId)
 {
 	std::unordered_map<ULONGLONG, UserPtr>::iterator iter = m_entityIdToUserUMap.find(entityId);
 
-	if (iter != m_sessionIdToUserUMap.end())
+	if (iter != m_entityIdToUserUMap.end())
 		return iter->second;
+
+	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserByEntityId] - 개체 검색 성공. EntityId : [%llu]", entityId);
 
 	return nullptr;
 }

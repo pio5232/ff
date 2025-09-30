@@ -127,7 +127,7 @@ int main()
 
 		gameServer.Monitor();
 		wprintf(L"-------------------------------------------------\n");
-		wprintf(L" [Content] Total Users : %d\n", jh_content::GamePlayer::GetAliveGamePlayerCount());
+		wprintf(L" [Content] Total Users : %llu\n", jh_content::GamePlayer::GetAliveGamePlayerCount());
 		wprintf(L" [Content] Total Rooms : %d\n", jh_content::User::GetAliveGameUserCount());
 		wprintf(L"=================================================\n\n\n");
 

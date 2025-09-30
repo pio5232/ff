@@ -27,8 +27,8 @@ namespace jh_content
 
 		//WorldChatPtr GetWorldChat() { return _worldChat; }
 
-		void SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr packet);
-		void SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr packet);
+		void SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr& packet);
+		void SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr& packet);
 
 		void CleanUpSpectatorEntities();
 		void SendToSpectatorEntities(PacketPtr& packet);
@@ -39,9 +39,11 @@ namespace jh_content
 		void ProcessAttack(GamePlayerPtr attacker);
 
 		void CreateAI(class jh_content::GameWorld* worldPtr);
-		GamePlayerPtr CreateGamePlayer();
+		GamePlayerPtr CreateGamePlayer(UserPtr userPtr);
 
 		void SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr);
+
+		void BroadCast(PacketPtr& packetPtr);
 
 	public:
 		void CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr);
@@ -54,7 +56,6 @@ namespace jh_content
 
 		ULONGLONG m_ullExpectedWinnerId = 0;
 		ULONGLONG m_ullExpectedWinTime = MAXULONGLONG;
-		volatile bool m_bIsGameRunning;
 
 	private:
 		SendPacketFunc m_sendPacketFunc;

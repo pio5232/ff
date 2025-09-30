@@ -77,6 +77,9 @@ void jh_content::Player::SendPositionUpdate()
 {
 	Vector3 currentPos = m_transformComponent.GetPosConst();
 
+	//if ((currentPos - m_lastUpdatePos).sqrMagnitude() < 0.01f)
+	//	return;
+	
 	if ((currentPos - m_lastUpdatePos).sqrMagnitude() < 0.01f)
 		return;
 
@@ -85,4 +88,6 @@ void jh_content::Player::SendPositionUpdate()
 	m_pWorldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
 
 	m_lastUpdatePos = currentPos;
+
+	printf("SendPositionUpdate\n");
 }

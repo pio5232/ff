@@ -68,7 +68,7 @@ const USHORT defaultAttackDamage = 1;
 
 const float defaultAttackRange = 1.6f;
 
-const float defaultErrorRange = 3.0f; // 오차 범위
+const float defaultErrorRange = 0.5f; // 오차 범위
 const float posUpdateInterval = 0.2f;
 
 const float attackDuration = 0.8f;

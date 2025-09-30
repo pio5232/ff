@@ -10,7 +10,7 @@ jh_content::Entity::Entity(EntityType type) : m_entityType(type), m_transformCom
 
 	printf("My ID : %llu\n", m_ullEntityId);
 
-	Vector3 position = m_transformComponent.GetPosConst();
+	const Vector3& position = m_transformComponent.GetPosConst();
 	m_curSector.m_iX = position.x / sectorCriteriaSize + 1;
 	m_curSector.m_iZ = position.z / sectorCriteriaSize + 1;
 
@@ -26,7 +26,7 @@ jh_content::Entity::Entity(EntityType type, const Vector3& startPos) : m_entityT
 
 	printf("My ID : %llu\n", m_ullEntityId);
 
-	Vector3 position = m_transformComponent.GetPosConst();
+	const Vector3& position = m_transformComponent.GetPosConst();
 	m_curSector.m_iX = position.x / sectorCriteriaSize + 1;
 	m_curSector.m_iZ = position.z / sectorCriteriaSize + 1;
 
@@ -37,7 +37,7 @@ bool jh_content::Entity::IsSectorUpdated()
 {
 	m_prevSector = m_curSector;
 
-	Vector3 position = m_transformComponent.GetPosConst();
+	const Vector3& position = m_transformComponent.GetPosConst();
 
 	m_curSector.m_iX = position.x / sectorCriteriaSize + 1;
 	m_curSector.m_iZ = position.z / sectorCriteriaSize + 1;

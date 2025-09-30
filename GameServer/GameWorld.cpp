@@ -12,8 +12,8 @@
 #include "UserManager.h"
 #include "User.h"
 #include "SectorManager.h"
-
-jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc) : m_bIsGameRunning(true), m_bIsUpdateRunning(false), m_fDeltaSum(0), m_pUserManager(userManager), m_sendPacketFunc(sendPacketFunc)
+#include "Memory.h"
+jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc) : m_bIsUpdateRunning(false), m_fDeltaSum(0), m_pUserManager(userManager), m_sendPacketFunc(sendPacketFunc)
 {
 	// entity ID를 통해서 Send를 가능하게 하는 작업을 전달한다.
 	auto sectorSendFunc = [this](ULONGLONG entityId, PacketPtr& packetPtr) {
@@ -39,10 +39,10 @@ jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPa
 
 jh_content::GameWorld::~GameWorld()
 {
-	m_aliveEntityDic.clear();
-	m_aliveEntityArr.clear();
-	m_aliveEntityToVectorIdxDic.clear();
-
+	if (true == m_bIsUpdateRunning.load())
+	{
+		Stop();
+	}
 }
 
 void jh_content::GameWorld::StartGame()
@@ -62,6 +62,8 @@ void jh_content::GameWorld::StartGame()
 
 void jh_content::GameWorld::Stop()
 {
+	m_bIsUpdateRunning.store(false);
+
 	m_aliveEntityDic.clear();
 	m_aliveEntityArr.clear();
 	m_aliveEntityToVectorIdxDic.clear();
@@ -97,13 +99,14 @@ void jh_content::GameWorld::Update(float deltaTime)
 
 				CheckVictoryZoneEntry(gamePlayer);
 			}
+
+			//if(entity->GetType() == Entity::EntityType::GamePlayer)
+			//	printf("entity Pos : [%0.3f %0.3f %0.3f]\n", entity->GetPosition().x, entity->GetPosition().y, entity->GetPosition().z);
 		}
+		//printf("\n\n");
 
 		m_fDeltaSum -= fixedDeltaTime;
 	}
-
-
-	printf("Update Thread Exit...\n");
 }
 
 
@@ -156,20 +159,12 @@ void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 
 }
 
-GamePlayerPtr jh_content::GameWorld::CreateGamePlayer()
+GamePlayerPtr jh_content::GameWorld::CreateGamePlayer(UserPtr userPtr)
 {
-	SRWLockGuard lockGuard(&_playerLock);
+	GamePlayerPtr gamePlayerPtr = MakeShared<jh_content::GamePlayer>(g_memAllocator, userPtr, this);
 
-	GamePlayerPtr gamePlayerPtr = MakeShared<GamePlayer>(gameSessionPtr, this);
-
-	_idToPlayerDic.insert({ gameSessionPtr->GetUserId(), gamePlayerPtr });
-
-	_playerCount.fetch_add(1);
-
-	printf("CreatePlayer - GameSession User ID = [ %llu ]\n ", gameSessionPtr->GetUserId());
+	printf("CreatePlayer - GameSession User ID = [ %llu ]\n ", gamePlayerPtr->GetEntityId());
 	return gamePlayerPtr;
-
-	return GamePlayerPtr();
 }
 
 void jh_content::GameWorld::SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr)
@@ -183,6 +178,12 @@ void jh_content::GameWorld::SendToEntity(ULONGLONG entityId, PacketPtr& packetPt
 
 	m_sendPacketFunc(sessionId, packetPtr);
 }
+
+void jh_content::GameWorld::BroadCast(PacketPtr& packetPtr)
+{
+	m_pUserManager->Broadcast(packetPtr);
+}
+
 
 void jh_content::GameWorld::AddEntity(EntityPtr entityPtr)
 {
@@ -279,14 +280,14 @@ void jh_content::GameWorld::SetDSCount(USHORT predMaxCnt)
 	m_aliveEntityToVectorIdxDic.reserve(predMaxCnt);
 }
 
-void jh_content::GameWorld::SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr packet)
+void jh_content::GameWorld::SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr& packet)
 {
 	m_pSectorManager->SendPacketAroundSector(sector, packet);
 
 	SendToSpectatorEntities(packet);
 }
 
-void jh_content::GameWorld::SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr packet)
+void jh_content::GameWorld::SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr& packet)
 {
 	m_pSectorManager->SendPacketAroundSector(sectorX, sectorZ, packet);
 
@@ -420,14 +421,15 @@ void jh_content::GameWorld::CheckWinner()
 		m_pUserManager->Broadcast(sendBuffer);
 		//UserManager::GetInstance().SendToAllPlayer(sendBuffer);
 
-		m_bIsGameRunning = false;
+		Stop();
+		//m_bIsGameRunning = false;
 		return;
 	}
 
 	TimerAction timerAction;
 	timerAction.executeTick = now + 2000;
 
-	timerAction.action = [this]() {this->CheckWinner(); };
+	timerAction.action = [this]() {this->CheckWinner();};
 
 	TryEnqueueTimerAction(std::move(timerAction));
 }

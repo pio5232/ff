@@ -31,9 +31,9 @@ namespace jh_content
 		std::unique_ptr<PlayerStateController> m_pStateController;
 
 		float m_fPosUpdateInterval;
+		class GameWorld* m_pWorldPtr;
 	private:
 		Vector3 m_lastUpdatePos;
-		class GameWorld* m_pWorldPtr;
 
 	};
 }

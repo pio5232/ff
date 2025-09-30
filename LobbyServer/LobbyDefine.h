@@ -41,7 +41,7 @@ namespace jh_content
 	#define MODE L"Release"
 #endif // DEBUG	
 
-#define TEST
+//#define TEST
 
 #ifdef TEST
 #define GAME_FILE_PATH L"..\\Exe\\" MODE "\\GameServer.exe"

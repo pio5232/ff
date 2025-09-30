@@ -111,7 +111,7 @@ void jh_content::GameSystem::GameLogic()
 		if (deltaTime > limitDeltaTime)
 			deltaTime = limitDeltaTime;
 
-		
+
 		// 패킷 처리.
 		ProcessNetJob();
 
@@ -125,13 +125,8 @@ void jh_content::GameSystem::GameLogic()
 		m_pGameWorld->ProcessTimerActions();
 
 		deltaSum += deltaTime;
-		
-		if (deltaSum >= fixedDeltaTime)
-		{ 
-			m_pGameWorld->Update(deltaTime);
 
-			deltaSum -= fixedDeltaTime;
-		}
+		m_pGameWorld->Update(deltaTime);
 
 		Sleep(0);
 	}
@@ -263,7 +258,7 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 	PacketPtr enterGameResponsePkt = jh_content::PacketBuilder::BuildEnterGameResponsePacket();
 	m_pOwner->SendPacket(sessionId, enterGameResponsePkt);
 
-	GamePlayerPtr newPlayer = m_pGameWorld->CreateGamePlayer();
+	GamePlayerPtr newPlayer = m_pGameWorld->CreateGamePlayer(newUser);
 
 	newUser->SetPlayer(newPlayer);
 
