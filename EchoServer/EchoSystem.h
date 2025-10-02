@@ -61,7 +61,7 @@ namespace jh_content
 		ErrorCode ProcessEchoPacket(LONGLONG sessionId,PacketPtr& packet);
 
 		std::unordered_map<DWORD, PacketFunc> m_packetFuncsDic;
-		std::unique_ptr<jh_content::UserManager> m_pUserManager;
+		//std::unique_ptr<jh_content::UserManager> m_pUserManager;
 
 		jh_utility::LockQueue<JobPtr> m_netJobQueue;
 		jh_utility::LockQueue<SessionConnectionEventPtr> m_sessionConnEventQueue;

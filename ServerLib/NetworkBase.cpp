@@ -7,7 +7,7 @@
 #include "ws2tcpip.h"
 #include "Session.h"
 #include "Memory.h"
-//#define ECHO
+#define ECHO
 
 #pragma comment (lib, "ws2_32.lib")
 	/*-----------------------

@@ -10,7 +10,7 @@ jh_content::EchoSystem::EchoSystem(jh_network::IocpServer* owner) : m_pOwner(own
 		jh_utility::CrashDump::Crash();
 	}
 
-	m_pUserManager = std::unique_ptr<jh_content::UserManager>();
+	//m_pUserManager = std::unique_ptr<jh_content::UserManager>();
 }
 
 jh_content::EchoSystem::~EchoSystem()
@@ -19,7 +19,7 @@ jh_content::EchoSystem::~EchoSystem()
 
 void jh_content::EchoSystem::Init()
 {
-	m_pUserManager->Init();
+	//m_pUserManager->Init();
 
 	m_packetFuncsDic.clear();
 
