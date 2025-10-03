@@ -1,0 +1,126 @@
+#include "pch.h"
+#include "DummyPacketBuilder.h"
+#include "Memory.h"
+
+PacketPtr jh_content::DummyPacketBuilder::BuildLoginRequestPacket()
+{
+    jh_network::LogInRequestPacket logInReqPkt;
+    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(logInReqPkt));
+
+    *buffer << logInReqPkt.size << logInReqPkt.type << (ULONGLONG)1 << (ULONGLONG)2;
+
+    return buffer;
+}
+
+PacketPtr jh_content::DummyPacketBuilder::BuildHeartbeatPacket()
+{
+    jh_network::HeartbeatPacket hbPkt;
+
+    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(hbPkt));
+
+    *buffer << hbPkt.size << hbPkt.type << jh_utility::GetTimeStamp();
+    
+    return buffer;
+}
+
+PacketPtr jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket()
+{
+    jh_network::MakeRoomRequestPacket makeRoomRequestPkt;
+
+    static LONGLONG roomNumGen = 0;
+
+    LONGLONG roomNum = InterlockedIncrement64(&roomNumGen);
+    WCHAR roomName[ROOM_NAME_MAX_LEN]{};
+
+    swprintf_s(roomName, ROOM_NAME_MAX_LEN, L"R_%lld", roomNum);
+
+    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(makeRoomRequestPkt));
+
+    *buffer << makeRoomRequestPkt.size << makeRoomRequestPkt.type;
+
+    buffer->PutData(reinterpret_cast<const char*>(roomName), ROOM_NAME_MAX_LEN * MESSAGE_SIZE);
+
+    return buffer;
+}
+
+PacketPtr jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(USHORT roomNum,const WCHAR roomName)
+{
+    jh_network::EnterRoomRequestPacket enterRoomRequestPkt;
+    
+    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(enterRoomRequestPkt));
+
+    *buffer << enterRoomRequestPkt.size << enterRoomRequestPkt.type << roomNum;
+
+    buffer->PutData(reinterpret_cast<const char*>(roomName), ROOM_NAME_MAX_LEN * MESSAGE_SIZE);
+
+    return buffer;
+}
+
+PacketPtr jh_content::DummyPacketBuilder::BuildLeaveRoomRequestPacket(USHORT roomNum, const WCHAR roomName)
+{
+    jh_network::LeaveRoomRequestPacket leaveRoomRequestPkt;
+
+    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(leaveRoomRequestPkt));
+
+    *buffer << leaveRoomRequestPkt.size << leaveRoomRequestPkt.type << roomNum;
+
+    buffer->PutData(reinterpret_cast<const char*>(roomName), ROOM_NAME_MAX_LEN * MESSAGE_SIZE);
+
+    return buffer;
+}
+
+PacketPtr jh_content::DummyPacketBuilder::BuildChatRequestPacket(USHORT roomNum)
+{
+    static const WCHAR* dummyChattingMsg[] =
+    {
+        L"안녕하세요",
+        L"반갑습니다.",
+        L"ABNCMXNMFNDMSF",
+        L"스핏츠의 노래가 좋아요",
+        L"아브라카다브라",
+        L"Southside johnny",
+        L"I was a ghost, I was alone (hah)",
+        L"어두워진 (hah), 앞길 속에 (ah)",
+        L"Given the throne, I didn't know how to believe",
+        L"I was the queen that I'm meant to be (oh)",
+        L"I lived two lives, tried to play both sides",
+        L"But I couldn't find my own place (oh, oh)",
+        L"Called a problem child,'cause I got too wild",
+        L"But now that's how I'm",
+        L"gettin'paid, 끝없이 on stage",
+        L"I'm done hidin', now I'm shinin'",
+        L"Like I'm born to be",
+        L"We dreamin'hard, we came so far",
+        L"Now I believe",
+        L"We're goin'up,up,up, it's our moment",
+        L"You know together we're glowin'",
+        L"Gonna be, gonna be golden",
+        L"Oh, I'm done hidin' now I'm shinin'",
+        L"미치도록 사랑했던",
+        L"지겹도록 다투었던 네가 먼저 떠나고",
+        L"여긴 온종일 비가 왔어",
+        L"금세 턱 끝까지 차올랐고 숨이 막혀와",
+        L"Oh, 내 맘이란 추는 나를 더 깊게",
+        L"더 깊게 붙잡아",
+        L"Oh, I'm Drowning",
+        L"It's raining all day, yeah - yeah (yeah)",
+        L"I can't (yeah) breathe"
+    };
+
+    int cnt = sizeof(dummyChattingMsg) / sizeof(dummyChattingMsg[0]);
+
+    int idx = rand() % cnt;
+
+    USHORT msgLen = wcslen(dummyChattingMsg[idx]) * 2;
+
+    // ROOMNUM, MSGLEN, MSG
+    USHORT pktSize = sizeof(USHORT) * 2 + msgLen;
+
+    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(jh_network::PacketHeader) + pktSize);
+
+    *buffer << pktSize << static_cast<USHORT>(jh_network::CHAT_NOTIFY_PACKET) << roomNum << msgLen;
+
+    buffer->PutData(reinterpret_cast<const char*>(dummyChattingMsg[idx]), msgLen);
+
+    return buffer;
+}
