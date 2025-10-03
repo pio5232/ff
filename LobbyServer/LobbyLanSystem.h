@@ -10,7 +10,7 @@ namespace jh_content
 		using PacketFunc = ErrorCode(LobbyLanSystem::*)(ULONGLONG, PacketPtr&);
 	
 	public:	
-		LobbyLanSystem(jh_network::IocpServer* owner) : m_pOwner(owner), m_hLogicThread(nullptr), m_netJobQueue(), m_pLobbySystem(nullptr),m_bRunningFlag(true) {}
+		LobbyLanSystem(jh_network::IocpServer* owner) : m_pOwner(owner), m_hLogicThread(nullptr), m_netJobQueue(), m_pLobbySystem(nullptr), m_bRunningFlag(true), m_hJobEvent(nullptr) {}
 		
 		~LobbyLanSystem();
 		
@@ -21,6 +21,8 @@ namespace jh_content
 		void EnqueueJob(JobPtr& job)
 		{
 			m_netJobQueue.Push(job);
+
+			SetEvent(m_hJobEvent);
 		}
 
 		static unsigned WINAPI StaticLogicProxy(LPVOID lparam);
@@ -42,6 +44,7 @@ namespace jh_content
 
 		std::atomic<bool> m_bRunningFlag;
 		HANDLE m_hLogicThread;
+		HANDLE m_hJobEvent;
 
 
 	};

@@ -18,7 +18,6 @@ namespace jh_memory
 
         ~MemoryPool()
         {
-            // 소멸 시 할당했던 모든 청크를 해제합니다.
             for (char* chunk : m_chunks)
             {
                 delete[] chunk;
@@ -203,7 +202,7 @@ std::shared_ptr<T> MakeShared(jh_memory::MemoryAllocator* allocator, Args&&... a
     if (allocator == nullptr)
         return nullptr;
 
-    // nullptr이 나오는 경우가 없다. malloc에 실패하면 crash
+    // malloc에 실패하면 crash
     void* rawPtr = allocator->Alloc(sizeof(T));
 
     T* t = new (rawPtr) T(std::forward<Args>(args)...);

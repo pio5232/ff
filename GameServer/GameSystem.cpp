@@ -90,6 +90,9 @@ unsigned jh_content::GameSystem::StaticLogicProxy(LPVOID lparam)
 {
 	jh_content::GameSystem* gameInstance = static_cast<GameSystem*>(lparam);
 
+	if (nullptr == gameInstance)
+		return 0;
+
 	gameInstance->m_bIsRunning = true;
 	gameInstance->GameLogic();
 

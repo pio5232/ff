@@ -15,18 +15,22 @@ void jh_content::LobbySystem::Init()
 	m_packetFuncsDic.clear();
 
 	m_packetFuncsDic[jh_network::ROOM_LIST_REQUEST_PACKET] = &LobbySystem::HandleRoomListRequestPacket;
-
 	m_packetFuncsDic[jh_network::CHAT_TO_ROOM_REQUEST_PACKET] = &LobbySystem::HandleChatToRoomRequestPacket;
-
 	m_packetFuncsDic[jh_network::LOG_IN_REQUEST_PACKET] = &LobbySystem::HandleLogInRequestPacket;
 	m_packetFuncsDic[jh_network::MAKE_ROOM_REQUEST_PACKET] = &LobbySystem::HandleMakeRoomRequestPacket;
-
 	m_packetFuncsDic[jh_network::ENTER_ROOM_REQUEST_PACKET] = &LobbySystem::HandleEnterRoomRequestPacket;
 	m_packetFuncsDic[jh_network::LEAVE_ROOM_REQUEST_PACKET] = &LobbySystem::HandleLeaveRoomRequestPacket;
-
 	m_packetFuncsDic[jh_network::GAME_READY_REQUEST_PACKET] = &LobbySystem::HandleGameReadyRequestPacket;
-
 	m_packetFuncsDic[jh_network::HEART_BEAT_PACKET] = &LobbySystem::HandleHeartbeatPacket;
+
+	m_hJobEvent = CreateEvent(nullptr, false, false, nullptr);
+	if (nullptr == m_hJobEvent)
+	{
+		DWORD lastError = GetLastError();
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Lobby System] - JobEvent 핸들이 존재하지 않습니다. 에러 코드 : [%u]",lastError);
+		
+		jh_utility::CrashDump::Crash();
+	}
 
 	LPVOID param = this;
 	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbySystem::StaticLogicProxy, param, 0, nullptr));
@@ -34,6 +38,7 @@ void jh_content::LobbySystem::Init()
 	if (nullptr == m_hLogicThread)
 	{
 		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Lobby System] - 로직 핸들이 존재하지 않습니다.");
+	
 		jh_utility::CrashDump::Crash();
 	}
 }
@@ -41,6 +46,7 @@ void jh_content::LobbySystem::Init()
 void jh_content::LobbySystem::Stop()
 {
 	m_bRunningFlag.store(false);
+	SetEvent(m_hJobEvent);
 
 	if (nullptr != m_hLogicThread)
 	{
@@ -56,13 +62,15 @@ void jh_content::LobbySystem::Stop()
 		}
 
 		CloseHandle(m_hLogicThread);
-		
+		CloseHandle(m_hJobEvent);
+
 		m_hLogicThread = nullptr;
+		m_hJobEvent = nullptr;
 	}
 
 }
 
-jh_content::LobbySystem::LobbySystem(jh_network::IocpServer* owner, USHORT maxRoomCnt, USHORT maxRoomUserCnt) : m_pOwner(owner), m_hLogicThread(nullptr), m_bRunningFlag(true), m_netJobQueue(), m_sessionConnEventQueue()
+jh_content::LobbySystem::LobbySystem(jh_network::IocpServer* owner, USHORT maxRoomCnt, USHORT maxRoomUserCnt) : m_pOwner(owner), m_hLogicThread(nullptr), m_bRunningFlag(true), m_netJobQueue(), m_sessionConnEventQueue(), m_hJobEvent(nullptr)
 {
 	if (nullptr == m_pOwner)
 	{
@@ -89,6 +97,9 @@ unsigned __stdcall jh_content::LobbySystem::StaticLogicProxy(LPVOID lparam)
 {
 	jh_content::LobbySystem* lobbyInstance = static_cast<LobbySystem*>(lparam);
 
+	if (nullptr == lobbyInstance)
+		return 0;
+
 	lobbyInstance->LobbyLogic();
 
 	return 0;
@@ -101,9 +112,11 @@ void jh_content::LobbySystem::LobbyLogic()
 
 	while (true == m_bRunningFlag)
 	{
+		WaitForSingleObject(m_hJobEvent, 3000);
+		
 		// Session 연결에 대한 처리
 		ProcessSessionConnectionEvent();
-	
+
 		// Packet 처리
 		ProcessNetJob();
 
@@ -111,16 +124,14 @@ void jh_content::LobbySystem::LobbyLogic()
 		ProcessLanRequest();
 
 		ULONGLONG currentTime = jh_utility::GetTimeStamp();
-		
-		if(currentTime - lastUpdateTime > LOBBY_TIMEOUT_CHECK_INTERVAL)
+
+		if (currentTime - lastUpdateTime > LOBBY_TIMEOUT_CHECK_INTERVAL)
 		{
 			m_pOwner->CheckHeartbeatTimeout(currentTime);
-			
+
 			lastUpdateTime = currentTime;
 		}
-
-
-		Sleep(1);
+		
 	}
 }
 

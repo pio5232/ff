@@ -1116,10 +1116,10 @@ void jh_network::IocpClient::WorkerThread()
 
 		if (&sessionPtr->m_connectOverlapped == lpOverlapped)
 		{
-			OnConnected(sessionPtr->m_ullSessionId);
-
 			// api사용을 위해 소켓 정보 초기화
 			setsockopt(sessionPtr->m_socket, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0);
+
+			OnConnected(sessionPtr->m_ullSessionId);
 
 			PostRecv(sessionPtr);
 		}
@@ -1458,34 +1458,36 @@ void jh_network::IocpClient::Connect()
 	serverAddr.sin_port = htons(m_usTargetPort);
 	serverAddr.sin_addr = NetAddress::IpToAddr(m_wszTargetIp);
 
-	Session* session = CreateSession(sock, &serverAddr);
-
-	if (nullptr == session)
+	for (int i = 0; i < m_dwMaxSessionCnt; i++)
 	{
-		closesocket(sock);
+		Session* session = CreateSession(sock, &serverAddr);
 
-		return;
-	}
-
-	//connect에 대한 ioCount 따로 등록
-	InterlockedIncrement(&session->m_lIoCount);
-	
-	DWORD bytes;
-
-	bool retConnectEx = jh_network::NetAddress::lpfnConnectEx(sock, (SOCKADDR*)&serverAddr, sizeof(serverAddr), nullptr, 0, &bytes, &session->m_connectOverlapped);
-
-	if (false == retConnectEx)
-	{
-		int wsaGetLastError = WSAGetLastError();
-
-		if (WSA_IO_PENDING != wsaGetLastError)
+		if (nullptr == session)
 		{
-			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] ConnectEx 실패. Session ID : [%llu]", session->m_ullSessionId);
+			closesocket(sock);
 
-			DecreaseIoCount(session);
+			return;
+		}
+
+		//connect에 대한 ioCount 따로 등록
+		InterlockedIncrement(&session->m_lIoCount);
+
+		DWORD bytes;
+
+		bool retConnectEx = jh_network::NetAddress::lpfnConnectEx(sock, (SOCKADDR*)&serverAddr, sizeof(serverAddr), nullptr, 0, &bytes, &session->m_connectOverlapped);
+
+		if (false == retConnectEx)
+		{
+			int wsaGetLastError = WSAGetLastError();
+
+			if (WSA_IO_PENDING != wsaGetLastError)
+			{
+				_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] ConnectEx 실패. Session ID : [%llu]", session->m_ullSessionId);
+
+				DecreaseIoCount(session);
+			}
 		}
 	}
-
 	//if(jh_network::NetAddress::lpfnConnectEx)
 	// TODO_
 }

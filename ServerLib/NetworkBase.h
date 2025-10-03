@@ -176,6 +176,13 @@ namespace jh_network
 		bool InitSessionArray(DWORD maxSessionCount);
 
 		void ForceStop(); // 강제 종료
+
+		LONG GetSessionCount() { return m_lSessionCount; }
+		LONG GetTotalRecvCount() { return InterlockedExchange(&m_lTotalRecvCount, 0); }
+		LONG GetTotalSendCount() { return InterlockedExchange(&m_lTotalSendCount, 0); }
+		LONG GetTotalAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
+		LONG GetTotalAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
+
 	protected:
 		const WCHAR* const m_pcwszClientName;
 	private:
@@ -202,7 +209,7 @@ namespace jh_network
 		HANDLE* m_hWorkerThreads;
 
 		alignas(64) LONG m_lSessionCount;						// 현재 연결된 Session의 수.
-		alignas(64) LONGLONG m_llTotalConnectedSessionCount;		// 시작부터 연결된 세션의 개수 
+		alignas(64) LONGLONG m_llTotalConnectedSessionCount;		// 시작부터 연결된 세션의 총 합
 
 		alignas(64) LONG m_lTotalRecvCount;						// 1초 동기 + 비동기 RECV 수
 		alignas(64) LONG m_lTotalSendCount;						// 1초 동기 + 비동기 SEND 수

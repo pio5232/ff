@@ -130,7 +130,7 @@ namespace jh_network
 	class ActiveSessionManager
 	{
 	public:
-		ActiveSessionManager(int reserveSize = 10);
+		ActiveSessionManager(int reserveSize = 10); 
 		~ActiveSessionManager();
 
 		void AddActiveSession(Session* sessionPtr);

@@ -17,16 +17,22 @@ namespace jh_content
 		void EnqueueJob(JobPtr& job)
 		{
 			m_netJobQueue.Push(job);
+
+			SetEvent(m_hJobEvent);
 		}
 
 		void EnqueueSessionConnEvent(SessionConnectionEventPtr& sessionConnEventPtr)
 		{
 			m_sessionConnEventQueue.Push(sessionConnEventPtr);
+			
+			SetEvent(m_hJobEvent);
 		}
 
 		void EnqueueLanRequest(LanRequestPtr& lanRequestPtr)
 		{
 			m_lanRequestQueue.Push(lanRequestPtr);
+			
+			SetEvent(m_hJobEvent);
 		}
 
 		static unsigned WINAPI StaticLogicProxy(LPVOID lparam);
@@ -72,6 +78,7 @@ namespace jh_content
 		std::vector<USHORT> m_pendingGameRoomList;
 
 		HANDLE m_hLogicThread;
+		HANDLE m_hJobEvent;
 		jh_network::IocpServer* m_pOwner;
 		std::atomic<bool> m_bRunningFlag;
 

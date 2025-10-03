@@ -37,6 +37,9 @@ unsigned __stdcall jh_content::LobbyLanSystem::StaticLogicProxy(LPVOID lparam)
 {
 	jh_content::LobbyLanSystem* lobbyLanInstance = static_cast<LobbyLanSystem*>(lparam);
 
+	if (nullptr == lobbyLanInstance)
+		return 0;
+
 	lobbyLanInstance->LobbyLanLogic();
 
 	return 0;
@@ -47,16 +50,17 @@ void jh_content::LobbyLanSystem::LobbyLanLogic()
 {
 	while (true == m_bRunningFlag.load())
 	{
+		WaitForSingleObject(m_hJobEvent, INFINITE);
 		// Packet 관련 작업 처리
 		ProcessNetJob();
-
-		Sleep(1);
 	}
 }
 
 void jh_content::LobbyLanSystem::Stop()
 {
 	m_bRunningFlag.store(false);
+
+	SetEvent(m_hJobEvent);
 
 	if (nullptr != m_hLogicThread)
 	{
@@ -72,7 +76,9 @@ void jh_content::LobbyLanSystem::Stop()
 		}
 
 		CloseHandle(m_hLogicThread);
+		CloseHandle(m_hJobEvent);
 
+		m_hJobEvent = nullptr;
 		m_hLogicThread = nullptr;
 	}
 }
@@ -83,6 +89,15 @@ void jh_content::LobbyLanSystem::Init()
 
 	m_packetFuncsDic[jh_network::GAME_SERVER_LAN_INFO_PACKET] = &LobbyLanSystem::HandleLanInfoNotifyPacket; // ip Port
 	m_packetFuncsDic[jh_network::GAME_SERVER_SETTING_REQUEST_PACKET] = &LobbyLanSystem::HandleGameSettingRequestPacket; // completePacket
+
+	m_hJobEvent = CreateEvent(nullptr, false, false, nullptr);
+	if (nullptr == m_hJobEvent)
+	{
+		DWORD lastError = GetLastError();
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[LobbyLanSystem] - JobEvent 핸들이 존재하지 않습니다. 에러 코드 : [%u]", lastError);
+
+		jh_utility::CrashDump::Crash();
+	}
 
 	LPVOID param = this;
 	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbyLanSystem::StaticLogicProxy, param, 0, nullptr));
