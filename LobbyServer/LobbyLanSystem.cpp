@@ -14,10 +14,10 @@ jh_content::LobbyLanSystem::~LobbyLanSystem()
 
 ErrorCode jh_content::LobbyLanSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet)
 {
-	if (m_packetFuncsDic.find(packetType) == m_packetFuncsDic.end())
+	if (m_packetFuncDic.find(packetType) == m_packetFuncDic.end())
 		return ErrorCode::CANNOT_FIND_PACKET_FUNC;
 
-	return (this->*m_packetFuncsDic[packetType])(sessionId, packet);
+	return (this->*m_packetFuncDic[packetType])(sessionId, packet);
 }
 
 void jh_content::LobbyLanSystem::ProcessNetJob()
@@ -85,10 +85,10 @@ void jh_content::LobbyLanSystem::Stop()
 
 void jh_content::LobbyLanSystem::Init()
 {
-	m_packetFuncsDic.clear();
+	m_packetFuncDic.clear();
 
-	m_packetFuncsDic[jh_network::GAME_SERVER_LAN_INFO_PACKET] = &LobbyLanSystem::HandleLanInfoNotifyPacket; // ip Port
-	m_packetFuncsDic[jh_network::GAME_SERVER_SETTING_REQUEST_PACKET] = &LobbyLanSystem::HandleGameSettingRequestPacket; // completePacket
+	m_packetFuncDic[jh_network::GAME_SERVER_LAN_INFO_PACKET] = &LobbyLanSystem::HandleLanInfoNotifyPacket; // ip Port
+	m_packetFuncDic[jh_network::GAME_SERVER_SETTING_REQUEST_PACKET] = &LobbyLanSystem::HandleGameSettingRequestPacket; // completePacket
 
 	m_hJobEvent = CreateEvent(nullptr, false, false, nullptr);
 	if (nullptr == m_hJobEvent)

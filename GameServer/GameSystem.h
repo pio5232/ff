@@ -83,7 +83,7 @@ namespace jh_content
 		std::unique_ptr<class jh_content::GameWorld> m_pGameWorld;
 		std::unique_ptr<class jh_content::UserManager> m_pUserManager;
 
-		std::unordered_map<USHORT, PacketFunc> m_packetFuncsDic;
+		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;
 		
 		jh_network::IocpServer* m_pOwner;
 		HANDLE m_hLogicThread;

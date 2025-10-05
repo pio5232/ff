@@ -5,7 +5,7 @@
 #include "Job.h"
 #include "Memory.h"
 
-jh_content::LobbyServer::LobbyServer() : IocpServer(LOBBY_SERVER_SAVE_FILE_NAME)/*, _canCheckHeartbeat(true)*/
+jh_content::LobbyServer::LobbyServer() : IocpServer{ LOBBY_SERVER_SAVE_FILE_NAME }/*, _canCheckHeartbeat(true)*/
 {
 	jh_utility::Parser parser;
 

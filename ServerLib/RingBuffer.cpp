@@ -30,23 +30,24 @@ bool RingBuffer::Resize(int newCapacity)
 	if (newCapacity < m_iCapacity)
 		return false;
 
-	char* _tmpBuffer = new char[newCapacity];
+	char* tmpBuffer = new char[newCapacity];
 
-	int _iBufferSize = GetUseSize();
-	bool bRet = Dequeue(_tmpBuffer, _iBufferSize);
+	int bufferSize = GetUseSize();
+	bool ret = Dequeue(tmpBuffer, bufferSize);
 
 	delete m_chpBuffer;
 
 	// 새로운 버퍼에 대한 포인터 재구성.
-	m_chpBuffer = _tmpBuffer;
+	m_chpBuffer = tmpBuffer;
 
 	m_iCapacity = newCapacity;
 	m_iFront = 0;
-	m_iRear = _iBufferSize;
+	m_iRear = bufferSize;
 
-	return bRet;
+	return ret;
 }
 
+// Capcity return
 int RingBuffer::GetCapacity()
 {
 	return m_iCapacity;
@@ -54,50 +55,64 @@ int RingBuffer::GetCapacity()
 
 int RingBuffer::GetUseSize()
 {
-	if (m_iFront == (m_iRear + 1) % m_iCapacity)
+	int front = m_iFront;
+	int rear = m_iRear;
+
+	if (front == (rear + 1) % m_iCapacity)
 		return m_iCapacity - 1;
 
-	if (m_iRear >= m_iFront)
-		return m_iRear - m_iFront;
+	if (rear >= front)
+		return rear - front;
 
 	else
-		return m_iCapacity - (m_iFront - m_iRear);
-
+		return m_iCapacity - (front - rear);
 }
 
 int RingBuffer::GetFreeSize()
 {
-	if (m_iFront == (m_iRear + 1) % m_iCapacity)
+	int front = m_iFront;
+	int rear = m_iRear;
+
+	// 이것만 수정함
+	if (front == (rear + 1) % m_iCapacity)
 		return 0;
 
-	else if (m_iRear >= m_iFront)
-		return m_iCapacity - (m_iRear - m_iFront) - 1;
+	else if (rear >= front)
+		return m_iCapacity - (rear - front) - 1;
 	else
-		return m_iFront - m_iRear - 1;
+		return front - rear - 1;
 }
 
+// 결국 empty <-> full은 m_rear == m_front 동일
 int RingBuffer::DirectEnqueueSize() // 
 {
-	if (m_iFront == (m_iRear + 1) % m_iCapacity)
+	int front = m_iFront;
+	int rear = m_iRear;
+
+	if (front == (rear + 1) % m_iCapacity)
 		return 0;
 
-	if (m_iRear >= m_iFront)
+	if (rear >= front)
 	{
-		if (m_iFront == 0)
-			return m_iCapacity - m_iRear - 1;
+		if (front == 0)
+			return m_iCapacity - rear - 1;
 
-		return m_iCapacity - m_iRear;
+		return m_iCapacity - rear;
 	}
 	else
-		return m_iFront - m_iRear - 1;
+		return front - rear - 1;
 }
 
 int RingBuffer::DirectDequeueSize()
 {
-	if (m_iRear >= m_iFront)
-		return m_iRear - m_iFront;
+	int front = m_iFront;
+	int rear = m_iRear;
 
-	return m_iCapacity - m_iFront;
+	if (rear >= front)
+		return rear - front;
+
+	return m_iCapacity - front;
+
 }
 // =============================================
 
@@ -120,7 +135,7 @@ bool RingBuffer::EnqueueRetBool(char* chpData, int iSize)
 
 		int extra_enqueue_size = iSize - direct_enqueue_size;
 
-		memcpy_s(&m_chpBuffer[m_iRear], extra_enqueue_size, chpData + direct_enqueue_size, extra_enqueue_size);
+		memcpy_s(m_chpBuffer, extra_enqueue_size, chpData + direct_enqueue_size, extra_enqueue_size);
 		MoveRear(extra_enqueue_size);
 	}
 	else
@@ -147,7 +162,7 @@ bool RingBuffer::DequeueRetBool(char* chpDest, int iSize) // 저장되어 있는 용량 
 		MoveFront(direct_dequeue_size);
 
 		int extra_dequeue_size = iSize - direct_dequeue_size;
-		memcpy_s(chpDest + direct_dequeue_size, extra_dequeue_size, &m_chpBuffer[m_iFront], extra_dequeue_size);
+		memcpy_s(chpDest + direct_dequeue_size, extra_dequeue_size, m_chpBuffer, extra_dequeue_size);
 		MoveFront(extra_dequeue_size);
 	}
 	else
@@ -160,7 +175,6 @@ bool RingBuffer::DequeueRetBool(char* chpDest, int iSize) // 저장되어 있는 용량 
 
 bool RingBuffer::PeekRetBool(char* chpDest, int iSize) // Deque와 마찬가지로 성공,실패 반환. 임시 프론트 활용.
 {
-
 	if (GetUseSize() < iSize)
 	{
 		return false;
@@ -171,12 +185,9 @@ bool RingBuffer::PeekRetBool(char* chpDest, int iSize) // Deque와 마찬가지로 성�
 	if (iSize > direct_dequeue_size)
 	{
 		memcpy_s(chpDest, direct_dequeue_size, &m_chpBuffer[m_iFront], direct_dequeue_size);
-		int prev_front = m_iFront;
 
 		int extra_dequeue_size = iSize - direct_dequeue_size;
-		memcpy_s(chpDest + direct_dequeue_size, extra_dequeue_size, &m_chpBuffer[m_iFront], extra_dequeue_size);
-
-		m_iFront = prev_front;
+		memcpy_s(chpDest + direct_dequeue_size, extra_dequeue_size, m_chpBuffer, extra_dequeue_size);
 	}
 	else
 	{
@@ -188,12 +199,12 @@ bool RingBuffer::PeekRetBool(char* chpDest, int iSize) // Deque와 마찬가지로 성�
 //===== 막 집어넣는 경우.
 int RingBuffer::Enqueue(char* chpData, int iSize)
 {
-	int _freeSize = GetFreeSize();
+	int freeSize = GetFreeSize();
 	int enqueueSize = iSize;
 
-	if (_freeSize < iSize)
+	if (freeSize < iSize)
 	{
-		enqueueSize = _freeSize;
+		enqueueSize = freeSize;
 	}
 
 	int direct_enqueue_size = DirectEnqueueSize();
@@ -205,7 +216,7 @@ int RingBuffer::Enqueue(char* chpData, int iSize)
 
 		int extra_enqueue_size = enqueueSize - direct_enqueue_size;
 
-		memcpy_s(&m_chpBuffer[m_iRear], extra_enqueue_size, chpData + direct_enqueue_size, extra_enqueue_size);
+		memcpy_s(m_chpBuffer, extra_enqueue_size, chpData + direct_enqueue_size, extra_enqueue_size);
 		MoveRear(extra_enqueue_size);
 	}
 	else
@@ -233,7 +244,7 @@ int RingBuffer::Dequeue(char* chpDest, int iSize)
 		MoveFront(direct_dequeue_size);
 
 		int extra_dequeue_size = dequeueSize - direct_dequeue_size;
-		memcpy_s(chpDest + direct_dequeue_size, extra_dequeue_size, &m_chpBuffer[m_iFront], extra_dequeue_size);
+		memcpy_s(chpDest + direct_dequeue_size, extra_dequeue_size, m_chpBuffer, extra_dequeue_size);
 		MoveFront(extra_dequeue_size);
 	}
 	else
@@ -260,12 +271,10 @@ int RingBuffer::Peek(char* chpDest, int iSize)
 	if (peekSize > direct_dequeue_size)
 	{
 		memcpy_s(chpDest, direct_dequeue_size, &m_chpBuffer[m_iFront], direct_dequeue_size);
-		int prev_front = m_iFront;
+		//MoveFrontRetBool(direct_dequeue_size);
 
 		int extra_dequeue_size = peekSize - direct_dequeue_size;
-		memcpy_s(chpDest + direct_dequeue_size, extra_dequeue_size, &m_chpBuffer[m_iFront], extra_dequeue_size);
-
-		m_iFront = prev_front;
+		memcpy_s(chpDest + direct_dequeue_size, extra_dequeue_size, m_chpBuffer, extra_dequeue_size);
 	}
 	else
 	{
@@ -274,37 +283,9 @@ int RingBuffer::Peek(char* chpDest, int iSize)
 
 	return peekSize;
 }
-int RingBuffer::MoveRear(int iSize)
-{
-	int _imoveSize = iSize;
-	int free_size = GetFreeSize();
-	if (free_size < iSize) // 남아있는 용량 (== GetFreeSize)이 이동시키려는 용량보다 작으면 실패 return;
-	{
-		_imoveSize = m_iCapacity - free_size;
-	}
 
-	m_iRear = (m_iRear + _imoveSize) % m_iCapacity;
 
-	//m_iSize += _imoveSize;
-	return _imoveSize;
-}
-
-int RingBuffer::MoveFront(int iSize)
-{
-	int _imoveSize = iSize;
-	int use_size = GetUseSize();
-	if (use_size < iSize)
-	{
-		_imoveSize = use_size;
-	}
-
-	m_iFront = (m_iFront + _imoveSize) % m_iCapacity;
-
-	//m_iSize -= _imoveSize;
-	return _imoveSize;
-}
-
-bool RingBuffer::MoveRearRetBool(int iSize)
+bool RingBuffer::MoveRear(int iSize)
 {
 	if (GetFreeSize() < iSize) // 남아있는 용량 (== GetFreeSize)이 이동시키려는 용량보다 작으면 실패 return;
 	{
@@ -313,10 +294,11 @@ bool RingBuffer::MoveRearRetBool(int iSize)
 
 	m_iRear = (m_iRear + iSize) % m_iCapacity;
 
+	//m_iSize += iSize;
 	return true;
 }
 
-bool RingBuffer::MoveFrontRetBool(int iSize)
+bool RingBuffer::MoveFront(int iSize)
 {
 	if (GetUseSize() < iSize)
 	{
@@ -324,7 +306,8 @@ bool RingBuffer::MoveFrontRetBool(int iSize)
 	}
 
 	m_iFront = (m_iFront + iSize) % m_iCapacity;
-
+	 
+	//m_iSize -= iSize;
 	return true;
 }
 

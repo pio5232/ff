@@ -35,7 +35,7 @@ namespace jh_content
 		ErrorCode ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet);
 		void ProcessNetJob();
 
-		std::unordered_map<USHORT, PacketFunc> m_packetFuncsDic;
+		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;
 
 		jh_network::IocpServer* m_pOwner;
 		class jh_content::LobbySystem* m_pLobbySystem;

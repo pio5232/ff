@@ -9,9 +9,9 @@
 #include "GamePlayer.h"
 #include "User.h"
 #include "Psapi.h"
-
 #define SERVERPORT 8768
 
+#pragma comment (lib, "Winmm.lib")
 jh_utility::CrashDump dump;
 //std::unique_ptr<jh_network::GameServer> gameServer = nullptr;
 // 
@@ -98,6 +98,7 @@ jh_utility::CrashDump dump;
 
 int main()
 {
+	timeBeginPeriod(1);
 	SET_LOG_LEVEL(LOG_LEVEL_INFO);
 
 	jh_content::GameServer gameServer;

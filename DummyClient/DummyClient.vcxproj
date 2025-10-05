@@ -167,6 +167,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DummyUpdateSystem.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="DummyPacketBuilder.cpp" />
     <ClCompile Include="pch.cpp">
@@ -179,6 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DummyPacketBuilder.h" />
+    <ClInclude Include="DummyUpdateSystem.h" />
     <ClInclude Include="LobbyDummyClient.h" />
     <ClInclude Include="LobbyDummyDefine.h" />
     <ClInclude Include="pch.h" />

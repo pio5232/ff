@@ -216,8 +216,6 @@ namespace jh_network
 		alignas(64) LONG m_lAsyncRecvCount;						// 1초 비동기 RECV 수
 		alignas(64) LONG m_lAsyncSendCount;						// 1초 비동기 SEND 수
 
-	private:
-
 	};
 
 	

@@ -66,7 +66,7 @@ namespace jh_content
 		void HandleLanInfoNotify(ULONGLONG lanSessionId, PacketPtr& lanPacket, jh_network::IocpServer* lanServer);
 		void HandleGameSettingRequest(ULONGLONG lanSessionId, PacketPtr& lanPacket, jh_network::IocpServer* lanServer);
 		
-		std::unordered_map<USHORT, PacketFunc> m_packetFuncsDic;
+		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;
 
 		std::unique_ptr<UserManager> m_pUserManager;
 		std::unique_ptr<jh_content::RoomManager> m_pRoomManager;

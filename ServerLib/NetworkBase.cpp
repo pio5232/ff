@@ -393,7 +393,7 @@ void jh_network::IocpServer::OnError(int errCode, WCHAR* cause)
 ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transferredBytes)
 {
 
-	if (false == sessionPtr->m_recvBuffer.MoveRearRetBool(transferredBytes))
+	if (false == sessionPtr->m_recvBuffer.MoveRear(transferredBytes))
 	{
 		Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Overflow", true);
 
@@ -837,7 +837,7 @@ jh_network::Session* jh_network::IocpServer::CreateSession(SOCKET sock, const SO
 
 void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredBytes)
 {
-	if (false == sessionPtr->m_recvBuffer.MoveRearRetBool(transferredBytes))
+	if (false == sessionPtr->m_recvBuffer.MoveRear(transferredBytes))
 	{
 		Disconnect(sessionPtr->m_ullSessionId);
 
@@ -1199,7 +1199,7 @@ jh_network::Session* jh_network::IocpClient::CreateSession(SOCKET sock, const SO
 	Session* sessionPtr = &m_pClientSessionArr[availableIndex];
 
 	// 세션 초기화
-	static ULONG sessionIdGen = 0;
+	static ULONGLONG sessionIdGen = 0;
 
 	//sessionPtr->m_socket = sock;
 	//sessionPtr->m_targetNetAddr = *pSockAddr;
@@ -1327,6 +1327,7 @@ void jh_network::IocpClient::ForceStop()
 		InterlockedDecrement(&m_lSessionCount);
 	}
 }
+
 
 jh_network::IocpClient::IocpClient(const WCHAR* clientName) : m_pcwszClientName(clientName), m_hCompletionPort(nullptr), m_hWorkerThreads(nullptr), m_wszTargetIp{}, m_pClientSessionArr(nullptr), m_lingerOption{}
 {

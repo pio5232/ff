@@ -4,13 +4,18 @@
 
 using namespace jh_utility;
 
+ULONGLONG SerializationBuffer::g_ullPacketCount = 0;
 
 SerializationBuffer::SerializationBuffer(jh_memory::MemoryAllocator* memoryAllocator, size_t iBufferSize) :m_iBufferCapacity(iBufferSize), m_iFront(0), m_iRear(0), /*m_iDataSize(0),*/ m_pMemoryAllocator(memoryAllocator)
 {
 	if (m_pMemoryAllocator == nullptr)
 		m_chpBuffer = new char[m_iBufferCapacity];
 	else
+	{
 		m_chpBuffer = static_cast<char*>(m_pMemoryAllocator->Alloc(iBufferSize));
+		
+		InterlockedIncrement64((LONGLONG*)&g_ullPacketCount);
+	}
 }
 
 
@@ -19,8 +24,11 @@ SerializationBuffer::~SerializationBuffer()
 	if (m_pMemoryAllocator == nullptr)
 		delete[] m_chpBuffer;
 	else
+	{
 		m_pMemoryAllocator->Free(m_chpBuffer);
-	
+
+		InterlockedDecrement64((LONGLONG*)&g_ullPacketCount);
+	}
 	m_chpBuffer = nullptr;
 }
 

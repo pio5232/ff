@@ -48,10 +48,10 @@ namespace jh_content
 	private:
 		ErrorCode ProcessPacket(LONGLONG sessionId, DWORD packetType, PacketPtr& packet)
 		{
-			if (m_packetFuncsDic.find(packetType) == m_packetFuncsDic.end())
+			if (m_packetFuncDic.find(packetType) == m_packetFuncDic.end())
 				return ErrorCode::CANNOT_FIND_PACKET_FUNC;
 
-			return (this->*m_packetFuncsDic[packetType])(sessionId, packet);
+			return (this->*m_packetFuncDic[packetType])(sessionId, packet);
 		}
 
 		void ProcessNetJob();
@@ -60,7 +60,7 @@ namespace jh_content
 		// 함수 정의
 		ErrorCode ProcessEchoPacket(LONGLONG sessionId,PacketPtr& packet);
 
-		std::unordered_map<DWORD, PacketFunc> m_packetFuncsDic;
+		std::unordered_map<DWORD, PacketFunc> m_packetFuncDic;
 		//std::unique_ptr<jh_content::UserManager> m_pUserManager;
 
 		jh_utility::LockQueue<JobPtr> m_netJobQueue;

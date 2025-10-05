@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "LobbyDummyClient.h"
-#include "LobbyDummyDefine.h"
 #include "DummyPacketBuilder.h"
 
 jh_content::LobbyDummyClient::LobbyDummyClient() : IocpClient(L"LobbyDummy")
@@ -53,17 +52,7 @@ jh_content::LobbyDummyClient::~LobbyDummyClient()
 
 void jh_content::LobbyDummyClient::OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type)
 {
-	switch (type)
-	{
-	case jh_network::PacketType::ROOM_LIST_RESPONSE_PACKET: HandleRoomListResponsePacket(sessionId, dataBuffer); break;
-	case jh_network::PacketType::LOG_IN_RESPONSE_PACKET: HandleLogInResponsePacket(sessionId, dataBuffer); break;
-	case jh_network::PacketType::MAKE_ROOM_RESPONSE_PACKET: HandleMakeRoomResponsePacket(sessionId, dataBuffer); break;
-	case jh_network::PacketType::ENTER_ROOM_RESPONSE_PACKET: HandleEnterRoomResponsePacket(sessionId, dataBuffer); break; 
-	case jh_network::PacketType::CHAT_NOTIFY_PACKET: HandleChatNotifyPacket(sessionId, dataBuffer); break;
-	case jh_network::PacketType::LEAVE_ROOM_RESPONSE_PACKET: HandleLeaveRoomResponsePacket(sessionId, dataBuffer); break;
-		// EnterRoomNotify와 LeaveRoomNotify, GameReady는 더미에서 사용하지 않는다.
 
-	}
 }
 
 void jh_content::LobbyDummyClient::OnConnected(ULONGLONG sessionId)
@@ -77,26 +66,3 @@ void jh_content::LobbyDummyClient::OnConnected(ULONGLONG sessionId)
 
 }
 
-void jh_content::LobbyDummyClient::HandleRoomListResponsePacket(ULONGLONG session, PacketPtr& packet)
-{
-}
-
-void jh_content::LobbyDummyClient::HandleLogInResponsePacket(ULONGLONG session, PacketPtr& packet)
-{
-}
-
-void jh_content::LobbyDummyClient::HandleMakeRoomResponsePacket(ULONGLONG session, PacketPtr& packet)
-{
-}
-
-void jh_content::LobbyDummyClient::HandleEnterRoomResponsePacket(ULONGLONG session, PacketPtr& packet)
-{
-}
-
-void jh_content::LobbyDummyClient::HandleChatNotifyPacket(ULONGLONG session, PacketPtr& packet)
-{
-}
-
-void jh_content::LobbyDummyClient::HandleLeaveRoomResponsePacket(ULONGLONG session, PacketPtr& packet)
-{
-}

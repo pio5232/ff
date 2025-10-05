@@ -11,12 +11,12 @@
 
 void jh_content::GameSystem::Init()
 {
-	m_packetFuncsDic[jh_network::ENTER_GAME_REQUEST_PACKET] = &GameSystem::HandleEnterGameRequestPacket;
-	m_packetFuncsDic[jh_network::GAME_LOAD_COMPELTE_PACKET] = &GameSystem::HandleLoadCompletedPacket;
-	m_packetFuncsDic[jh_network::MOVE_START_REQUEST_PACKET] = &GameSystem::HandleMoveStartRequestPacket;
-	m_packetFuncsDic[jh_network::MOVE_STOP_REQUEST_PACKET] = &GameSystem::HandleMoveStopRequestPacket;
-	m_packetFuncsDic[jh_network::ATTACK_REQUEST_PACKET] = &GameSystem::HandleAttackRequestPacket;
-	m_packetFuncsDic[jh_network::CHAT_TO_ROOM_REQUEST_PACKET] = &GameSystem::HandleChatRequestPacket;
+	m_packetFuncDic[jh_network::ENTER_GAME_REQUEST_PACKET] = &GameSystem::HandleEnterGameRequestPacket;
+	m_packetFuncDic[jh_network::GAME_LOAD_COMPELTE_PACKET] = &GameSystem::HandleLoadCompletedPacket;
+	m_packetFuncDic[jh_network::MOVE_START_REQUEST_PACKET] = &GameSystem::HandleMoveStartRequestPacket;
+	m_packetFuncDic[jh_network::MOVE_STOP_REQUEST_PACKET] = &GameSystem::HandleMoveStopRequestPacket;
+	m_packetFuncDic[jh_network::ATTACK_REQUEST_PACKET] = &GameSystem::HandleAttackRequestPacket;
+	m_packetFuncDic[jh_network::CHAT_TO_ROOM_REQUEST_PACKET] = &GameSystem::HandleChatRequestPacket;
 	
 	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, GameSystem::StaticLogicProxy, (LPVOID)this, 0, nullptr));
 
@@ -139,10 +139,10 @@ void jh_content::GameSystem::GameLogic()
 
 void jh_content::GameSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet)
 {
-	if (m_packetFuncsDic.find(packetType) == m_packetFuncsDic.end())
+	if (m_packetFuncDic.find(packetType) == m_packetFuncDic.end())
 		return;
 
-	(this->*m_packetFuncsDic[packetType])(sessionId, packet);
+	(this->*m_packetFuncDic[packetType])(sessionId, packet);
 	
 	return;
 }

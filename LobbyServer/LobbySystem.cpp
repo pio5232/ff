@@ -12,16 +12,16 @@ void jh_content::LobbySystem::Init()
 
 	m_pUserManager->Init();
 
-	m_packetFuncsDic.clear();
+	m_packetFuncDic.clear();
 
-	m_packetFuncsDic[jh_network::ROOM_LIST_REQUEST_PACKET] = &LobbySystem::HandleRoomListRequestPacket;
-	m_packetFuncsDic[jh_network::CHAT_TO_ROOM_REQUEST_PACKET] = &LobbySystem::HandleChatToRoomRequestPacket;
-	m_packetFuncsDic[jh_network::LOG_IN_REQUEST_PACKET] = &LobbySystem::HandleLogInRequestPacket;
-	m_packetFuncsDic[jh_network::MAKE_ROOM_REQUEST_PACKET] = &LobbySystem::HandleMakeRoomRequestPacket;
-	m_packetFuncsDic[jh_network::ENTER_ROOM_REQUEST_PACKET] = &LobbySystem::HandleEnterRoomRequestPacket;
-	m_packetFuncsDic[jh_network::LEAVE_ROOM_REQUEST_PACKET] = &LobbySystem::HandleLeaveRoomRequestPacket;
-	m_packetFuncsDic[jh_network::GAME_READY_REQUEST_PACKET] = &LobbySystem::HandleGameReadyRequestPacket;
-	m_packetFuncsDic[jh_network::HEART_BEAT_PACKET] = &LobbySystem::HandleHeartbeatPacket;
+	m_packetFuncDic[jh_network::ROOM_LIST_REQUEST_PACKET] = &LobbySystem::HandleRoomListRequestPacket;
+	m_packetFuncDic[jh_network::CHAT_TO_ROOM_REQUEST_PACKET] = &LobbySystem::HandleChatToRoomRequestPacket;
+	m_packetFuncDic[jh_network::LOG_IN_REQUEST_PACKET] = &LobbySystem::HandleLogInRequestPacket;
+	m_packetFuncDic[jh_network::MAKE_ROOM_REQUEST_PACKET] = &LobbySystem::HandleMakeRoomRequestPacket;
+	m_packetFuncDic[jh_network::ENTER_ROOM_REQUEST_PACKET] = &LobbySystem::HandleEnterRoomRequestPacket;
+	m_packetFuncDic[jh_network::LEAVE_ROOM_REQUEST_PACKET] = &LobbySystem::HandleLeaveRoomRequestPacket;
+	m_packetFuncDic[jh_network::GAME_READY_REQUEST_PACKET] = &LobbySystem::HandleGameReadyRequestPacket;
+	m_packetFuncDic[jh_network::HEART_BEAT_PACKET] = &LobbySystem::HandleHeartbeatPacket;
 
 	m_hJobEvent = CreateEvent(nullptr, false, false, nullptr);
 	if (nullptr == m_hJobEvent)
@@ -70,7 +70,8 @@ void jh_content::LobbySystem::Stop()
 
 }
 
-jh_content::LobbySystem::LobbySystem(jh_network::IocpServer* owner, USHORT maxRoomCnt, USHORT maxRoomUserCnt) : m_pOwner(owner), m_hLogicThread(nullptr), m_bRunningFlag(true), m_netJobQueue(), m_sessionConnEventQueue(), m_hJobEvent(nullptr)
+jh_content::LobbySystem::LobbySystem(jh_network::IocpServer* owner, USHORT maxRoomCnt, USHORT maxRoomUserCnt) : m_pOwner{ owner }, m_hLogicThread{ nullptr },
+m_bRunningFlag{ true }, m_netJobQueue{}, m_sessionConnEventQueue{}, m_hJobEvent{ nullptr }
 {
 	if (nullptr == m_pOwner)
 	{
@@ -137,10 +138,10 @@ void jh_content::LobbySystem::LobbyLogic()
 
 ErrorCode jh_content::LobbySystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet)
 {
-	if (m_packetFuncsDic.find(packetType) == m_packetFuncsDic.end())
+	if (m_packetFuncDic.find(packetType) == m_packetFuncDic.end())
 		return ErrorCode::CANNOT_FIND_PACKET_FUNC;
 
-	return (this->*m_packetFuncsDic[packetType])(sessionId, packet);
+	return (this->*m_packetFuncDic[packetType])(sessionId, packet);
 }
 
 void jh_content::LobbySystem::ProcessNetJob()

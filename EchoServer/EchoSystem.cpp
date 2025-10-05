@@ -21,9 +21,9 @@ void jh_content::EchoSystem::Init()
 {
 	//m_pUserManager->Init();
 
-	m_packetFuncsDic.clear();
+	m_packetFuncDic.clear();
 
-	m_packetFuncsDic[0] = &EchoSystem::ProcessEchoPacket;
+	m_packetFuncDic[0] = &EchoSystem::ProcessEchoPacket;
 
 	LPVOID param = this;
 	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, EchoSystem::LogicFunc, param, 0, nullptr));

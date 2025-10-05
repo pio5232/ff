@@ -25,11 +25,8 @@ namespace jh_utility
 		int Dequeue(char* chpDest, int iSize);
 		int Peek(char* chpDest, int iSize);
 
-		int MoveRear(int iSize);
-		int MoveFront(int iSize);
-
-		bool MoveRearRetBool(int iSize);
-		bool MoveFrontRetBool(int iSize);
+		bool MoveRear(int iSize);
+		bool MoveFront(int iSize);
 
 		void ClearBuffer(void);
 		char* GetFrontBufferPtr();

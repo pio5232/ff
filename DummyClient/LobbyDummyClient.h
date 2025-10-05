@@ -14,14 +14,6 @@ namespace jh_content
 		void OnConnected(ULONGLONG sessionId) override;
 
 
-		void HandleRoomListResponsePacket(ULONGLONG session, PacketPtr& packet);
-		void HandleLogInResponsePacket(ULONGLONG session, PacketPtr& packet);
-		void HandleMakeRoomResponsePacket(ULONGLONG session, PacketPtr& packet);
-		void HandleEnterRoomResponsePacket(ULONGLONG session, PacketPtr& packet);
-		void HandleChatNotifyPacket(ULONGLONG session, PacketPtr& packet);
-		void HandleLeaveRoomResponsePacket(ULONGLONG session, PacketPtr& packet);
-
-
 
 	};
 }

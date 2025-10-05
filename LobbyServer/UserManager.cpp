@@ -30,9 +30,9 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId)
 	// 이게 아니라면 아마 ID를 얻어와야겠지?
 	static ULONGLONG newUserId = 4283;
 
-	const static ULONGLONG mod = (ULONGLONG)1 << 63;
-
-	newUserId = (newUserId + 3) % mod;
+	//const static ULONGLONG mod = (ULONGLONG)1 << 63;
+	//newUserId = (newUserId + 3) % mod;
+	newUserId += 3;
 
 	UserPtr userPtr = std::make_shared<jh_content::User>(sessionId, newUserId);
 

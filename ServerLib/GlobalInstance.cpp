@@ -10,10 +10,10 @@ jh_memory::MemoryAllocator* g_memAllocator = nullptr;
 jh_utility::NodeMemoryPool<jh_utility::Job>* g_jobPool;
 jh_utility::NodeMemoryPool<jh_utility::SessionConnectionEvent>* g_systemJobPool;
 
-class CGlobalGen
+class GlobalGenerator
 {
 public:
-	CGlobalGen()
+	GlobalGenerator()
 	{
 
 		g_logger = new jh_utility::FileLogger();
@@ -29,7 +29,7 @@ public:
 
 	}
 
-	~CGlobalGen()
+	~GlobalGenerator()
 	{
 		delete g_memAllocator;
 		//delete g_packetPool;
@@ -38,4 +38,4 @@ public:
 
 		jh_network::NetAddress::Clear();
 	}
-} g_GlobalGen;
+} g_gGlobalGen;

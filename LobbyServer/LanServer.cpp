@@ -98,10 +98,10 @@ void jh_content::LobbyLanServer::SetLobbySystem(jh_content::LobbySystem* lobbySy
 
 //void jh_network::LobbyLanServer::InitPacketFuncs()
 //{
-//	m_packetFuncsDic.clear();
+//	m_packetFuncDic.clear();
 //
-//	m_packetFuncsDic[GAME_SERVER_LAN_INFO_PACKET] = LobbyLanServer::HandleLanInfoNotifyPacket; // ip Port
-//	m_packetFuncsDic[GAME_SERVER_SETTING_REQUEST_PACKET] = LobbyLanServer::HandleGameSettingRequestPacket; // completePacket
+//	m_packetFuncDic[GAME_SERVER_LAN_INFO_PACKET] = LobbyLanServer::HandleLanInfoNotifyPacket; // ip Port
+//	m_packetFuncDic[GAME_SERVER_SETTING_REQUEST_PACKET] = LobbyLanServer::HandleGameSettingRequestPacket; // completePacket
 //
 //}
 //

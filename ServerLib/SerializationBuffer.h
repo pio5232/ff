@@ -106,9 +106,11 @@ namespace jh_utility
 		// 버퍼 Pos 이동
 		int MoveRearPos(int iSize);
 		int MoveFrontPos(int iSize);
-	private:
 
 	public:
+		static ULONGLONG g_ullPacketCount;
+		
+	private:
 		int m_iBufferCapacity;
 		int m_iFront;
 		int m_iRear;
@@ -117,7 +119,5 @@ namespace jh_utility
 		jh_memory::MemoryAllocator* m_pMemoryAllocator;
 	};
 }
-
-
 
 //#endif // !CSerialization
