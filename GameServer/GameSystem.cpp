@@ -47,6 +47,11 @@ void jh_content::GameSystem::Stop()
 		CloseHandle(m_hLogicThread);
 
 		m_hLogicThread = nullptr;
+
+		m_netJobQueue.Clear();
+		m_gameLanRequestQueue.Clear();
+		m_sessionConnEventQueue.Clear();
+
 	}
 
 	m_pGameWorld->Stop();

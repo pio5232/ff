@@ -80,6 +80,7 @@ void jh_content::LobbyLanSystem::Stop()
 
 		m_hJobEvent = nullptr;
 		m_hLogicThread = nullptr;
+		m_netJobQueue.Clear();
 	}
 }
 

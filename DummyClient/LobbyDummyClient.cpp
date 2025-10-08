@@ -13,7 +13,7 @@ jh_content::LobbyDummyClient::LobbyDummyClient() : IocpClient(L"LobbyDummy")
 	USHORT port;
 	USHORT maxSessionCnt;
 	DWORD concurrentWorkerThreadCount;
-
+	
 	USHORT lingerOnOff;
 	USHORT lingerTime;
 	ULONGLONG timeOut;

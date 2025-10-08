@@ -66,6 +66,10 @@ void jh_content::LobbySystem::Stop()
 
 		m_hLogicThread = nullptr;
 		m_hJobEvent = nullptr;
+		
+		m_netJobQueue.Clear();
+		m_sessionConnEventQueue.Clear();
+		m_lanRequestQueue.Clear();
 	}
 
 }
