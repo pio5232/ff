@@ -39,7 +39,7 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId)
 	m_sessionIdToUserUMap[sessionId] = userPtr;
 	m_userIdToUserUMap[newUserId] = userPtr;
 	
-	std::cout << "[CreateUser] UserId : " << newUserId << " SessionID : " << sessionId << "\n";
+	//std::cout << "[CreateUser] UserId : " << newUserId << " SessionID : " << sessionId << "\n";
 	return userPtr;
 }
 

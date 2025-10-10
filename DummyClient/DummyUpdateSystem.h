@@ -53,7 +53,7 @@ namespace jh_content
 		void HandleChatNotifyPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 
-		bool IsValidThreadNum(int threadNum) { return threadNum > 0 && threadNum < LOGIC_THREAD_COUNT; }
+		bool IsValidThreadNum(int threadNum) { return threadNum >= 0 && threadNum < LOGIC_THREAD_COUNT; }
 		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;
 		jh_network::IocpClient* m_pOwner;
 

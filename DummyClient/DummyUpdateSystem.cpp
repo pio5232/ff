@@ -35,7 +35,7 @@ void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 
 		for (DummyPtr& dummy : dummyVec)
 		{
-			if (dummy->m_ullLastUpdatedHeartbeatTime < curTimeStamp)
+			if (curTimeStamp - dummy->m_ullLastUpdatedHeartbeatTime > 5000)
 			{
 				dummy->m_ullLastUpdatedHeartbeatTime = curTimeStamp;
 
@@ -248,6 +248,9 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 		break;
 		case jh_utility::SessionConnectionEventType::DISCONNECT:
 		{
+			if (threadLogicData.m_dummyUmap.find(sessionId) == threadLogicData.m_dummyUmap.end())
+				break;
+
 			DummyPtr dummy = threadLogicData.m_dummyUmap[sessionId];
 
 			threadLogicData.m_dummyUmap.erase(sessionId);
@@ -312,7 +315,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 	}
 	else
 	{
-		int ran = GetRandValue(150, 0);
+		int ran = GetRandValue(250, 0);
 		int randRoomNum = GetRandValue(roomCnt, 0);
 
 		// È®·ü Make,
@@ -324,7 +327,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 		// ¹æ Enter
 		else
 		{
-			PacketPtr enterRoomPkt = jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(randRoomNum, roomInfo[randRoomNum].m_wszRoomName);
+			PacketPtr enterRoomPkt = jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(roomInfo[randRoomNum].m_usRoomNum, roomInfo[randRoomNum].m_wszRoomName);
 			m_pOwner->SendPacket(sessionId, enterRoomPkt);
 		}
 	}

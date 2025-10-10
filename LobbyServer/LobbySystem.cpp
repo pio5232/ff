@@ -271,7 +271,7 @@ ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG session
 
 ErrorCode jh_content::LobbySystem::HandleLogInRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
-	std::cout << "LogIn Request\n";
+	//std::cout << "LogIn Request\n";
 
 	jh_network::LogInRequestPacket clientRequestPacket;
 
@@ -346,7 +346,7 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 
 ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
-	wprintf(L" MakeRoom Request Recv\n");
+	//wprintf(L" MakeRoom Request Recv\n");
 
 	WCHAR roomName[ROOM_NAME_MAX_LEN]{};
 
@@ -373,7 +373,7 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 		*packetBuffer << makeRoomResponsePacket;
 
 		m_pOwner->SendPacket(sessionId, packetBuffer);
-		printf("EnterRoom Response Packet Send -- [bAllow = false]");
+		//printf("EnterRoom Response Packet Send -- [bAllow = false]");
 		
 		return ErrorCode::CREATE_ROOM_FAILED;
 	}
@@ -429,7 +429,7 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 
 		m_pOwner->SendPacket(sessionId, packetPtr);
 
-		printf("Invalid Access - Destroyed Room");
+		//printf("Invalid Access - Destroyed Room");
 		return ErrorCode::CANNOT_FIND_ROOM;
 	}
 
@@ -439,7 +439,7 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 
 		m_pOwner->SendPacket(sessionId, packetPtr);
 
-		printf("EnterRoom - Room name is Diffrent\n");
+		//printf("EnterRoom - Room name is Diffrent\n");
 		return ErrorCode::CANNOT_FIND_ROOM;
 	}
 
@@ -454,7 +454,7 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 
 	ULONGLONG userId = userPtr->GetUserId();
 
-	printf("EnterRoom Response Packet Send  ");
+	//printf("EnterRoom Response Packet Send  ");
 
 	jh_content::Room::RoomEnterResult res = roomPtr->TryEnterRoom(userPtr);
 
@@ -535,7 +535,7 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 
 	if (wcscmp(leaveRoomRequestPacket.roomName, static_cast<const WCHAR*>(roomPtr->GetRoomNamePtr())) != 0)
 	{
-		printf("LeaveRoom - Room name is Diffrent\n");
+		//printf("LeaveRoom - Room name is Diffrent\n");
 		return ErrorCode::CANNOT_FIND_ROOM;
 	}
 
@@ -610,7 +610,7 @@ ErrorCode jh_content::LobbySystem::HandleHeartbeatPacket(ULONGLONG sessionId, Pa
 	ULONGLONG packetTimeStamp;
 
 	*packet >> packetTimeStamp;
-	printf("SessionId : %llu, [comTimeStamp : %llu], [PacketTimeStamp : %llu]\n", sessionId, jh_utility::GetTimeStamp(), packetTimeStamp);
+	//printf("SessionId : %llu, [comTimeStamp : %llu], [PacketTimeStamp : %llu]\n", sessionId, jh_utility::GetTimeStamp(), packetTimeStamp);
 
 	m_pOwner->UpdateHeartbeat(sessionId, packetTimeStamp);
 
