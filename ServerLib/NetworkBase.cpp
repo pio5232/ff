@@ -356,7 +356,8 @@ void jh_network::IocpServer::WorkerThreadFunc()
 		if (false == gqcsRet)
 		{
 			//DecreaseIoCount(sessionPtr);
-
+			InterlockedIncrement(&m_lDisconnectedCount);
+			
 			Disconnect(sessionPtr->m_ullSessionId, L"연결 끊김");
 
 			DecreaseIoCount(sessionPtr);
@@ -1105,8 +1106,9 @@ void jh_network::IocpClient::WorkerThread()
 		// lpOverlapped != nullptr, gqcsRet == false
 		// 작업 도중 연결이 끊겼을 때의 상황이다.
 		if (false == gqcsRet)
-		{
-			wprintf(L"-----------------------------------------------GQCSRET FALSE --------------------------------------------\n");
+		{			
+			InterlockedIncrement(&m_lDisconnectedCount);
+
 			Disconnect(sessionPtr->m_ullSessionId);
 
 			DecreaseIoCount(sessionPtr);
@@ -1143,7 +1145,7 @@ jh_network::Session* jh_network::IocpClient::TryAcquireSession(ULONGLONG session
 {
 	if (sessionId == INVALID_SESSION_ID)
 	{
-		_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[TryAcquireSession] - 유효하지 않은 세션입니다. Session ID [0x%0x]", sessionId);
+		_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[TryAcquireSession] - Invalid Session. Session ID [0x%0x]", sessionId);
 		return nullptr;
 	}
 
@@ -1154,7 +1156,7 @@ jh_network::Session* jh_network::IocpClient::TryAcquireSession(ULONGLONG session
 	if (sessionId != sessionPtr->m_ullSessionId)
 	{
 		// 이미 해제된 세션에 접근하는 것은 아주 정상적인 상태.
-		_LOG(m_pcwszClientName, LOG_LEVEL_DEBUG, L"[TryAcquireSession] - 접근한 세션의 ID가 다릅니다. SessionID : [%lld], SessionIdx : [%lld]", sessionId, sessionIdx);
+		_LOG(m_pcwszClientName, LOG_LEVEL_DEBUG, L"[TryAcquireSession] - Accessed SessionID is Different. SessionID : [%lld], SessionIdx : [%lld]", sessionId, sessionIdx);
 
 		return nullptr;
 	}
@@ -1188,13 +1190,14 @@ jh_network::Session* jh_network::IocpClient::CreateSession(SOCKET sock, const SO
 
 	if (false == m_sessionIndexStack.TryPop(availableIndex))
 	{
-		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L"[CreateSession] 사용할 수 있는 세션이 없습니다. 현재 세션 수 : [%u]", m_lSessionCount);
+		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L"[CreateSession] Available Session Count is 0. Current Session Count : [%u]", m_sessionCount.load());
 
 		return nullptr;
 	}
 
 	// 세션 수를 증가하고.
-	InterlockedIncrement(&m_lSessionCount);
+	//InterlockedIncrement(&m_lSessionCount);
+	m_sessionCount.fetch_add(1);
 
 	Session* sessionPtr = &m_pClientSessionArr[availableIndex];
 
@@ -1222,7 +1225,8 @@ jh_network::Session* jh_network::IocpClient::CreateSession(SOCKET sock, const SO
 	{
 		m_sessionIndexStack.Push(availableIndex);
 
-		InterlockedDecrement(&m_lSessionCount);
+		//InterlockedDecrement(&m_lSessionCount);
+		m_sessionCount.fetch_sub(1);
 
 		_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"CreateSession - Session Register Failed");
 
@@ -1261,7 +1265,7 @@ void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
 		return;
 	}
 
-	//OnDisconnected(sessionId);
+	OnDisconnected(sessionId);
 
 	closesocket(sessionPtr->m_socket);
 
@@ -1269,7 +1273,8 @@ void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
 
 	m_sessionIndexStack.Push(sessionIdx);
 
-	InterlockedDecrement(&m_lSessionCount);
+	//InterlockedDecrement(&m_lSessionCount);
+	m_sessionCount.fetch_sub(1);
 
 	_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[DeleteSession] - 세션이 해제되었습니다.. Session ID [0x%0x]", sessionId);
 
@@ -1324,7 +1329,8 @@ void jh_network::IocpClient::ForceStop()
 		sessionPtr->Reset();
 		m_sessionIndexStack.Push(sessionIdx);
 
-		InterlockedDecrement(&m_lSessionCount);
+		m_sessionCount.fetch_sub(1);
+		//InterlockedDecrement(&m_lSessionCount);
 	}
 }
 
@@ -1338,7 +1344,8 @@ jh_network::IocpClient::IocpClient(const WCHAR* clientName) : m_pcwszClientName(
 
 	//_sessionLog = new SessionLog[sessionLogMax];
 
-	m_lSessionCount = 0;
+	m_lDisconnectedCount = 0;
+	m_sessionCount = 0;
 	m_llTotalConnectedSessionCount = 0;
 
 	m_lAsyncRecvCount = 0;
@@ -1376,13 +1383,15 @@ bool jh_network::IocpClient::Start()
 		}
 	}
 
-	Connect();
+	BeginAction();
 
 	return true;
 }
 
 void jh_network::IocpClient::Stop()
 {
+	EndAction();
+
 	if (nullptr != m_hWorkerThreads)
 	{
 		for(int i =0 ;i< m_dwConcurrentWorkerThreadCount;i++)
@@ -1411,56 +1420,57 @@ void jh_network::IocpClient::Stop()
 	ForceStop();
 }
 
-void jh_network::IocpClient::Connect()
+void jh_network::IocpClient::Connect(int cnt)
 {
-	SOCKET sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED);
-
-	if (INVALID_SOCKET == sock)
-	{
-		int getLastError = WSAGetLastError();
-
-		_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] 유효하지 않은 소켓입니다. GetLastError : [%d]", getLastError);
-
-		closesocket(sock);
-		return;
-	}
-	DWORD setLingerRet = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
-
-	if (SOCKET_ERROR == setLingerRet)
-	{
-		int getLastError = WSAGetLastError();
-
-		_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] SetLingerOpt 실패. GetLastError : [%d]", getLastError);
-
-		closesocket(sock);
-		return;
-	}
-	// connectEx 사용 시 bind 필요
-	sockaddr_in clientAddr{};
-	clientAddr.sin_family = AF_INET;
-	InetPton(AF_INET,m_wszTargetIp, &clientAddr.sin_addr);
-	clientAddr.sin_port = htons(0);
-
-	DWORD bindRet = bind(sock, (SOCKADDR*)&clientAddr, sizeof(SOCKADDR_IN));
-
-	if (SOCKET_ERROR == bindRet)
-	{
-		int getLastError = WSAGetLastError();
-
-		_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] Bind 실패. GetLastError : [%d]", getLastError);
-
-		closesocket(sock);
-
-		return;
-	}
-
 	SOCKADDR_IN serverAddr;
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(m_usTargetPort);
 	serverAddr.sin_addr = NetAddress::IpToAddr(m_wszTargetIp);
 
-	for (int i = 0; i < m_dwMaxSessionCnt; i++)
+	for (int i = 0; i < cnt; i++)
 	{
+
+		SOCKET sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED);
+
+		if (INVALID_SOCKET == sock)
+		{
+			int getLastError = WSAGetLastError();
+
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] 유효하지 않은 소켓입니다. GetLastError : [%d]", getLastError);
+
+			closesocket(sock);
+			return;
+		}
+		DWORD setLingerRet = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
+
+		if (SOCKET_ERROR == setLingerRet)
+		{
+			int getLastError = WSAGetLastError();
+
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] SetLingerOpt 실패. GetLastError : [%d]", getLastError);
+
+			closesocket(sock);
+			return;
+		}
+		// connectEx 사용 시 bind 필요
+		sockaddr_in clientAddr{};
+		clientAddr.sin_family = AF_INET;
+		//InetPton(AF_INET,m_wszTargetIp, &clientAddr.sin_addr);
+		clientAddr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
+		clientAddr.sin_port = htons(0);
+
+		DWORD bindRet = bind(sock, (SOCKADDR*)&clientAddr, sizeof(SOCKADDR_IN));
+
+		if (SOCKET_ERROR == bindRet)
+		{
+			int getLastError = WSAGetLastError();
+
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] Bind 실패. GetLastError : [%d]", getLastError);
+
+			closesocket(sock);
+
+			return;
+		}
 		Session* session = CreateSession(sock, &serverAddr);
 
 		if (nullptr == session)

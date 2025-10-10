@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "LobbyDummyClient.h"
 #include "DummyPacketBuilder.h"
-
+#include "DummyUpdateSystem.h"
+#include "Memory.h"
 jh_content::LobbyDummyClient::LobbyDummyClient() : IocpClient(L"LobbyDummy")
 {
 	jh_utility::Parser parser;
@@ -44,25 +45,49 @@ jh_content::LobbyDummyClient::LobbyDummyClient() : IocpClient(L"LobbyDummy")
 		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[GameLanClient()] - maxSession 초기화 실패");
 		jh_utility::CrashDump::Crash();
 	}
+
+	m_pDummySystem = std::make_unique<jh_content::DummyUpdateSystem>(this);
+	
 }
 
 jh_content::LobbyDummyClient::~LobbyDummyClient()
 {
 }
 
-void jh_content::LobbyDummyClient::OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type)
+void jh_content::LobbyDummyClient::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
 {
+	int threadNum = static_cast<int>(sessionId % LOGIC_THREAD_COUNT);
 
+	JobPtr job = MakeShared<jh_utility::Job>(g_memAllocator, sessionId, type, packet); //MakeJob(sessionId, type, packet);
+
+	m_pDummySystem->EnqueueJob(job, threadNum);
 }
 
 void jh_content::LobbyDummyClient::OnConnected(ULONGLONG sessionId)
 {
-	PacketPtr hbPkt = jh_content::DummyPacketBuilder::BuildHeartbeatPacket();
-	SendPacket(sessionId, hbPkt);
+	int threadNum = static_cast<int>(sessionId % LOGIC_THREAD_COUNT);
 
-	PacketPtr logInReqPkt = jh_content::DummyPacketBuilder::BuildLoginRequestPacket();
+	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memAllocator, sessionId, jh_utility::SessionConnectionEventType::CONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
-	SendPacket(sessionId, logInReqPkt);
+	m_pDummySystem->EnqueueSessionConnEvent(sessionConnEvent, threadNum);
+}
 
+void jh_content::LobbyDummyClient::OnDisconnected(ULONGLONG sessionId)
+{
+	int threadNum = static_cast<int>(sessionId % LOGIC_THREAD_COUNT);
+
+	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memAllocator, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+
+	m_pDummySystem->EnqueueSessionConnEvent(sessionConnEvent, threadNum);
+}
+
+void jh_content::LobbyDummyClient::BeginAction()
+{
+	m_pDummySystem->Init();
+}
+
+void jh_content::LobbyDummyClient::EndAction()
+{
+	m_pDummySystem->Stop();
 }
 

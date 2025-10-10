@@ -32,3 +32,5 @@ Uniform 초기화 => (균일 초기화)
 초기화는 다시 한번 살펴보도록 하고
 
 5.  Dummy Stop에서의 조건을 다시 생각해야함., 또 수많은 역할이 나뉜 상태에서 ProcessNetJob을 하는 주체는 과연 무엇인가? DummyClient가 되는 것인가 그것이 아니라면 LogicData자체의 역할인 것인가? 생각을 좀 해보자.
+
+6. State에 따라 핸들링, 핸들Func 만들고 테스트

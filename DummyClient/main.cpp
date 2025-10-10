@@ -5,11 +5,19 @@
 #include <iostream>
 #include <conio.h>
 #include "LobbyDummyClient.h"
+
+std::atomic<bool> reconnectFlag = true;
+extern std::atomic<bool> clientSendFlag = true;
 int main()
 {
     jh_content::LobbyDummyClient dummyClient;
 
     dummyClient.Start();
+    int maxSessionCnt = dummyClient.GetMaxSessionCount();
+    dummyClient.Connect(maxSessionCnt);
+
+    ULONGLONG prevTime = jh_utility::GetTimeStamp();
+    ULONGLONG curTime;
 
     while (1)
     {
@@ -17,12 +25,56 @@ int main()
         {
             char c = _getch();
 
-            if (c == 'Q' || 'q')
+            if ('Q' == c || 'q' == c)
                 break;
+
+            else if ('S' == c || 's' == c)
+            {
+                bool flag = clientSendFlag.load();
+                clientSendFlag.store(!flag);
+            }
+            else if ('R' == c || 'r' == c)
+            {
+                bool flag = reconnectFlag.load();
+                reconnectFlag.store(!flag);
+            }
         }
 
 
-        Sleep(1);
+        if (true == reconnectFlag.load())
+        {
+            int diff = maxSessionCnt - dummyClient.GetSessionCount();
+
+            if (diff > 0)
+            {
+                int connectCount = diff > 100 ? 100 : diff;
+
+                dummyClient.Connect(connectCount);
+
+                Sleep(200);
+            }
+        }
+
+        curTime = jh_utility::GetTimeStamp();
+        if (curTime - prevTime > 1000)
+        {
+            wprintf(L"=================================================\n");
+            wprintf(L"            DUMMY CLIENT MONITORING\n");
+            wprintf(L"=================================================\n");
+            wprintf(L" Press 'Q' to shut down\n");
+            wprintf(L" Press 'R' to Reconnect, ReconnectMode    : [%s]\n", reconnectFlag ? L"YES" : L"NO");
+            wprintf(L" Press 'S' to SendMode,  SendMode         : [%s]\n", clientSendFlag ? L"YES" : L"NO");
+            wprintf(L"-------------------------------------------------\n");
+
+            wprintf(L"-------------------------------------------------\n");
+            wprintf(L" [Content] MAX Sessions : %d\n", dummyClient.GetMaxSessionCount());
+            wprintf(L" [Content] Total Sessions : %d\n", dummyClient.GetSessionCount());
+            wprintf(L" [Content] Total Dummies : %d\n", DummyData::aliveDummyCount.load());
+            wprintf(L"=================================================\n\n\n");
+            
+            prevTime = curTime;
+        }
+        //Sleep(1000);
     }
 
     GetRandDouble(1.0, 10.0, 2);

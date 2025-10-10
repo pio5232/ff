@@ -216,8 +216,7 @@ void jh_content::GameWorld::RemoveEntity(ULONGLONG entityId)
 	if (entityToVectorIter == m_aliveEntityToVectorIdxDic.end())
 	{
 		// entityDic에는 존재하지만, entityToVectorDic에는 존재하지 않는 상황.. 이상한 상황임
-		// => insert delete가 동일하게 진행되는지 체크 필요
-		printf("Remove Entity - Fatal Error!!!!! Check Please !!!\n");
+		// => insert delete가 동일하게 진행되어야한다.
 		return;
 	}
 

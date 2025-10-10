@@ -126,6 +126,8 @@ namespace jh_network
 		alignas(64) LONG m_lSessionCount;						// 현재 접속중인 세션 수
 		alignas(64) LONGLONG m_llTotalAcceptedSessionCount;		// 시작부터 연결된 세션의 개수 
 
+		alignas(64) LONG m_lDisconnectedCount; // 상대쪽에서 연결을 끊은 횟수
+
 		alignas(64) LONG m_lTotalRecvCount;						// 1초 동기 + 비동기 RECV 수
 		alignas(64) LONG m_lTotalSendCount;						// 1초 동기 + 비동기 SEND 수
 		alignas(64) LONG m_lAsyncRecvCount;						// 1초 비동기 RECV 수
@@ -148,11 +150,11 @@ namespace jh_network
 		bool Start();
 		void Stop();
 	
-		void Connect();
+		void Connect(int cnt);
 		virtual void OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type) = 0;
 
 		virtual void OnConnected(ULONGLONG sessionId) = 0;
-		//virtual void OnDisconnected(ULONGLONG sessionId) = 0;
+		virtual void OnDisconnected(ULONGLONG sessionId) = 0;
 
 		void ProcessRecv(Session* sessionPtr, DWORD transferredBytes);
 		void ProcessSend(Session* sessionPtr, DWORD transferredBytes);
@@ -176,14 +178,17 @@ namespace jh_network
 		bool InitSessionArray(DWORD maxSessionCount);
 
 		void ForceStop(); // 강제 종료
-
-		LONG GetSessionCount() { return m_lSessionCount; }
+		
+		int GetMaxSessionCount() { return m_dwMaxSessionCnt; }
+		LONG GetSessionCount() { return m_sessionCount.load(); }
 		LONG GetTotalRecvCount() { return InterlockedExchange(&m_lTotalRecvCount, 0); }
 		LONG GetTotalSendCount() { return InterlockedExchange(&m_lTotalSendCount, 0); }
 		LONG GetTotalAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
 		LONG GetTotalAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
 
 	protected:
+		virtual void BeginAction() {}
+		virtual void EndAction() {}
 		const WCHAR* const m_pcwszClientName;
 	private:
 		// 설정 값
@@ -208,8 +213,10 @@ namespace jh_network
 		HANDLE m_hCompletionPort;
 		HANDLE* m_hWorkerThreads;
 
-		alignas(64) LONG m_lSessionCount;						// 현재 연결된 Session의 수.
+		alignas(64) std::atomic<LONG> m_sessionCount;						// 현재 연결된 Session의 수.
 		alignas(64) LONGLONG m_llTotalConnectedSessionCount;		// 시작부터 연결된 세션의 총 합
+
+		alignas(64) LONG m_lDisconnectedCount; // 상대쪽에서 연결을 끊은 횟수
 
 		alignas(64) LONG m_lTotalRecvCount;						// 1초 동기 + 비동기 RECV 수
 		alignas(64) LONG m_lTotalSendCount;						// 1초 동기 + 비동기 SEND 수

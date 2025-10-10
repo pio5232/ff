@@ -12,13 +12,13 @@ PacketPtr jh_content::DummyPacketBuilder::BuildLoginRequestPacket()
     return buffer;
 }
 
-PacketPtr jh_content::DummyPacketBuilder::BuildHeartbeatPacket()
+PacketPtr jh_content::DummyPacketBuilder::BuildHeartbeatPacket(ULONGLONG timeStamp)
 {
     jh_network::HeartbeatPacket hbPkt;
 
     PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(hbPkt));
 
-    *buffer << hbPkt.size << hbPkt.type << jh_utility::GetTimeStamp();
+    *buffer << hbPkt.size << hbPkt.type << timeStamp;
     
     return buffer;
 }
@@ -43,7 +43,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket()
     return buffer;
 }
 
-PacketPtr jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(USHORT roomNum,const WCHAR roomName)
+PacketPtr jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(USHORT roomNum,const WCHAR* roomName)
 {
     jh_network::EnterRoomRequestPacket enterRoomRequestPkt;
     
@@ -56,7 +56,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(USHORT roo
     return buffer;
 }
 
-PacketPtr jh_content::DummyPacketBuilder::BuildLeaveRoomRequestPacket(USHORT roomNum, const WCHAR roomName)
+PacketPtr jh_content::DummyPacketBuilder::BuildLeaveRoomRequestPacket(USHORT roomNum, const WCHAR* roomName)
 {
     jh_network::LeaveRoomRequestPacket leaveRoomRequestPkt;
 
@@ -121,6 +121,17 @@ PacketPtr jh_content::DummyPacketBuilder::BuildChatRequestPacket(USHORT roomNum)
     *buffer << pktSize << static_cast<USHORT>(jh_network::CHAT_NOTIFY_PACKET) << roomNum << msgLen;
 
     buffer->PutData(reinterpret_cast<const char*>(dummyChattingMsg[idx]), msgLen);
+
+    return buffer;
+}
+
+PacketPtr jh_content::DummyPacketBuilder::BuildRoomListRequestPacket()
+{
+    jh_network::RoomListRequestPacket roomListRequestPkt;
+
+    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(roomListRequestPkt));
+
+    *buffer << roomListRequestPkt.size << roomListRequestPkt.type;
 
     return buffer;
 }

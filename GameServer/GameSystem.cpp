@@ -18,7 +18,7 @@ void jh_content::GameSystem::Init()
 	m_packetFuncDic[jh_network::ATTACK_REQUEST_PACKET] = &GameSystem::HandleAttackRequestPacket;
 	m_packetFuncDic[jh_network::CHAT_TO_ROOM_REQUEST_PACKET] = &GameSystem::HandleChatRequestPacket;
 	
-	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, GameSystem::StaticLogicProxy, (LPVOID)this, 0, nullptr));
+	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, GameSystem::StaticLogic, (LPVOID)this, 0, nullptr));
 
 	if (nullptr == m_hLogicThread)
 	{
@@ -91,7 +91,7 @@ void jh_content::GameSystem::SetGameInfo(USHORT roomNumber, USHORT requiredUsers
 }
 
 
-unsigned jh_content::GameSystem::StaticLogicProxy(LPVOID lparam)
+unsigned jh_content::GameSystem::StaticLogic(LPVOID lparam)
 {
 	jh_content::GameSystem* gameInstance = static_cast<GameSystem*>(lparam);
 
@@ -155,6 +155,7 @@ void jh_content::GameSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType
 void jh_content::GameSystem::ProcessNetJob()
 {
 	static alignas(64) std::vector<JobPtr> jobList;
+	std::vector<JobPtr>	emptyVec;
 
 	m_netJobQueue.PopAll(jobList);
 
@@ -162,12 +163,14 @@ void jh_content::GameSystem::ProcessNetJob()
 	{
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
 	}
-	jobList.clear();
+
+	jobList.swap(emptyVec);
 }
 
 void jh_content::GameSystem::ProcessSessionConnectionEvent()
 {
 	static alignas(64) std::vector<SessionConnectionEventPtr> sessionConnEventList;
+	std::vector<SessionConnectionEventPtr> emptyList;
 
 	m_sessionConnEventQueue.PopAll(sessionConnEventList);
 
@@ -210,7 +213,7 @@ void jh_content::GameSystem::ProcessSessionConnectionEvent()
 		}
 	}
 
-	sessionConnEventList.clear();
+	sessionConnEventList.swap(emptyList);
 }
 
 void jh_content::GameSystem::ProcessLanRequest()

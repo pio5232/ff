@@ -76,9 +76,10 @@ UserPtr jh_content::UserManager::GetUserBySessionId(ULONGLONG sessionId)
 {
 	auto userIter = m_sessionIdToUserUMap.find(sessionId);
 
+	// 세션만 연결된 경우에는 유저가 존재하지 않음.
 	if (userIter == m_sessionIdToUserUMap.end())
 	{
-		_LOG(L"UserManager", LOG_LEVEL_WARNING, L"[GetUserByUserId] - sessionId : [%llu]에 해당하는 유저가 존재하지 않습니다.", sessionId);
+		_LOG(L"UserManager", LOG_LEVEL_INFO, L"[GetUserByUserId] - sessionId : [%llu]에 해당하는 유저가 존재하지 않습니다.", sessionId);
 		return UserPtr(nullptr);
 	}
 

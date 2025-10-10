@@ -5,21 +5,21 @@ namespace jh_content
 	class DummyUpdateSystem
 	{
 	public:
-		using PacketFunc = void(DummyUpdateSystem::*)(ULONGLONG, PacketPtr&);
+		using PacketFunc = void(DummyUpdateSystem::*)(ULONGLONG, PacketPtr&, int);
 		
 	private:
 		struct alignas(64) LogicData
 		{
-			LogicData() : m_hLogicThread{}, m_hJobEvent{}, m_netJobQueue{} {}
-
-			void ProcessNetJob()
-			{
-				
-			}
+			LogicData() : m_hLogicThread{}, m_hJobEvent{}, m_netJobQueue{}, m_sessionConnEventQueue{}, m_dummyUmap{} {}
 
 			HANDLE m_hLogicThread;
 			HANDLE m_hJobEvent;
 			jh_utility::LockQueue<JobPtr> m_netJobQueue;
+			jh_utility::LockQueue<SessionConnectionEventPtr> m_sessionConnEventQueue;
+			std::unordered_map<ULONGLONG, DummyPtr> m_dummyUmap;
+			std::unordered_map<DummyPtr, int> m_dummyVectorIndexUMap;
+			std::vector<DummyPtr> m_dummyVector;
+			
 		};
 
 		struct WorkerTransData
@@ -29,11 +29,11 @@ namespace jh_content
 		};
 	
 	private:
-		void ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet);
+		void ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet, int threadNum);
 	
 	public:
-		static unsigned WINAPI Worker(LPVOID lparam);
-		void WorkerThread(int threadNum);
+		static unsigned WINAPI StaticLogic(LPVOID lparam);
+		void DummyLogic(int threadNum);
 
 		DummyUpdateSystem(jh_network::IocpClient* owner);
 		~DummyUpdateSystem();
@@ -42,14 +42,18 @@ namespace jh_content
 		void Stop();
 
 		void EnqueueJob(JobPtr& job, int idx);
+		void EnqueueSessionConnEvent(SessionConnectionEventPtr& connectionEvent, int idx);
+		void ProcessNetJob(int threadNum);
+		void ProcessSessionConnectionEvent(int threadNum);
 
-		void HandleRoomListResponsePacket(ULONGLONG session, PacketPtr& packet);
-		void HandleLogInResponsePacket(ULONGLONG session, PacketPtr& packet);
-		void HandleMakeRoomResponsePacket(ULONGLONG session, PacketPtr& packet);
-		void HandleEnterRoomResponsePacket(ULONGLONG session, PacketPtr& packet);
-		void HandleChatNotifyPacket(ULONGLONG session, PacketPtr& packet);
-		void HandleLeaveRoomResponsePacket(ULONGLONG session, PacketPtr& packet);
+		void HandleRoomListResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
+		void HandleLogInResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
+		void HandleMakeRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
+		void HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
+		void HandleChatNotifyPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
+		void HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 
+		bool IsValidThreadNum(int threadNum) { return threadNum > 0 && threadNum < LOGIC_THREAD_COUNT; }
 		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;
 		jh_network::IocpClient* m_pOwner;
 

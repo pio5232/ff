@@ -15,6 +15,7 @@ namespace jh_content
 		virtual void OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type) override;
 
 		virtual void OnConnected(ULONGLONG sessionId) override;
+		virtual void OnDisconnected(ULONGLONG sessionId) override;
 
 	private:
 		class GameSystem* m_pGameSystem;

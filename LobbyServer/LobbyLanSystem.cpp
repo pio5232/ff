@@ -23,6 +23,7 @@ ErrorCode jh_content::LobbyLanSystem::ProcessPacket(ULONGLONG sessionId, DWORD p
 void jh_content::LobbyLanSystem::ProcessNetJob()
 {
 	static alignas(64) std::vector<JobPtr> jobList;
+	std::vector<JobPtr>	emptyVec;
 
 	m_netJobQueue.PopAll(jobList);
 
@@ -30,10 +31,12 @@ void jh_content::LobbyLanSystem::ProcessNetJob()
 	{
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
 	}
-	jobList.clear();
+
+	jobList.swap(emptyVec);
+
 }
 
-unsigned __stdcall jh_content::LobbyLanSystem::StaticLogicProxy(LPVOID lparam)
+unsigned __stdcall jh_content::LobbyLanSystem::StaticLogic(LPVOID lparam)
 {
 	jh_content::LobbyLanSystem* lobbyLanInstance = static_cast<LobbyLanSystem*>(lparam);
 
@@ -101,7 +104,7 @@ void jh_content::LobbyLanSystem::Init()
 	}
 
 	LPVOID param = this;
-	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbyLanSystem::StaticLogicProxy, param, 0, nullptr));
+	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbyLanSystem::StaticLogic, param, 0, nullptr));
 
 	if (nullptr == m_hLogicThread)
 	{

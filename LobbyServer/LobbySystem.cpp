@@ -33,7 +33,7 @@ void jh_content::LobbySystem::Init()
 	}
 
 	LPVOID param = this;
-	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbySystem::StaticLogicProxy, param, 0, nullptr));
+	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbySystem::StaticLogic, param, 0, nullptr));
 
 	if (nullptr == m_hLogicThread)
 	{
@@ -98,20 +98,20 @@ jh_content::LobbySystem::~LobbySystem()
 	}
 }
 
-unsigned __stdcall jh_content::LobbySystem::StaticLogicProxy(LPVOID lparam)
+unsigned __stdcall jh_content::LobbySystem::StaticLogic(LPVOID lparam)
 {
 	jh_content::LobbySystem* lobbyInstance = static_cast<LobbySystem*>(lparam);
 
 	if (nullptr == lobbyInstance)
 		return 0;
 
-	lobbyInstance->LobbyLogic();
+	lobbyInstance->Logic();
 
 	return 0;
 }
 
 
-void jh_content::LobbySystem::LobbyLogic()
+void jh_content::LobbySystem::Logic()
 {
 	static ULONGLONG lastUpdateTime = jh_utility::GetTimeStamp();
 
@@ -151,6 +151,7 @@ ErrorCode jh_content::LobbySystem::ProcessPacket(ULONGLONG sessionId, DWORD pack
 void jh_content::LobbySystem::ProcessNetJob()
 {
 	static alignas(64) std::vector<JobPtr> jobList;
+	std::vector<JobPtr>	emptyVec;
 
 	m_netJobQueue.PopAll(jobList);
 
@@ -158,13 +159,15 @@ void jh_content::LobbySystem::ProcessNetJob()
 	{
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
 	}
-	jobList.clear();
+
+	jobList.swap(emptyVec);
 }
 
 void jh_content::LobbySystem::ProcessSessionConnectionEvent()
 {
 	static alignas(64) std::vector<SessionConnectionEventPtr> sessionConnEventList;
-	
+	std::vector<SessionConnectionEventPtr> emptyList;
+
 	m_sessionConnEventQueue.PopAll(sessionConnEventList);
 
 	for (SessionConnectionEventPtr& sessionConnEvent : sessionConnEventList)
@@ -184,7 +187,7 @@ void jh_content::LobbySystem::ProcessSessionConnectionEvent()
 
 			if (nullptr == userPtr)
 			{
-				_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L" [ProcessSessionConnectionEvent] - 유저 정보가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+				_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L" [ProcessSessionConnectionEvent] - User Info is Not Exist. SessionId : [%llu]", sessionId);
 
 				break;
 			}
@@ -215,12 +218,13 @@ void jh_content::LobbySystem::ProcessSessionConnectionEvent()
 		}
 	}
 
-	sessionConnEventList.clear();
+	sessionConnEventList.swap(emptyList);
 }
 
 void jh_content::LobbySystem::ProcessLanRequest()
 {
 	static alignas(64) std::vector<LanRequestPtr> lanRequestJobList;
+	std::vector<LanRequestPtr> emptyList;
 
 	m_lanRequestQueue.PopAll(lanRequestJobList);
 
@@ -238,7 +242,7 @@ void jh_content::LobbySystem::ProcessLanRequest()
 		}
 	}
 
-	lanRequestJobList.clear();
+	lanRequestJobList.swap(emptyList);
 }
 
 ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG sessionId, PacketPtr& packet)

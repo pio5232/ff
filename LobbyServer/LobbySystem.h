@@ -35,8 +35,8 @@ namespace jh_content
 			SetEvent(m_hJobEvent);
 		}
 
-		static unsigned WINAPI StaticLogicProxy(LPVOID lparam);
-		void LobbyLogic();
+		static unsigned WINAPI StaticLogic(LPVOID lparam);
+		void Logic();
 
 		void Init();
 		// 로직 스레드의 실행을 종료

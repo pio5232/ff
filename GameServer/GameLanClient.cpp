@@ -68,3 +68,7 @@ void jh_content::GameLanClient::OnConnected(ULONGLONG sessionId)
 	PacketPtr settingReqPkt = jh_content::PacketBuilder::BuildGameServerSettingRequestPacket();
 	SendPacket(sessionId, settingReqPkt);
 }
+
+void jh_content::GameLanClient::OnDisconnected(ULONGLONG sessionId)
+{
+}
