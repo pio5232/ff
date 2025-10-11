@@ -753,7 +753,7 @@ void jh_network::IocpServer::AcceptThreadFunc()
 
 		//_LOG(m_pcwszServerName, LOG_LEVEL_DETAIL, L"Enter Session, Current Session Count : %d",m_lSessionCount);
 		Session* newSession = CreateSession(clientSock, &clientInfo);
-
+		
 		if (nullptr == newSession)
 		{
 			_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"[AcceptThreadFunc] 세션이 nullptr입니다.");

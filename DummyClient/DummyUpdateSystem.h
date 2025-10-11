@@ -46,6 +46,9 @@ namespace jh_content
 		void ProcessNetJob(int threadNum);
 		void ProcessSessionConnectionEvent(int threadNum);
 
+		void ProcessDummyLogic(int threadNum);
+
+
 		void HandleRoomListResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleLogInResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleMakeRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);

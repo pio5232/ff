@@ -15,6 +15,7 @@
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 
+jh_utility::CrashDump dump;
 
 using namespace jh_network;
 
@@ -32,7 +33,7 @@ int main()
 
 	jh_content::LobbyServer lobbyServer;
 
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	if (false == lobbyServer.Start())
 	{
@@ -92,6 +93,7 @@ int main()
 		wprintf(L"-------------------------------------------------\n");
 		wprintf(L" [Content] Total Users : %llu\n", jh_content::User::m_ullAliveLobbyUserCount);
 		wprintf(L" [Content] Total Rooms : %d\n", jh_content::Room::GetAliveRoomCount());
+		lobbyServer.GetInvalidMsgCnt();
 		wprintf(L"=================================================\n\n\n");
 
 

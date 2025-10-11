@@ -94,6 +94,17 @@ PacketPtr jh_content::PacketBuilder::BuildLeaveRoomNotifyPacket(ULONGLONG userId
 	return buffer;
 }
 
+PacketPtr jh_content::PacketBuilder::BuildLeaveRoomResponsePacket()
+{
+	jh_network::LeaveRoomResponsePacket leaveRoomResPacket;
+
+	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(leaveRoomResPacket));
+
+	*buffer << leaveRoomResPacket.size << leaveRoomResPacket.type;
+
+	return buffer;
+}
+
 PacketPtr jh_content::PacketBuilder::BuildRoomListResponsePacket(std::vector<jh_content::RoomInfo>& roomInfos)
 {
 	jh_network::PacketHeader header;

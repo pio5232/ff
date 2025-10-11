@@ -2,4 +2,4 @@
 
 int GetRandValue(int div, int extra) { return  rand() % div + extra; }
 
-int GetRandTimeForDummy() { return  GetRandValue(3000, 1000); }
+int GetRandTimeForDummy() { return  GetRandValue(3000, 2000); }

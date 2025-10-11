@@ -125,3 +125,8 @@ void jh_content::LobbyServer::Monitor()
 	wprintf(L" [Lobby Server] Sessions : %d\n", GetSessionCount());
 	wprintf(L" [LAN Server]   Sessions : %d\n", m_pLanServer->GetSessionCount());
 }
+
+void jh_content::LobbyServer::GetInvalidMsgCnt()
+{
+	m_pLobbySystem->GetInvalidMsgCnt();
+}

@@ -42,7 +42,15 @@ namespace jh_content
 		// 로직 스레드의 실행을 종료
 		void Stop();
 
+		void GetInvalidMsgCnt();
+
 	private:
+		LONGLONG m_invalidLeave = 0;
+		LONGLONG m_invalidEnter = 0;
+		LONGLONG m_invalidChat = 0;
+		LONGLONG m_invalidMake = 0;
+		LONGLONG m_invalidReady = 0;
+
 		ErrorCode ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet);
 
 		void ProcessNetJob();

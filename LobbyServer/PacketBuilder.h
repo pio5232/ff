@@ -11,6 +11,7 @@ namespace jh_content
 		static PacketPtr BuildEnterRoomNotifyPacket(ULONGLONG userId);
 		static PacketPtr BuildEnterRoomResponsePacket(bool isAllowed, const std::vector<ULONGLONG>& userIdAndReadyList); // 입장 요청한 유저에게 입장 가능 여부, 유저 목록을 전송.
 		static PacketPtr BuildLeaveRoomNotifyPacket(ULONGLONG userId);
+		static PacketPtr BuildLeaveRoomResponsePacket();
 		static PacketPtr BuildRoomListResponsePacket(std::vector<jh_content::RoomInfo>& roomInfos);
 		static PacketPtr BuildOwnerChangeNotifyPacket(ULONGLONG newOwnerUserId);
 		

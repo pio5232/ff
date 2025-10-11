@@ -12,6 +12,8 @@ int main()
 {
     jh_content::LobbyDummyClient dummyClient;
 
+    SET_LOG_LEVEL(LOG_LEVEL_WARNING);
+
     dummyClient.Start();
     int maxSessionCnt = dummyClient.GetMaxSessionCount();
     dummyClient.Connect(maxSessionCnt);
@@ -43,7 +45,7 @@ int main()
 
         if (true == reconnectFlag.load())
         {
-            int diff = maxSessionCnt - dummyClient.GetSessionCount();
+             int diff = maxSessionCnt - dummyClient.GetSessionCount();
 
             if (diff > 0)
             {

@@ -74,6 +74,16 @@ void jh_content::LobbySystem::Stop()
 
 }
 
+void jh_content::LobbySystem::GetInvalidMsgCnt()
+{
+	wprintf(L" [Content] Invliad Leave : %lld\n", m_invalidLeave);
+	wprintf(L" [Content] Invalid Enter : %lld\n", m_invalidEnter);
+	wprintf(L" [Content] Invalid Chat : %lld\n", m_invalidChat);
+	wprintf(L" [Content] Invalid Make : %lld\n", m_invalidMake);
+	wprintf(L" [Content] Invalid Ready : %lld\n", m_invalidReady);
+
+}
+
 jh_content::LobbySystem::LobbySystem(jh_network::IocpServer* owner, USHORT maxRoomCnt, USHORT maxRoomUserCnt) : m_pOwner{ owner }, m_hLogicThread{ nullptr },
 m_bRunningFlag{ true }, m_netJobQueue{}, m_sessionConnEventQueue{}, m_hJobEvent{ nullptr }
 {
@@ -194,21 +204,21 @@ void jh_content::LobbySystem::ProcessSessionConnectionEvent()
 
 			auto [isJoined, roomNum] = userPtr->TryGetRoomId();
 
-			if (false == isJoined)
-				break;
-		
-			RoomPtr roomPtr = m_pRoomManager->GetRoom(roomNum);
-
-			if (nullptr == roomPtr)
+			if (true == isJoined)
 			{
-				_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[ProcessSessionConnectionEvent] - 유저와 RoomManager가 관리하는 방 정보가 다릅니다. 방 번호 : [%hu]", roomNum);
-			}
-			else
-			{
-				bool isRoomEmpty = roomPtr->LeaveRoom(userPtr);
+				RoomPtr roomPtr = m_pRoomManager->GetRoom(roomNum);
 
-				if (isRoomEmpty == true)
-					m_pRoomManager->DestroyRoom(roomPtr->GetRoomNum());
+				if (nullptr == roomPtr)
+				{
+					_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[ProcessSessionConnectionEvent] - 유저와 RoomManager가 관리하는 방 정보가 다릅니다. 방 번호 : [%hu]", roomNum);
+				}
+				else
+				{
+					bool isRoomEmpty = roomPtr->LeaveRoom(userPtr);
+
+					if (isRoomEmpty == true)
+						m_pRoomManager->DestroyRoom(roomPtr->GetRoomNum());
+				}
 			}
 
 			m_pUserManager->RemoveUser(sessionConnEvent->m_ullSessionId);
@@ -253,7 +263,7 @@ ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG session
 
 	if (nullptr == userPtr)
 	{
-		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleRoomListRequestPacket] - 유저가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleRoomListRequestPacket] - User is Not Exist. SessionId : [%llu]", sessionId);
 
 		return ErrorCode::NOT_FOUND;
 	}
@@ -264,7 +274,6 @@ ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG session
 	
 	//std::cout << "[HandleRoomListRequestPacket] send pending Size : " << responsePacket->GetDataSize() << " capa : " << responsePacket->GetBufferSize() << "\n";
 	m_pOwner->SendPacket(sessionId, responsePacket);
-	
 	
 	return ErrorCode::NONE;
 }
@@ -289,17 +298,18 @@ ErrorCode jh_content::LobbySystem::HandleLogInRequestPacket(ULONGLONG sessionId,
 }
 ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
-	USHORT roomNum;
 	USHORT messageLen; // WCHAR
+	USHORT roomNum;
 
 	*packet >> roomNum >> messageLen;
 
-	char* payLoad = static_cast<char*>(g_memAllocator->Alloc(messageLen));
-
+	//char* payLoad = static_cast<char*>(g_memAllocator->Alloc(messageLen));
+	//char* payLoad = static_cast<char*>(g_memAllocator->Alloc(messageLen));
+	
+	std::shared_ptr<char> payLoad(static_cast<char*>(g_memAllocator->Alloc(messageLen)),[](char* p) { g_memAllocator->Free(p); });
 	//char* payLoad = static_cast<char*>(malloc(messageLen * MESSAGE_SIZE));
 
-	packet->GetData(payLoad, messageLen);
-
+	packet->GetData(payLoad.get(), messageLen);
 
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
 
@@ -310,6 +320,18 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 		return ErrorCode::NOT_FOUND;
 	}
 
+	auto [isAlreadyInRoom, serverRoomNum] = userPtr->TryGetRoomId();
+	
+	if (false == isAlreadyInRoom || serverRoomNum != roomNum)
+	{
+		//_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatToRoomRequestPacket] - Invalid Room Info . SessionId : [%llu]", sessionId);
+
+		m_invalidChat++;
+
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L" [HandleMakeRoomRequestPacket] - SessionId : [0x%016llx], ClientRoomNum : [%hu], ServerRoomNum : [%hu]", roomNum,serverRoomNum);
+
+		return ErrorCode::NOT_FOUND;
+	}
 	ULONGLONG userId = userPtr->GetUserId();
 
 	jh_network::PacketHeader packetHeader;
@@ -330,9 +352,9 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 	PacketPtr notifyBuffer = MakeSharedBuffer(g_memAllocator, sizeof(packetHeader) + packetHeader.size);
 	*notifyBuffer << packetHeader << userId << messageLen;
 
-	notifyBuffer->PutData(reinterpret_cast<const char*>(payLoad), messageLen);
+	notifyBuffer->PutData(reinterpret_cast<const char*>(payLoad.get()), messageLen);
 
-	g_memAllocator->Free(payLoad);
+	//g_memAllocator->Free(payLoad);
 
 	RoomPtr roomPtr = m_pRoomManager->GetRoom(roomNum);
 
@@ -359,6 +381,17 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L" [HandleMakeRoomRequestPacket] - 유저 정보가 존재하지 않습니다. SessionID : [%llu].", sessionId);
 
 		return ErrorCode::NOT_FOUND;
+	}
+
+	auto [isAlreadyInRoom, roomNum] = userPtr->TryGetRoomId();
+	
+	if (true == isAlreadyInRoom)
+	{
+		m_invalidMake++;
+		
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L" [HandleMakeRoomRequestPacket] - SessionId : [0x%016llx], ServerRoomNum : [%hu]", roomNum);
+
+		return ErrorCode::DUPLICATED_MEMBER;
 	}
 
 	RoomPtr newRoomPtr = m_pRoomManager->CreateRoom(userPtr, roomName);
@@ -452,6 +485,15 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 		return ErrorCode::NOT_FOUND;
 	}
 
+	auto [isAlreadyInRoom, curRoomNum] = userPtr->TryGetRoomId();
+
+	if (true == isAlreadyInRoom)
+	{
+		m_invalidEnter++;
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L" [HandleEnterRoomRequestPacket] - SessionId : [0x%016llx], ClientRoomNum : [%hu], ServerRoomNum : [%hu]", requestPacket.roomNum, curRoomNum);
+
+		return ErrorCode::DUPLICATED_MEMBER;
+	}
 	ULONGLONG userId = userPtr->GetUserId();
 
 	//printf("EnterRoom Response Packet Send  ");
@@ -524,6 +566,24 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 
 	*packet >> leaveRoomRequestPacket;
 
+	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
+
+	if (userPtr == nullptr)
+	{
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L" [HandleLeaveRoomRequestPacket] - 유저 정보가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+
+		return ErrorCode::NOT_FOUND;
+	}
+	auto [isAlreadyInRoom, roomNum] = userPtr->TryGetRoomId();
+
+	if (false == isAlreadyInRoom || roomNum != leaveRoomRequestPacket.roomNum)
+	{
+		m_invalidLeave++;
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L" [HandleLeaveRoomRequestPacket] - SessionId : [0x%016llx], ClientRoomNum : [%hu], ServerRoomNum : [%hu]", leaveRoomRequestPacket.roomNum,roomNum);
+
+		return ErrorCode::CANNOT_FIND_ROOM;
+	}
+
 	RoomPtr roomPtr = m_pRoomManager->GetRoom(leaveRoomRequestPacket.roomNum);
 
 	if (roomPtr == nullptr)
@@ -539,17 +599,12 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 		return ErrorCode::CANNOT_FIND_ROOM;
 	}
 
-	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
-
-	if (userPtr == nullptr)
-	{
-		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L" [HandleLeaveRoomRequestPacket] - 유저 정보가 존재하지 않습니다. SessionId : [%llu]", sessionId);
-
-		return ErrorCode::NOT_FOUND;
-	}
-
 	bool isRoomEmpty = roomPtr->LeaveRoom(userPtr);
 
+	PacketPtr leaveRoomResPkt = jh_content::PacketBuilder::BuildLeaveRoomResponsePacket();
+	
+	m_pOwner->SendPacket(sessionId, leaveRoomResPkt);
+	
 	if (isRoomEmpty == true)
 		m_pRoomManager->DestroyRoom(roomPtr->GetRoomNum());
 
@@ -576,6 +631,8 @@ ErrorCode jh_content::LobbySystem::HandleGameReadyRequestPacket(ULONGLONG sessio
 	if (res == false)
 	{
 		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GameReadyRequest] - 방에 접속하지 않은 유저의 준비패킷입니다. UserID : [%llu]", userPtr->GetUserId());
+		
+		m_invalidReady++;
 		
 		return ErrorCode::NOT_FOUND;
 	}

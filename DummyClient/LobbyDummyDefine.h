@@ -16,12 +16,12 @@ enum class DummyStatus : byte
 };
 struct DummyData
 {
-	DummyData() : m_usRoomNum{}, m_wszRoomName{}, m_dummyStatus{ DummyStatus::DISCONNECTED }, m_ullSessionId{ (ULONGLONG)(INVALID_SESSION_ID) }, m_ullNextActionTime{}, m_ullLastUpdatedHeartbeatTime {} { aliveDummyCount.fetch_add(1); }
+	DummyData() : m_usExpectedRoomNum{}, m_wszExpectedRoomName{}, m_dummyStatus{ DummyStatus::DISCONNECTED }, m_ullSessionId{ (ULONGLONG)(INVALID_SESSION_ID) }, m_ullNextActionTime{}, m_ullLastUpdatedHeartbeatTime {} { aliveDummyCount.fetch_add(1); }
 	~DummyData() { aliveDummyCount.fetch_sub(1); m_dummyStatus = DummyStatus::DISCONNECTED; }
 
 	inline static std::atomic<int> aliveDummyCount = 0;
-	USHORT m_usRoomNum;
-	WCHAR m_wszRoomName[ROOM_NAME_MAX_LEN]{};
+	USHORT m_usExpectedRoomNum;
+	WCHAR m_wszExpectedRoomName[ROOM_NAME_MAX_LEN]{};
 	DummyStatus m_dummyStatus;
 	ULONGLONG m_ullSessionId;
 

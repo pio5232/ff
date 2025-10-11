@@ -104,7 +104,11 @@ PacketPtr jh_content::DummyPacketBuilder::BuildChatRequestPacket(USHORT roomNum)
         L"더 깊게 붙잡아",
         L"Oh, I'm Drowning",
         L"It's raining all day, yeah - yeah (yeah)",
-        L"I can't (yeah) breathe"
+        L"I can't (yeah) breathe",
+        L"동해물과 백두산이 마르고 닳도록",
+        L"오빤 강남스타일",
+        L"가나다라마바사아자차카타파하",
+        L"가지마 가지마 가지마"
     };
 
     int cnt = sizeof(dummyChattingMsg) / sizeof(dummyChattingMsg[0]);
@@ -118,7 +122,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildChatRequestPacket(USHORT roomNum)
 
     PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(jh_network::PacketHeader) + pktSize);
 
-    *buffer << pktSize << static_cast<USHORT>(jh_network::CHAT_NOTIFY_PACKET) << roomNum << msgLen;
+    *buffer << pktSize << static_cast<USHORT>(jh_network::CHAT_TO_ROOM_REQUEST_PACKET) << roomNum << msgLen;
 
     buffer->PutData(reinterpret_cast<const char*>(dummyChattingMsg[idx]), msgLen);
 

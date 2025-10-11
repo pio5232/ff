@@ -19,6 +19,7 @@ namespace jh_content
         void OnDisconnected(ULONGLONG sessionId) override;
 
         void Monitor();
+        void GetInvalidMsgCnt();
     private:
         void BeginAction() override;
         void EndAction() override;

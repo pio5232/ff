@@ -94,7 +94,7 @@ namespace jh_memory
             int size = 0;
             int tableIndex = 0;
 
-            for (size = 32; size <= 1024; size += 32)
+            for (size = 32; size < 1024; size += 32)
             {
                 MemoryPool* pool = new MemoryPool(size);
                 m_pools.push_back(pool);
@@ -106,7 +106,7 @@ namespace jh_memory
                 }
             }
 
-            for (; size <= 2048; size += 128)
+            for (; size < 2048; size += 128)
             {
                 MemoryPool* pool = new MemoryPool(size);
                 m_pools.push_back(pool);

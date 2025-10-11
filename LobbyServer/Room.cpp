@@ -36,7 +36,6 @@ jh_content::Room::Room(ULONGLONG ownerId, USHORT maxUserCnt, USHORT roomNum, WCH
 
 jh_content::Room::~Room()
 {
-	printf("¹æ ÆøÆÄ\n");
 
 	aliveRoomCount.fetch_sub(1);
 }
