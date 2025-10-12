@@ -157,31 +157,36 @@ void jh_content::DummyUpdateSystem::EnqueueSessionConnEvent(SessionConnectionEve
 
 void jh_content::DummyUpdateSystem::ProcessNetJob(int threadNum)
 {
-	static thread_local alignas(64) std::vector<JobPtr> jobList;
+	static thread_local alignas(64) std::queue<JobPtr> dummyJobQ;
 
-	std::vector<JobPtr>	emptyVec;
+	std::queue<JobPtr> emptyQ;
 
-	m_logicData[threadNum].m_netJobQueue.PopAll(jobList);
+	m_logicData[threadNum].m_netJobQueue.Swap(dummyJobQ);
 
-	for (JobPtr& job : jobList)
+	while(dummyJobQ.size() > 0)
 	{
+		JobPtr& job = dummyJobQ.front();
+	
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket, threadNum);
+	
+		dummyJobQ.pop();
 	}
 	
-	jobList.swap(emptyVec);
+	dummyJobQ.swap(emptyQ);
 }
 
 void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 {
 	LogicData& threadLogicData = m_logicData[threadNum];
 
-	static thread_local alignas(64) std::vector<SessionConnectionEventPtr> sessionConnEventList;
-	std::vector<SessionConnectionEventPtr> emptyList;
+	static thread_local alignas(64) std::queue<SessionConnectionEventPtr> sessionConnEventQ;
+	std::queue<SessionConnectionEventPtr> emptyQ;
 
-	threadLogicData.m_sessionConnEventQueue.PopAll(sessionConnEventList);
+	threadLogicData.m_sessionConnEventQueue.Swap(sessionConnEventQ);
 	
-	for (SessionConnectionEventPtr& sessionConnEvent : sessionConnEventList)
+	while(sessionConnEventQ.size() > 0)
 	{
+		SessionConnectionEventPtr& sessionConnEvent = sessionConnEventQ.front();
 		ULONGLONG sessionId = sessionConnEvent->m_ullSessionId;
 
 		switch (sessionConnEvent->m_msgType)
@@ -241,9 +246,11 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 		break;
 		default:break;
 		}
+
+		sessionConnEventQ.pop();
 	}
 
-	sessionConnEventList.swap(emptyList);
+	sessionConnEventQ.swap(emptyQ);
 }
 
 void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
@@ -407,6 +414,8 @@ void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessi
 
 	dummy->m_usExpectedRoomNum = responsePkt.roomInfo.m_usRoomNum;
 	wcscpy_s(dummy->m_wszExpectedRoomName, responsePkt.roomInfo.m_wszRoomName);
+	
+	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = MAXULONGLONG;
 }
 
 void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)

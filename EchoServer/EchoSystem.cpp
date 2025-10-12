@@ -78,15 +78,21 @@ void jh_content::EchoSystem::Stop()
 
 void jh_content::EchoSystem::ProcessNetJob()
 {
-	static std::vector<JobPtr> jobList;
+	static thread_local alignas(64) std::queue<JobPtr> echoJobQ;
+	std::queue<JobPtr> emptyQ;
 
-	m_netJobQueue.PopAll(jobList);
+	m_netJobQueue.Swap(echoJobQ);
 
-	for (JobPtr& job : jobList)
+	while(echoJobQ.size() > 0)
 	{
+		JobPtr& job = echoJobQ.front();
+
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
+		
+		echoJobQ.pop();
 	}
-	jobList.clear();
+
+	echoJobQ.swap(emptyQ);
 
 	// netJobQueue에서 Job 확인 후 
 	// 작업따라 패킷 처리
@@ -95,12 +101,15 @@ void jh_content::EchoSystem::ProcessNetJob()
 
 void jh_content::EchoSystem::ProcessSystemJob()
 {
-	static std::vector<SessionConnectionEventPtr> systemJobList;
+	static thread_local alignas(64) std::queue<SessionConnectionEventPtr> systemJobQ;
+	std::queue<SessionConnectionEventPtr> emptyQ;
 
-	m_sessionConnEventQueue.PopAll(systemJobList);
+	m_sessionConnEventQueue.Swap(systemJobQ);
 
-	for (SessionConnectionEventPtr& job : systemJobList)
+	while(systemJobQ.size() > 0)
 	{
+		SessionConnectionEventPtr& job = systemJobQ.front();
+
 		switch (job->m_msgType)
 		{
 		case jh_utility::SessionConnectionEventType::CONNECT:
@@ -115,9 +124,11 @@ void jh_content::EchoSystem::ProcessSystemJob()
 		}
 		break;
 		}
+		
+		systemJobQ.pop();
 	}
 
-	systemJobList.clear();
+	systemJobQ.swap(emptyQ);
 }
 
 //ErrorCode jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, jh_network::SerializationBufferPtr& serializationBufferPtr)

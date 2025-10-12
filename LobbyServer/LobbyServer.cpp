@@ -131,8 +131,9 @@ void jh_content::LobbyServer::Monitor()
 	wprintf(L" [Network] Disconnected Session Count : %lld\n", GetDisconnectedCount());
 	wprintf(L" [Network] Total Disconnected Session Count : %lld\n", GetTotalDisconnectedCount());
 
-	wprintf(L" [Lobby Server] Sessions : %ld\n", GetSessionCount());
-	wprintf(L" [LAN Server]   Sessions : %ld\n", m_pLanServer->GetSessionCount());
+	wprintf(L" [Lobby Server] Accepted Count: %lld\n", GetTotalAcceptedCount());
+	wprintf(L" [Lobby Server] Sessions Count : %ld\n", GetSessionCount());
+	wprintf(L" [LAN Server]   Sessions Count : %ld\n", m_pLanServer->GetSessionCount());
 }
 
 void jh_content::LobbyServer::GetInvalidMsgCnt()

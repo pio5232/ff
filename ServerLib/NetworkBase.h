@@ -52,8 +52,8 @@ namespace jh_network
 		virtual bool OnConnectionRequest(const SOCKADDR_IN& clientInfo);
 		virtual void OnError(int errCode, WCHAR* cause);
 
-		// 포인터버전
-		//virtual void OnRecv(LONGLONG sessionId, jh_utility::SerializationBuffer* dataBuffer, WORD type) = 0;
+
+		// 스마트포인터버전
 		virtual void OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type) = 0;
 		
 		virtual void OnConnected(ULONGLONG sessionId) = 0;
@@ -91,8 +91,9 @@ namespace jh_network
 		LONG GetAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
 		LONG GetAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
 
+		LONGLONG GetTotalAcceptedCount() { return m_llTotalAcceptedSessionCount; }
 		LONGLONG GetDisconnectedCount() { return m_llDisconnectedCount; }
-		LONGLONG GetTotalDisconnectedCount() { return m_llDisconnectedCount; }
+		LONGLONG GetTotalDisconnectedCount() { return m_llTotalDisconnectedCount; }
 
 		SOCKET GetListenSock() { return m_listenSock; }
 		
@@ -199,8 +200,9 @@ namespace jh_network
 		LONG GetAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
 		LONG GetAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
 
+		LONGLONG GetTotalConnectedCount() { return m_llTotalConnectedSessionCount; }
 		LONGLONG GetDisconnectedCount() { return m_llDisconnectedCount; }
-		LONGLONG GetTotalDisconnectedCount() { return m_llDisconnectedCount; }
+		LONGLONG GetTotalDisconnectedCount() { return m_llTotalDisconnectedCount; }
 	protected:
 		virtual void BeginAction() {}
 		virtual void EndAction() {}

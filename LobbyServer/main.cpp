@@ -15,8 +15,6 @@
 #define _CRTDBG_MAP_ALLOC
 #include <crtdbg.h>
 
-jh_utility::CrashDump dump;
-
 using namespace jh_network;
 
 

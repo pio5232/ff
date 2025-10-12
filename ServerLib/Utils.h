@@ -146,6 +146,12 @@ namespace jh_utility
 			return popCount;
 		}
 
+		void Swap(std::queue<T>& vec)
+		{
+			SRWLockGuard lockGuard(&m_lock);
+			
+			std::swap(m_queue, vec);
+		}
 		int GetUseSize()
 		{
 			SRWLockGuard lockGuard(&m_lock);

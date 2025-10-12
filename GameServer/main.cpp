@@ -12,7 +12,7 @@
 #define SERVERPORT 8768
 
 #pragma comment (lib, "Winmm.lib")
-jh_utility::CrashDump dump;
+//jh_utility::CrashDump dump;
 //std::unique_ptr<jh_network::GameServer> gameServer = nullptr;
 // 
 //

@@ -66,7 +66,7 @@ struct SendOverlapped : public CustomOverlapped
 		//{
 		//	g_packetPool->Free(m_pendingList[i]);
 		//}
-		m_pendingList.clear();
+		 m_pendingList.clear();
 	}
 
 	//std::vector<jh_utility::SerializationBuffer*> m_pendingList;

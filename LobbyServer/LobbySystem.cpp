@@ -161,28 +161,30 @@ ErrorCode jh_content::LobbySystem::ProcessPacket(ULONGLONG sessionId, DWORD pack
 void jh_content::LobbySystem::ProcessNetJob()
 {
 	PRO_START_AUTO_FUNC;
-	static alignas(64) std::vector<JobPtr> jobList;
-	std::vector<JobPtr>	emptyVec;
+	static alignas(64) std::queue<JobPtr> lobbyJobQ;
 
-	m_netJobQueue.PopAll(jobList);
+	m_netJobQueue.Swap(lobbyJobQ);
 
-	for (JobPtr& job : jobList)
+	while(lobbyJobQ.size() > 0)
 	{
-		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
-	}
+		JobPtr& job = lobbyJobQ.front();
 
-	jobList.swap(emptyVec);
+		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
+		
+		lobbyJobQ.pop();
+	}
 }
 
 void jh_content::LobbySystem::ProcessSessionConnectionEvent()
 {
-	static alignas(64) std::vector<SessionConnectionEventPtr> sessionConnEventList;
-	std::vector<SessionConnectionEventPtr> emptyList;
+	static alignas(64) std::queue<SessionConnectionEventPtr> sessionConnEventJob;
 
-	m_sessionConnEventQueue.PopAll(sessionConnEventList);
+	m_sessionConnEventQueue.Swap(sessionConnEventJob);
 
-	for (SessionConnectionEventPtr& sessionConnEvent : sessionConnEventList)
+	while(sessionConnEventJob.size() > 0)
 	{
+		SessionConnectionEventPtr& sessionConnEvent = sessionConnEventJob.front();
+		
 		ULONGLONG sessionId = sessionConnEvent->m_ullSessionId;
 
 		switch (sessionConnEvent->m_msgType)
@@ -227,22 +229,20 @@ void jh_content::LobbySystem::ProcessSessionConnectionEvent()
 		break;
 		default:break;
 		}
-	}
 
-	sessionConnEventList.swap(emptyList);
+		sessionConnEventJob.pop();
+	}
 }
 
 void jh_content::LobbySystem::ProcessLanRequest()
 {
-	static alignas(64) std::vector<LanRequestPtr> lanRequestJobList;
-	std::vector<LanRequestPtr> emptyList;
+	static alignas(64) std::queue<LanRequestPtr> lanRequestJobQ;
 
-	m_lanRequestQueue.PopAll(lanRequestJobList);
-
-	for (LanRequestPtr& req : lanRequestJobList)
+	m_lanRequestQueue.Swap(lanRequestJobQ);
+	
+	while(lanRequestJobQ.size() > 0)
 	{
-		if (req->m_ullSessionId == INVALID_SESSION_ID)
-			continue;
+		LanRequestPtr& req = lanRequestJobQ.front();
 
 		switch (req->m_usMsgType)
 		{
@@ -251,9 +251,10 @@ void jh_content::LobbySystem::ProcessLanRequest()
 
 		default:break;
 		}
+
+		lanRequestJobQ.pop();
 	}
 
-	lanRequestJobList.swap(emptyList);
 }
 
 ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG sessionId, PacketPtr& packet)

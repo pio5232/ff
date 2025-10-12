@@ -22,18 +22,18 @@ ErrorCode jh_content::LobbyLanSystem::ProcessPacket(ULONGLONG sessionId, DWORD p
 
 void jh_content::LobbyLanSystem::ProcessNetJob()
 {
-	static alignas(64) std::vector<JobPtr> jobList;
-	std::vector<JobPtr>	emptyVec;
+	static thread_local alignas(64) std::queue<JobPtr> jobQ;
 
-	m_netJobQueue.PopAll(jobList);
+	m_netJobQueue.Swap(jobQ);
 
-	for (JobPtr& job : jobList)
+	while(jobQ.size() > 0)
 	{
+		JobPtr& job = jobQ.front();
+
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
+		
+		jobQ.pop();
 	}
-
-	jobList.swap(emptyVec);
-
 }
 
 unsigned __stdcall jh_content::LobbyLanSystem::StaticLogic(LPVOID lparam)

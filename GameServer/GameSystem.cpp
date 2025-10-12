@@ -154,28 +154,34 @@ void jh_content::GameSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType
 
 void jh_content::GameSystem::ProcessNetJob()
 {
-	static alignas(64) std::vector<JobPtr> jobList;
-	std::vector<JobPtr>	emptyVec;
+	static thread_local alignas(64) std::queue<JobPtr> gameJobQ;
+	std::queue<JobPtr>	emptyQ;
 
-	m_netJobQueue.PopAll(jobList);
+	m_netJobQueue.Swap(gameJobQ);
 
-	for (JobPtr& job : jobList)
+	while(gameJobQ.size() > 0)
 	{
+		JobPtr& job = gameJobQ.front();
+
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
+		
+		gameJobQ.pop();
 	}
 
-	jobList.swap(emptyVec);
+	gameJobQ.swap(emptyQ);
 }
 
 void jh_content::GameSystem::ProcessSessionConnectionEvent()
 {
-	static alignas(64) std::vector<SessionConnectionEventPtr> sessionConnEventList;
-	std::vector<SessionConnectionEventPtr> emptyList;
+	static alignas(64) std::queue<SessionConnectionEventPtr> sessionConnEventQ;
+	std::queue<SessionConnectionEventPtr> emptyQ;
 
-	m_sessionConnEventQueue.PopAll(sessionConnEventList);
+	m_sessionConnEventQueue.Swap(sessionConnEventQ);
 
-	for (SessionConnectionEventPtr& sessionConnEvent : sessionConnEventList)
+	while(sessionConnEventQ.size() > 0)
 	{
+		SessionConnectionEventPtr& sessionConnEvent = sessionConnEventQ.front();
+
 		ULONGLONG sessionId = sessionConnEvent->m_ullSessionId;
 		switch (sessionConnEvent->m_msgType)
 		{
@@ -211,19 +217,24 @@ void jh_content::GameSystem::ProcessSessionConnectionEvent()
 		break;
 		default:break;
 		}
+
+		sessionConnEventQ.pop();
 	}
 
-	sessionConnEventList.swap(emptyList);
+	sessionConnEventQ.swap(emptyQ);
 }
 
 void jh_content::GameSystem::ProcessLanRequest()
 {
-	static alignas(64) std::vector<GameLanRequestPtr> gameLanRequestJobList;
+	static thread_local alignas(64) std::queue<GameLanRequestPtr> gameLanRequestJobQ;
+	std::queue<GameLanRequestPtr> emptyQ;
 
-	m_gameLanRequestQueue.PopAll(gameLanRequestJobList);
+	m_gameLanRequestQueue.Swap(gameLanRequestJobQ);
 
-	for (GameLanRequestPtr& req : gameLanRequestJobList)
+	while(gameLanRequestJobQ.size() > 0)
 	{
+		GameLanRequestPtr& req = gameLanRequestJobQ.front();
+
 		if (req->m_ullSessionId == INVALID_SESSION_ID)
 			continue;
 
@@ -234,9 +245,11 @@ void jh_content::GameSystem::ProcessLanRequest()
 
 		default:break;
 		}
+
+		gameLanRequestJobQ.pop();
 	}
 
-	gameLanRequestJobList.clear();
+	gameLanRequestJobQ.swap(emptyQ);
 }
 
 void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, PacketPtr& packet)

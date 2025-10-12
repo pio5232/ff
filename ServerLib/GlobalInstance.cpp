@@ -10,6 +10,8 @@ jh_memory::MemoryAllocator* g_memAllocator = nullptr;
 jh_utility::NodeMemoryPool<jh_utility::Job>* g_jobPool;
 jh_utility::NodeMemoryPool<jh_utility::SessionConnectionEvent>* g_systemJobPool;
 
+jh_utility::CrashDump dump;
+
 class GlobalGenerator
 {
 public:

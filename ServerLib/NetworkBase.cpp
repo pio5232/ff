@@ -429,9 +429,9 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
+		//jh_utility::SerializationBuffer* packet = static_cast<jh_utility::SerializationBuffer*>(g_memAllocator->Alloc(header));
 		PacketPtr packet = MakeSharedBuffer(g_memAllocator, header);
 
-		//jh_utility::SerializationBuffer* pPacket = g_packetPool->Alloc();
 
 		//if (false == sessionPtr->m_recvBuffer.DequeueRetBool(pPacket->GetRearPtr(), header.size))
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
@@ -555,7 +555,18 @@ void jh_network::IocpServer::PostSend(Session* sessionPtr)
 	//	++wsabufCount;
 	//}
 
-	int popCount = sessionPtr->m_sendQ.PopAll(sessionPtr->m_sendOverlapped.m_pendingList);
+	static thread_local alignas(64) std::queue<PacketPtr> tempQ;
+
+	sessionPtr->m_sendQ.Swap(tempQ);
+
+	int popCount = tempQ.size();
+	
+	while (tempQ.size() > 0)
+	{
+		sessionPtr->m_sendOverlapped.m_pendingList.push_back(std::move(tempQ.front()));
+		
+		tempQ.pop();
+	}
 
 	std::vector<WSABUF> wsaBufs;
 
@@ -684,6 +695,9 @@ void jh_network::IocpServer::UpdateHeartbeat(ULONGLONG sessionId, ULONGLONG time
 
 void jh_network::IocpServer::CheckHeartbeatTimeout(ULONGLONG now)
 {
+	static alignas(64) std::vector<ULONGLONG> disconnList;
+	std::vector<ULONGLONG> emptyVec;
+
 	auto func = [this, now](ULONGLONG sessionId) {
 		Session* sessionPtr = TryAcquireSession(sessionId, PROF_WFUNC);
 
@@ -695,12 +709,19 @@ void jh_network::IocpServer::CheckHeartbeatTimeout(ULONGLONG now)
 
 		if (now - sessionPtr->m_ullLastTimeStamp > m_ullTimeOutLimit)
 		{
-			Disconnect(sessionPtr->m_ullSessionId, L"TIME OUT");
+			disconnList.push_back(sessionId);
 		}
 		DecreaseIoCount(sessionPtr);
 	};
 
 	m_activeSessionManager.ProcessAllSessions(func);
+
+	for (ULONGLONG sessionId : disconnList)
+	{
+		Disconnect(sessionId, L"Heartbeat");
+	}
+	
+	disconnList.swap(emptyVec);
 }
 
 // 0이 리턴되는 경우는 잘못된 경우
@@ -955,7 +976,18 @@ void jh_network::IocpClient::PostSend(Session* sessionPtr)
 		return;
 	}
 
-	int popCount = sessionPtr->m_sendQ.PopAll(sessionPtr->m_sendOverlapped.m_pendingList);
+	static thread_local alignas(64) std::queue<PacketPtr> tempQ;
+
+	sessionPtr->m_sendQ.Swap(tempQ);
+
+	int popCount = tempQ.size();
+
+	while (tempQ.size() > 0)
+	{
+		sessionPtr->m_sendOverlapped.m_pendingList.push_back(std::move(tempQ.front()));
+
+		tempQ.pop();
+	}
 
 	std::vector<WSABUF> wsaBufs;
 
@@ -1126,6 +1158,8 @@ void jh_network::IocpClient::WorkerThread()
 			setsockopt(sessionPtr->m_socket, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0);
 
 			OnConnected(sessionPtr->m_ullSessionId);
+		
+			InterlockedIncrement64(&m_llTotalConnectedSessionCount);
 
 			PostRecv(sessionPtr);
 		}
@@ -1237,8 +1271,6 @@ jh_network::Session* jh_network::IocpClient::CreateSession(SOCKET sock, const SO
 		return nullptr;
 	}
 
-	InterlockedIncrement64(&m_llTotalConnectedSessionCount);
-
 	return sessionPtr;
 
 }
@@ -1268,7 +1300,8 @@ void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
 		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L" [DeleteSession] - 사용중인 세션입니다. SessionId : [%llu]", sessionId);
 		return;
 	}
-	
+	InterlockedIncrement64(&m_llTotalDisconnectedCount);
+
 	OnDisconnected(sessionId);
 
 	closesocket(sessionPtr->m_socket);
