@@ -24,7 +24,7 @@ void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 	
 	while (true == m_bRunnigFlag.load())
 	{
-		WaitForSingleObject(jobEvent, 100);
+		WaitForSingleObject(jobEvent, 10);
 
 		ProcessNetJob(threadNum);
 
@@ -254,6 +254,9 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 
 	for (DummyPtr& dummy : dummyVec)
 	{
+		if (false == clientSendFlag.load())
+			continue;
+
 		if (curTimeStamp - dummy->m_ullLastUpdatedHeartbeatTime > 5000)
 		{
 			dummy->m_ullLastUpdatedHeartbeatTime = curTimeStamp;
@@ -261,9 +264,6 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 			PacketPtr hbPkt = jh_content::DummyPacketBuilder::BuildHeartbeatPacket(curTimeStamp);
 			m_pOwner->SendPacket(dummy->m_ullSessionId, hbPkt);
 		}
-
-		if (false == clientSendFlag.load())
-			continue;
 
 		if (dummy->m_ullNextActionTime > curTimeStamp)
 			continue;

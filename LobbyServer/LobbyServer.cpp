@@ -122,8 +122,17 @@ void jh_content::LobbyServer::OnDisconnected(ULONGLONG sessionId)
 
 void jh_content::LobbyServer::Monitor()
 {
-	wprintf(L" [Lobby Server] Sessions : %d\n", GetSessionCount());
-	wprintf(L" [LAN Server]   Sessions : %d\n", m_pLanServer->GetSessionCount());
+	wprintf(L" [Network] Sync + Async Send TPS : %ld\n", GetTotalSendCount());
+	wprintf(L" [Network] Sync + Async Recv TPS : %ld\n", GetTotalRecvCount());
+
+	wprintf(L" [Network] Async Send TPS : %ld\n", GetAsyncSendCount());
+	wprintf(L" [Network] Async Recv TPS : %ld\n", GetAsyncRecvCount());	;
+
+	wprintf(L" [Network] Disconnected Session Count : %lld\n", GetDisconnectedCount());
+	wprintf(L" [Network] Total Disconnected Session Count : %lld\n", GetTotalDisconnectedCount());
+
+	wprintf(L" [Lobby Server] Sessions : %ld\n", GetSessionCount());
+	wprintf(L" [LAN Server]   Sessions : %ld\n", m_pLanServer->GetSessionCount());
 }
 
 void jh_content::LobbyServer::GetInvalidMsgCnt()

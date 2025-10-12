@@ -15,6 +15,7 @@ namespace jh_content
 		void OnConnected(ULONGLONG sessionId) override;
 		void OnDisconnected(ULONGLONG sessionId) override;
 
+		void Monitor();
 		std::unique_ptr<jh_content::DummyUpdateSystem> m_pDummySystem;
 
 		virtual void BeginAction() override;

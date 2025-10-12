@@ -27,6 +27,8 @@ jh_network::IocpServer::IocpServer(const WCHAR* serverName) : m_hCompletionPort(
 	m_lSessionCount = 0;
 	m_llTotalAcceptedSessionCount = 0;
 
+	m_llDisconnectedCount = 0;
+	m_llTotalDisconnectedCount = 0;
 	m_lAsyncRecvCount = 0;
 	m_lAsyncSendCount = 0;
 	
@@ -224,6 +226,8 @@ void jh_network::IocpServer::DeleteSession(ULONGLONG sessionId)
 	sessionPtr->Reset();
 
 	m_sessionIndexStack.Push(sessionIdx);
+	
+	InterlockedIncrement64(&m_llTotalDisconnectedCount);
 
 	InterlockedDecrement(&m_lSessionCount);
 	_LOG(L"Session", LOG_LEVEL_DETAIL, L"Delete PushStack SessionIdx, SessionID : 0x%08x, SessionIdx : 0x%08x", sessionId, sessionIdx);
@@ -356,7 +360,7 @@ void jh_network::IocpServer::WorkerThreadFunc()
 		if (false == gqcsRet)
 		{
 			//DecreaseIoCount(sessionPtr);
-			InterlockedIncrement(&m_lDisconnectedCount);
+			InterlockedIncrement64(&m_llDisconnectedCount);
 			
 			Disconnect(sessionPtr->m_ullSessionId, L"연결 끊김");
 
@@ -601,7 +605,7 @@ void jh_network::IocpServer::PostSend(Session* sessionPtr)
 
 void jh_network::IocpServer::PostRecv(Session* sessionPtr)
 {
-	//if (1 != InterlockedAnd8(&sessionPtr->useFlag, 1))
+	//if (1 != InterlockedAnd8(&sessionPtr->m_bUseFlag, 1))
 	//{
 	//	return;
 	//}
@@ -824,10 +828,10 @@ jh_network::Session* jh_network::IocpServer::CreateSession(SOCKET sock, const SO
 
 //void jh_network::IocpServer::WriteSessionLog(LONGLONG m_llSessionId, LONGLONG m_lIoCount, SessionJob sessionJob)
 //{
-//	DWORD threadId = GetCurrentThreadId();
+//	DWORD m_dwThreadId = GetCurrentThreadId();
 //	LONG order = InterlockedIncrement(&logIndex) % sessionLogMax;
 //
-//	_sessionLog[order].threadId = threadId;
+//	_sessionLog[order].m_dwThreadId = m_dwThreadId;
 //	_sessionLog[order].m_llSessionId = m_llSessionId;
 //	_sessionLog[order].sessionIoCount = m_lIoCount;
 //	_sessionLog[order].sessionJob = sessionJob;
@@ -1107,7 +1111,7 @@ void jh_network::IocpClient::WorkerThread()
 		// 작업 도중 연결이 끊겼을 때의 상황이다.
 		if (false == gqcsRet)
 		{			
-			InterlockedIncrement(&m_lDisconnectedCount);
+			InterlockedIncrement(&m_llDisconnectedCount);
 
 			Disconnect(sessionPtr->m_ullSessionId);
 
@@ -1264,7 +1268,7 @@ void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
 		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L" [DeleteSession] - 사용중인 세션입니다. SessionId : [%llu]", sessionId);
 		return;
 	}
-
+	
 	OnDisconnected(sessionId);
 
 	closesocket(sessionPtr->m_socket);
@@ -1344,8 +1348,11 @@ jh_network::IocpClient::IocpClient(const WCHAR* clientName) : m_pcwszClientName(
 
 	//_sessionLog = new SessionLog[sessionLogMax];
 
-	m_lDisconnectedCount = 0;
+	m_llDisconnectedCount = 0;
+	m_llTotalDisconnectedCount = 0;
+
 	m_sessionCount = 0;
+	
 	m_llTotalConnectedSessionCount = 0;
 
 	m_lAsyncRecvCount = 0;

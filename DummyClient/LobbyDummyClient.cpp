@@ -81,6 +81,25 @@ void jh_content::LobbyDummyClient::OnDisconnected(ULONGLONG sessionId)
 	m_pDummySystem->EnqueueSessionConnEvent(sessionConnEvent, threadNum);
 }
 
+void jh_content::LobbyDummyClient::Monitor()
+{
+	wprintf(L"=================================================\n");
+
+	wprintf(L" [Network] Sync + Async Send TPS : %ld\n", GetTotalSendCount());
+	wprintf(L" [Network] Sync + Async Recv TPS : %ld\n", GetTotalRecvCount());
+
+	wprintf(L" [Network] Async Send TPS : %ld\n", GetAsyncSendCount());
+	wprintf(L" [Network] Async Recv TPS : %ld\n", GetAsyncRecvCount()); ;
+
+	wprintf(L" [Network] Disconnected Session Count : %lld\n", GetDisconnectedCount());
+	wprintf(L" [Network] Total Disconnected Session Count : %lld\n", GetTotalDisconnectedCount());
+	wprintf(L"=================================================\n");
+
+	wprintf(L" [Content] MAX Sessions : %d\n", GetMaxSessionCount());
+	wprintf(L" [Content] Total Sessions : %d\n", GetSessionCount());
+	wprintf(L" [Content] Total Dummies : %d\n", DummyData::aliveDummyCount.load());
+}
+
 void jh_content::LobbyDummyClient::BeginAction()
 {
 	m_pDummySystem->Init();

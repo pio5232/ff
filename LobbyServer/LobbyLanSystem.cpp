@@ -53,7 +53,7 @@ void jh_content::LobbyLanSystem::LobbyLanLogic()
 {
 	while (true == m_bRunningFlag.load())
 	{
-		WaitForSingleObject(m_hJobEvent, INFINITE);
+		WaitForSingleObject(m_hJobEvent, 1000);
 		// Packet 관련 작업 처리
 		ProcessNetJob();
 	}

@@ -33,6 +33,7 @@ namespace jh_utility
 #define LOG_LEVEL_INFO jh_utility::FileLogger::LogLevel::LEVEL_INFO  // 정보성 로그
 #define LOG_LEVEL_WARNING jh_utility::FileLogger::LogLevel::LEVEL_WARNING // 오류 로그
 #define LOG_LEVEL_SYSTEM jh_utility::FileLogger::LogLevel::LEVEL_SYSTEM // 치명적 로그
+#define LOG_LEVEL_NO_LOG jh_utility::FileLogger::LogLevel::LEVEL_NO_LOGGING
 
 //#define SET_LOG_LEVEL(LOG_LEVEL) jh_utility::FileLogger::GetInstance().SetLogLevel(LOG_LEVEL)
 #define SET_LOG_LEVEL(LOG_LEVEL) g_logger->SetLogLevel(LOG_LEVEL)
@@ -59,6 +60,7 @@ do {																				\
 			LEVEL_INFO,
 			LEVEL_WARNING,
 			LEVEL_SYSTEM,
+			LEVEL_NO_LOGGING,
 		};
 
 		//static FileLogger& GetInstance();

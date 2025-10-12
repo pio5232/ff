@@ -68,12 +68,8 @@ int main()
             wprintf(L" Press 'S' to SendMode,  SendMode         : [%s]\n", clientSendFlag ? L"YES" : L"NO");
             wprintf(L"-------------------------------------------------\n");
 
-            wprintf(L"-------------------------------------------------\n");
-            wprintf(L" [Content] MAX Sessions : %d\n", dummyClient.GetMaxSessionCount());
-            wprintf(L" [Content] Total Sessions : %d\n", dummyClient.GetSessionCount());
-            wprintf(L" [Content] Total Dummies : %d\n", DummyData::aliveDummyCount.load());
-            wprintf(L"=================================================\n\n\n");
-            
+            dummyClient.Monitor();
+
             prevTime = curTime;
         }
         //Sleep(1000);

@@ -24,7 +24,7 @@ namespace jh_network
 	//};
 	//struct SessionLog
 	//{
-	//	DWORD threadId;
+	//	DWORD m_dwThreadId;
 	//	// Decrease 전 IOCount
 	//	LONGLONG sessionIoCount;
 	//	LONGLONG m_llSessionId;
@@ -82,7 +82,18 @@ namespace jh_network
 		USHORT GetPort() const;
 		
 		bool InitSessionArray(DWORD maxSessionCount);
+
+
 	protected:
+
+		LONG GetTotalRecvCount() { return InterlockedExchange(&m_lTotalRecvCount, 0); }
+		LONG GetTotalSendCount() { return InterlockedExchange(&m_lTotalSendCount, 0); }
+		LONG GetAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
+		LONG GetAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
+
+		LONGLONG GetDisconnectedCount() { return m_llDisconnectedCount; }
+		LONGLONG GetTotalDisconnectedCount() { return m_llDisconnectedCount; }
+
 		SOCKET GetListenSock() { return m_listenSock; }
 		
 		// session 수를 제외한 다른 옵션들을 설정.
@@ -110,7 +121,7 @@ namespace jh_network
 		LINGER m_lingerOption;									// TIME_OUT 옵션 설정 (GRACEFUL_SHUTDOWN 하지 않게 설정 위해.)
 		ULONGLONG m_ullTimeOutLimit;							// HEARTBEAT
 
-	protected:
+	private:
 		const WCHAR* const m_pcwszServerName;					// 실행중인 서버의 이름 // Chatting / Lobby / Game.. 등등
 		SOCKET m_listenSock;
 
@@ -126,7 +137,9 @@ namespace jh_network
 		alignas(64) LONG m_lSessionCount;						// 현재 접속중인 세션 수
 		alignas(64) LONGLONG m_llTotalAcceptedSessionCount;		// 시작부터 연결된 세션의 개수 
 
-		alignas(64) LONG m_lDisconnectedCount; // 상대쪽에서 연결을 끊은 횟수
+		alignas(64) LONGLONG m_llDisconnectedCount; // 상대쪽에서 연결을 끊은 횟수
+
+		alignas(64) LONGLONG m_llTotalDisconnectedCount; // 상대 + 서버가 연결을 끊은 횟수
 
 		alignas(64) LONG m_lTotalRecvCount;						// 1초 동기 + 비동기 RECV 수
 		alignas(64) LONG m_lTotalSendCount;						// 1초 동기 + 비동기 SEND 수
@@ -183,14 +196,16 @@ namespace jh_network
 		LONG GetSessionCount() { return m_sessionCount.load(); }
 		LONG GetTotalRecvCount() { return InterlockedExchange(&m_lTotalRecvCount, 0); }
 		LONG GetTotalSendCount() { return InterlockedExchange(&m_lTotalSendCount, 0); }
-		LONG GetTotalAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
-		LONG GetTotalAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
+		LONG GetAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
+		LONG GetAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
 
+		LONGLONG GetDisconnectedCount() { return m_llDisconnectedCount; }
+		LONGLONG GetTotalDisconnectedCount() { return m_llDisconnectedCount; }
 	protected:
 		virtual void BeginAction() {}
 		virtual void EndAction() {}
 		const WCHAR* const m_pcwszClientName;
-	private:
+	
 		// 설정 값
 		WCHAR m_wszTargetIp[IP_STRING_LEN]; // 원본 20				// ip
 		USHORT m_usTargetPort;											// 포트 번호
@@ -216,7 +231,8 @@ namespace jh_network
 		alignas(64) std::atomic<LONG> m_sessionCount;						// 현재 연결된 Session의 수.
 		alignas(64) LONGLONG m_llTotalConnectedSessionCount;		// 시작부터 연결된 세션의 총 합
 
-		alignas(64) LONG m_lDisconnectedCount; // 상대쪽에서 연결을 끊은 횟수
+		alignas(64) LONG m_llDisconnectedCount; // 상대쪽에서 연결을 끊은 횟수
+		alignas(64) LONGLONG m_llTotalDisconnectedCount; // 상대 + 서버가 연결을 끊은 횟수
 
 		alignas(64) LONG m_lTotalRecvCount;						// 1초 동기 + 비동기 RECV 수
 		alignas(64) LONG m_lTotalSendCount;						// 1초 동기 + 비동기 SEND 수

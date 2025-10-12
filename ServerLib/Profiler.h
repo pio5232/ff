@@ -10,11 +10,13 @@
 #define PROF_WIDE1(x) PROF_WIDE2(x)
 #define PROF_WFUNC PROF_WIDE1(__FUNCTION__)
 
-#define PRO_START_AUTO_FUNC jh_utility::ProfileManager::GetInstance().Start(PROF_WFUNC)
-#define PRO_END_AUTO_FUNC jh_utility::ProfileManager::GetInstance().Stop(PROF_WFUNC)
+#define PRO_START_AUTO_FUNC jh_utility::AutoProfiling ra(PROF_WFUNC)
 
-#define PRO_START(x) CProfileManager::GetInstance().Start(L##x)
-#define PRO_END(x) CProfileManager::GetInstance().Stop(L##x)
+#define PRO_START(x) jh_utility::ProfileManager::GetInstance().Start(L##x)
+#define PRO_END(x) jh_utility::ProfileManager::GetInstance().Stop(L##x)
+
+//#define PRO_START(x) CProfileManager::GetInstance().Start(L##x)
+//#define PRO_END(x) CProfileManager::GetInstance().Stop(L##x)
 
 #define PRO_RESET jh_utility::ProfileManager::GetInstance().DataReset()
 #define PRO_SAVE(FILE_NAME) jh_utility::ProfileManager::GetInstance().ProfileDataOutText(L##FILE_NAME) 
@@ -31,18 +33,18 @@ namespace jh_utility
 		ProfileSample();
 		void Initialize();
 
-		WCHAR sampleName[SAMPLE_NAME_LEN]; // 태그 이름
+		WCHAR m_wszSampleName[SAMPLE_NAME_LEN]; // 태그 이름
 
-		LARGE_INTEGER startTime; // 시작 시간
+		LARGE_INTEGER m_llStartTime; // 시작 시간
 
-		ULONGLONG totalTime; // 전체 사용 시간
-		ULONGLONG minTime[2]; // 최소 사용 시간
-		ULONGLONG maxTime[2]; // 최대 사용 시간.
-		ULONGLONG callCount; // 호출 횟수 
+		ULONGLONG m_ullTotalTime; // 전체 사용 시간
+		ULONGLONG m_ullMinTime[2]; // 최소 사용 시간
+		ULONGLONG m_ullMaxTime[2]; // 최대 사용 시간.
+		ULONGLONG m_ullCallCount; // 호출 횟수 
 
-		DWORD threadId;
+		DWORD m_dwThreadId;
 
-		bool useFlag; // 프로파일의 사용 여부
+		bool m_bUseFlag; // 프로파일의 사용 여부
 	};
 
 	struct ThreadProfileData
@@ -57,7 +59,7 @@ namespace jh_utility
 
 		void Reset();
 	
-		ProfileSample _samples[MAX_SAMPLE_COUNT];
+		ProfileSample m_samples[MAX_SAMPLE_COUNT];
 	};
 
 	class ProfileManager
@@ -95,5 +97,22 @@ namespace jh_utility
 		// 오차가 있을 수 있다.
 
 	};
+
+	class AutoProfiling
+	{
+		public :
+			AutoProfiling(const WCHAR* functionName) : currentFunctionName{ functionName } 
+			{
+				jh_utility::ProfileManager::GetInstance().Start(currentFunctionName);
+			}
+			~AutoProfiling() {
+				
+				jh_utility::ProfileManager::GetInstance().Stop(currentFunctionName);
+				currentFunctionName = nullptr;
+			}
+
+	private:
+		const WCHAR* currentFunctionName = nullptr;
+	};
 }
-extern thread_local jh_utility::ThreadProfileData* tls_profiler;
+extern thread_local jh_utility::ThreadProfileData* tls_pProfiler;

@@ -160,6 +160,7 @@ ErrorCode jh_content::LobbySystem::ProcessPacket(ULONGLONG sessionId, DWORD pack
 
 void jh_content::LobbySystem::ProcessNetJob()
 {
+	PRO_START_AUTO_FUNC;
 	static alignas(64) std::vector<JobPtr> jobList;
 	std::vector<JobPtr>	emptyVec;
 
@@ -257,6 +258,7 @@ void jh_content::LobbySystem::ProcessLanRequest()
 
 ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
+	PRO_START_AUTO_FUNC;
 	_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"HandleRoomListRequest for session %lld", sessionId);
 
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
@@ -280,6 +282,8 @@ ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG session
 
 ErrorCode jh_content::LobbySystem::HandleLogInRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
+	PRO_START_AUTO_FUNC;
+
 	//std::cout << "LogIn Request\n";
 
 	jh_network::LogInRequestPacket clientRequestPacket;
@@ -298,6 +302,8 @@ ErrorCode jh_content::LobbySystem::HandleLogInRequestPacket(ULONGLONG sessionId,
 }
 ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
+	PRO_START_AUTO_FUNC;
+
 	USHORT messageLen; // WCHAR
 	USHORT roomNum;
 
@@ -368,6 +374,8 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 
 ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
+	PRO_START_AUTO_FUNC;
+
 	//wprintf(L" MakeRoom Request Recv\n");
 
 	WCHAR roomName[ROOM_NAME_MAX_LEN]{};
@@ -450,6 +458,8 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 }
 ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
+	PRO_START_AUTO_FUNC;
+
 	jh_network::EnterRoomRequestPacket requestPacket;
 
 	*packet >> requestPacket;
@@ -562,6 +572,8 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 }
 ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
+	PRO_START_AUTO_FUNC;
+
 	jh_network::LeaveRoomRequestPacket leaveRoomRequestPacket;
 
 	*packet >> leaveRoomRequestPacket;
@@ -613,6 +625,8 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 
 ErrorCode jh_content::LobbySystem::HandleGameReadyRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
+	PRO_START_AUTO_FUNC;
+
 	jh_network::GameReadyRequestPacket requestPacket;
 
 	*packet >> requestPacket.isReady;
@@ -664,6 +678,8 @@ ErrorCode jh_content::LobbySystem::HandleGameReadyRequestPacket(ULONGLONG sessio
 
 ErrorCode jh_content::LobbySystem::HandleHeartbeatPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
+	PRO_START_AUTO_FUNC;
+
 	ULONGLONG packetTimeStamp;
 
 	*packet >> packetTimeStamp;
@@ -676,6 +692,8 @@ ErrorCode jh_content::LobbySystem::HandleHeartbeatPacket(ULONGLONG sessionId, Pa
 
 void jh_content::LobbySystem::HandleLanInfoNotify(ULONGLONG lanSessionId, PacketPtr& lanPacket, jh_network::IocpServer* lanServer)
 {
+	PRO_START_AUTO_FUNC;
+
 	printf("Lan Info Notify Packet Recv\n");
 
 	WCHAR ipStr[IP_STRING_LEN] = {};
@@ -709,6 +727,8 @@ void jh_content::LobbySystem::HandleLanInfoNotify(ULONGLONG lanSessionId, Packet
 
 void jh_content::LobbySystem::HandleGameSettingRequest(ULONGLONG lanSessionId, PacketPtr& lanPacket, jh_network::IocpServer* lanServer)
 {
+	PRO_START_AUTO_FUNC;
+
 	printf("Game Setting Request Packet Recv\n");
 
 	if (m_pendingGameRoomList.empty())
