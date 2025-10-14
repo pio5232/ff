@@ -45,10 +45,10 @@ do {																			\
 } while(0)
 
 /*jh_utility::FileLogger::GetInstance().WriteLogHex(logType, logLevelMacro, logWstr, buffer, bufferSize);	\*/
-//#define _LOGHEX(logType, logLevelMacro, logWstr, buffer, bufferSize)											\
-//do {																				\
-//	g_logger->WriteLogHex(logType, logLevelMacro, logWstr, buffer, bufferSize);	\
-//} while(0)
+#define _LOGHEX(logType, logLevelMacro, logWstr, buffer, bufferSize)											\
+do {																				\
+	g_logger->WriteLogHex(logType, logLevelMacro, logWstr, buffer, bufferSize);	\
+} while(0)
 
 	class FileLogger
 	{
@@ -62,7 +62,7 @@ do {																			\
 			LEVEL_SYSTEM,
 			LEVEL_NO_LOGGING,
 		};
-;
+
 		//static FileLogger& GetInstance();
 
 		FileLogger();
@@ -72,23 +72,12 @@ do {																			\
 		// StringSafe한
 		void WriteLog(const WCHAR* logType, LogLevel logLevel, const WCHAR* logFormat, ...);
 
-		// 바이너리 데이터를 Hex 16진수로 남기는 함수. 
-		//void WriteLogHex(const WCHAR* logType, LogLevel logLevel, const WCHAR* logWstr, BYTE* buffer, int bufferLen);
+		// 바이너리 데이터를 Hex 16진수로 남기는 함수.
+		void WriteLogHex(const WCHAR* logType, LogLevel logLevel, const WCHAR* logWstr, BYTE* buffer, int bufferLen);
 
 		void SetLogLevel(LogLevel logLevel) { m_eLogLevel = logLevel; }
 
 	private:
-
-		struct LogInfo
-		{
-			WCHAR* m_pPath;
-			WCHAR* m_pHeader;
-			WCHAR* m_pMsg;
-		};
-
-		static unsigned WINAPI LogThreadMain(LPVOID lparam);
-		void LogThreadFunc();
-
 		bool CheckNCreateDir(const WCHAR* filePath);
 
 		// 저장할 파일 이름,[type] [날짜 / LogLevel] 같은 정보들 세팅.
@@ -98,15 +87,12 @@ do {																			\
 		// .\\FileLog\\DATE_TIME
 		WCHAR m_wszCommonFilePath[DEFAULT_FILE_PATH_SIZE];
 
+		//static FileLogger* m_pInstance;
+		//static std::once_flag m_onceFlag;
+
 		LogLevel m_eLogLevel;
 
-		jh_utility::LockQueue<LogInfo*> m_logQ;
-
-		ULONGLONG m_ullLogCounter;
-
-		char m_bIsRunning;
-		bool m_bCasOpen;
-		HANDLE m_hThread;
-		HANDLE m_hLogEvent;
+		alignas(64) volatile LONGLONG m_llLogCounter;
+		SRWLOCK m_lock;
 	};
 }

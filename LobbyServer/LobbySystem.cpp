@@ -33,7 +33,7 @@ void jh_content::LobbySystem::Init()
 	}
 
 	LPVOID param = this;
-	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbySystem::StaticLogic, param, 0, nullptr));
+	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbySystem::LogicThreadMain, param, 0, nullptr));
 
 	if (nullptr == m_hLogicThread)
 	{
@@ -108,7 +108,7 @@ jh_content::LobbySystem::~LobbySystem()
 	}
 }
 
-unsigned __stdcall jh_content::LobbySystem::StaticLogic(LPVOID lparam)
+unsigned __stdcall jh_content::LobbySystem::LogicThreadMain(LPVOID lparam)
 {
 	jh_content::LobbySystem* lobbyInstance = static_cast<LobbySystem*>(lparam);
 

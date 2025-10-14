@@ -18,7 +18,7 @@ void jh_content::GameSystem::Init()
 	m_packetFuncDic[jh_network::ATTACK_REQUEST_PACKET] = &GameSystem::HandleAttackRequestPacket;
 	m_packetFuncDic[jh_network::CHAT_TO_ROOM_REQUEST_PACKET] = &GameSystem::HandleChatRequestPacket;
 	
-	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, GameSystem::StaticLogic, (LPVOID)this, 0, nullptr));
+	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, GameSystem::LogicThreadMain, (LPVOID)this, 0, nullptr));
 
 	if (nullptr == m_hLogicThread)
 	{
@@ -91,7 +91,7 @@ void jh_content::GameSystem::SetGameInfo(USHORT roomNumber, USHORT requiredUsers
 }
 
 
-unsigned jh_content::GameSystem::StaticLogic(LPVOID lparam)
+unsigned jh_content::GameSystem::LogicThreadMain(LPVOID lparam)
 {
 	jh_content::GameSystem* gameInstance = static_cast<GameSystem*>(lparam);
 

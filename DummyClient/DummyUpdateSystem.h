@@ -32,7 +32,7 @@ namespace jh_content
 		void ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet, int threadNum);
 	
 	public:
-		static unsigned WINAPI StaticLogic(LPVOID lparam);
+		static unsigned WINAPI LogicThreadMain(LPVOID lparam);
 		void DummyLogic(int threadNum);
 
 		DummyUpdateSystem(jh_network::IocpClient* owner);

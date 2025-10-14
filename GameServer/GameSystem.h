@@ -49,7 +49,7 @@ namespace jh_content
 		void Init();
 		void Stop();
 	private:
-		static unsigned StaticLogic(LPVOID lparam);
+		static unsigned LogicThreadMain(LPVOID lparam);
 		void GameLogic();
 
 		void ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet);

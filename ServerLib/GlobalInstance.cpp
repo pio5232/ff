@@ -36,11 +36,11 @@ public:
 	{
 		PRO_SAVE("ProfileData.TXT");
 
+		delete g_logger;
 		delete g_memAllocator;
 		//delete g_packetPool;
 		//delete g_jobPool;
 		//delete g_systemJobPool;
-
 		jh_network::NetAddress::Clear();
 	}
 } g_gGlobalGen;

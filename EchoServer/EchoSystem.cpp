@@ -79,7 +79,6 @@ void jh_content::EchoSystem::Stop()
 void jh_content::EchoSystem::ProcessNetJob()
 {
 	static thread_local alignas(64) std::queue<JobPtr> echoJobQ;
-	std::queue<JobPtr> emptyQ;
 
 	m_netJobQueue.Swap(echoJobQ);
 
@@ -91,8 +90,6 @@ void jh_content::EchoSystem::ProcessNetJob()
 		
 		echoJobQ.pop();
 	}
-
-	echoJobQ.swap(emptyQ);
 
 	// netJobQueue에서 Job 확인 후 
 	// 작업따라 패킷 처리
@@ -127,8 +124,6 @@ void jh_content::EchoSystem::ProcessSystemJob()
 		
 		systemJobQ.pop();
 	}
-
-	systemJobQ.swap(emptyQ);
 }
 
 //ErrorCode jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, jh_network::SerializationBufferPtr& serializationBufferPtr)

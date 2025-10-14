@@ -2,7 +2,7 @@
 #include "DummyUpdateSystem.h"
 #include "DummyPacketBuilder.h"
 #include "Memory.h"
-unsigned jh_content::DummyUpdateSystem::StaticLogic(LPVOID lparam)
+unsigned jh_content::DummyUpdateSystem::LogicThreadMain(LPVOID lparam)
 {
 	WorkerTransData* data = static_cast<WorkerTransData*>(lparam);
 	
@@ -81,7 +81,7 @@ void jh_content::DummyUpdateSystem::Init()
 		transData[i].m_pThis = this;
 		transData[i].m_iThreadNum = i;
 
-		logicData.m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, DummyUpdateSystem::StaticLogic, &transData[i], 0, nullptr));
+		logicData.m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, DummyUpdateSystem::LogicThreadMain, &transData[i], 0, nullptr));
 
 		if (nullptr == logicData.m_hLogicThread)
 		{
