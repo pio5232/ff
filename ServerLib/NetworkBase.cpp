@@ -360,6 +360,10 @@ void jh_network::IocpServer::WorkerThreadFunc()
 		if (false == gqcsRet)
 		{
 			//DecreaseIoCount(sessionPtr);
+			DWORD er = WSAGetLastError();
+
+			_LOG(L"Server GQCS_FALSE", LOG_LEVEL_WARNING, L"WSAGetLastError : %u", er);
+
 			InterlockedIncrement64(&m_llDisconnectedCount);
 			
 			Disconnect(sessionPtr->m_ullSessionId, L"gqcsRet False");
@@ -1010,17 +1014,7 @@ void jh_network::IocpClient::PostSend(Session* sessionPtr)
 		// 등록에 실패한 상황
 		if (wsaErr != WSA_IO_PENDING)
 		{
-			switch (wsaErr)
-			{
-			case 10053:;
-
-				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다.  WSAECONNRESET
-			case 10054:;
-				break;
-			default:
-				_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"  SEND POST FAILED .. WSAERROR : %u, 0x%08x", wsaErr, sessionPtr->m_ullSessionId);
-				break;
-			}
+			_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"  [SendPost] Failed. WsaError : [%u], SessionID : [0x%016x]", wsaErr, sessionPtr->m_ullSessionId);
 
 			DecreaseIoCount(sessionPtr);
 
@@ -1067,19 +1061,8 @@ void jh_network::IocpClient::PostRecv(Session* sessionPtr)
 
 		if (wsaErr != WSA_IO_PENDING)
 		{
-			switch (wsaErr)
-			{
-				//
-			case 10053:
-				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다. WSAECONNRESET
-			case 10054:
-				break;
-			default:
-				_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[RecvPost] 실패 WSAERROR : %u, 0x%08x", wsaErr, sessionPtr->m_ullSessionId);
-				break;
-			}
+			_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[RecvPost] Failed. WsaError : [%u], SessionID : [0x%016x]", wsaErr, sessionPtr->m_ullSessionId);
 
-			//DecreaseIoCount(sessionPtr, SessionJob::RECV);
 			DecreaseIoCount(sessionPtr);
 
 			return;
@@ -1144,6 +1127,9 @@ void jh_network::IocpClient::WorkerThread()
 		// 작업 도중 연결이 끊겼을 때의 상황이다.
 		if (false == gqcsRet)
 		{			
+			auto er = WSAGetLastError();
+			
+			_LOG(L"Client GQCS_FALSE", LOG_LEVEL_WARNING, L"WSAGetLastError : %u", er);
 			InterlockedIncrement(&m_llDisconnectedCount);
 
 			Disconnect(sessionPtr->m_ullSessionId, L"gqcs false");

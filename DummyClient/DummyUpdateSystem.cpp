@@ -30,6 +30,7 @@ void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 	{
 		WaitForSingleObject(jobEvent, 10);
 
+		PRO_START("DummyLogic");
 		ProcessNetJob(threadNum);
 
 		ProcessSessionConnectionEvent(threadNum);
@@ -45,7 +46,7 @@ void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 			
 			CheckSendTimeOut(threadNum);
 		}
-
+		PRO_END("DummyLogic");
 	}
 
 	
@@ -172,6 +173,8 @@ void jh_content::DummyUpdateSystem::EnqueueSessionConnEvent(SessionConnectionEve
 
 void jh_content::DummyUpdateSystem::ProcessNetJob(int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	static thread_local alignas(64) std::queue<JobPtr> dummyJobQ;
 
 	std::queue<JobPtr> emptyQ;
@@ -192,6 +195,8 @@ void jh_content::DummyUpdateSystem::ProcessNetJob(int threadNum)
 
 void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	LogicData& threadLogicData = m_logicData[threadNum];
 
 	static thread_local alignas(64) std::queue<SessionConnectionEventPtr> sessionConnEventQ;
@@ -270,6 +275,8 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 
 void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	std::vector<DummyPtr>& dummyVec = m_logicData[threadNum].m_dummyVector;
 
 	ULONGLONG curTimeStamp = jh_utility::GetTimeStamp();
@@ -366,6 +373,8 @@ void jh_content::DummyUpdateSystem::ProcessPacket(ULONGLONG sessionId, DWORD pac
 
 void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+	
 	DummyPtr dummy = m_logicData[threadNum].m_dummyUmap[sessionId];
 	// LOBBY 
 	if (DummyStatus::IN_LOBBY != dummy->m_dummyStatus)
@@ -422,6 +431,8 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 
 void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	if (m_logicData[threadNum].m_dummyUmap.end() == m_logicData[threadNum].m_dummyUmap.find(sessionId))
 		return;
 
@@ -457,6 +468,8 @@ void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionI
 
 void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	DummyPtr dummy = m_logicData[threadNum].m_dummyUmap[sessionId];
 	// LOBBY
 	if (DummyStatus::IN_LOBBY != dummy->m_dummyStatus)
@@ -483,6 +496,8 @@ void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessi
 
 void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	// MAKE
 	if (DummyStatus::WAIT_ENTER_ROOM != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 	{
@@ -505,6 +520,8 @@ void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sess
 
 void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	if (DummyStatus::WAIT_LEAVE_ROOM == m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus ||
 		DummyStatus::IN_ROOM == m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 		return;
@@ -516,6 +533,8 @@ void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, 
 
 void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	// ROOM
 	if (DummyStatus::WAIT_LEAVE_ROOM != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 	{
@@ -534,6 +553,7 @@ void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sess
 void jh_content::DummyUpdateSystem::HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
 	// RTT 측정은 하나의 세션이 담당한다..
+	PRO_START_AUTO_FUNC;
 
 	ULONGLONG curTime = jh_utility::GetTimeStamp();
 
@@ -551,6 +571,8 @@ void jh_content::DummyUpdateSystem::HandleEchoPacket(ULONGLONG sessionId, Packet
 
 void jh_content::DummyUpdateSystem::CheckSendTimeOut(int threadNum)
 {
+	PRO_START_AUTO_FUNC;
+
 	std::vector<DummyPtr>& dummyVec = m_logicData[threadNum].m_dummyVector;
 
 	ULONGLONG curTime = jh_utility::GetTimeStamp();
@@ -559,7 +581,10 @@ void jh_content::DummyUpdateSystem::CheckSendTimeOut(int threadNum)
 	for (DummyPtr& dummy : dummyVec)
 	{
 		if (curTime - dummy->m_ullLastSendTime > RE_SEND_TIMEOUT)
+		{
 			resendTimeoutCnt++;
+
+		}
 	}
 
 	m_logicData[threadNum].m_reSendTimeoutCnt.exchange(resendTimeoutCnt);

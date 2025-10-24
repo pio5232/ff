@@ -200,7 +200,7 @@ namespace jh_network
 	};
 	// LOG_IN
 	// 암호화.. 복호화?
-	struct alignas (32) LogInRequestPacket : public PacketHeader
+	struct LogInRequestPacket : public PacketHeader
 	{
 	public:
 		LogInRequestPacket() { size = sizeof(logInId) + sizeof(logInPw); type = LOG_IN_REQUEST_PACKET; }
@@ -208,7 +208,7 @@ namespace jh_network
 		ULONGLONG logInPw = 0;
 	};
 
-	struct alignas (16) LogInResponsePacket : public PacketHeader
+	struct LogInResponsePacket : public PacketHeader
 	{
 		LogInResponsePacket() { size = sizeof(userId); type = LOG_IN_RESPONSE_PACKET; }
 		ULONGLONG userId = 0;

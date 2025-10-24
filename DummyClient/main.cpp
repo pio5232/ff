@@ -16,7 +16,7 @@ int main()
 
     dummyClient.Start();
     int maxSessionCnt = dummyClient.GetMaxSessionCount();
-    dummyClient.Connect(maxSessionCnt);
+    //dummyClient.Connect(maxSessionCnt);
 
     ULONGLONG prevTime = jh_utility::GetTimeStamp();
     ULONGLONG curTime;

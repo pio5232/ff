@@ -42,6 +42,8 @@ jh_content::Room::~Room()
 
 jh_content::Room::RoomEnterResult jh_content::Room::TryEnterRoom(UserPtr userPtr)
 {
+	PRO_START_AUTO_FUNC;
+
 	if (m_roomInfo.m_usMaxUserCnt <= m_userMap.size())
 		return jh_content::Room::RoomEnterResult::FULL;
 
@@ -60,6 +62,8 @@ jh_content::Room::RoomEnterResult jh_content::Room::TryEnterRoom(UserPtr userPtr
 
 bool jh_content::Room::LeaveRoom(UserPtr userPtr)
 {
+	PRO_START_AUTO_FUNC;
+
 	bool isReady = false;
 
 	ULONGLONG userId = userPtr->GetUserId();
@@ -109,6 +113,8 @@ bool jh_content::Room::LeaveRoom(UserPtr userPtr)
 
 bool jh_content::Room::UpdateUserReadyStatus(UserPtr userPtr, bool isReady, bool sendOpt) // Ready 정보를 모두에게 알릴 것인가. (방장 교체의 경우 false => 알리지 않는다.)
 {
+	PRO_START_AUTO_FUNC;
+
 	if (userPtr->GetReadyState() == isReady)
 		return false;
 
@@ -146,6 +152,7 @@ bool jh_content::Room::UpdateUserReadyStatus(UserPtr userPtr, bool isReady, bool
 
 void jh_content::Room::BroadCast(PacketPtr& packet, ULONGLONG excludedUserId)
 {
+	PRO_START_AUTO_FUNC;
 	for (const auto& [_userId, _userWptr] : m_userMap)
 	{
 		UserPtr _userPtr = _userWptr.lock();

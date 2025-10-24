@@ -310,11 +310,9 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 	USHORT roomNum;
 
 	*packet >> roomNum >> messageLen;
-
-	//char* payLoad = static_cast<char*>(g_memAllocator->Alloc(messageLen));
-	//char* payLoad = static_cast<char*>(g_memAllocator->Alloc(messageLen));
 	
 	std::shared_ptr<char> payLoad(static_cast<char*>(g_memAllocator->Alloc(messageLen)),[](char* p) { g_memAllocator->Free(p); });
+	
 	//char* payLoad = static_cast<char*>(malloc(messageLen * MESSAGE_SIZE));
 
 	packet->GetData(payLoad.get(), messageLen);
@@ -615,9 +613,9 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 
 	bool isRoomEmpty = roomPtr->LeaveRoom(userPtr);
 
-	PacketPtr leaveRoomResPkt = jh_content::PacketBuilder::BuildLeaveRoomResponsePacket();
-	
-	m_pOwner->SendPacket(sessionId, leaveRoomResPkt);
+	//PacketPtr leaveRoomResPkt = jh_content::PacketBuilder::BuildLeaveRoomResponsePacket();
+	//
+	//m_pOwner->SendPacket(sessionId, leaveRoomResPkt);
 	
 	if (isRoomEmpty == true)
 		m_pRoomManager->DestroyRoom(roomPtr->GetRoomNum());
