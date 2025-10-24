@@ -6,6 +6,7 @@
 #define LOBBY_DUMMY_SAVEFILE_NAME L"LobbyClient"
 #define LOGIC_THREAD_COUNT 5
 
+#define RE_SEND_TIMEOUT ((int)8000)
 enum class DummyStatus : byte
 {
 	DISCONNECTED = 0,
@@ -13,20 +14,25 @@ enum class DummyStatus : byte
 	IN_LOBBY,
 	WAIT_ENTER_ROOM,
 	IN_ROOM,
+	WAIT_LEAVE_ROOM,
+	CHECK_RTT,
+	NO_CHANGE,
 };
 struct DummyData
 {
-	DummyData() : m_usExpectedRoomNum{}, m_wszExpectedRoomName{}, m_dummyStatus{ DummyStatus::DISCONNECTED }, m_ullSessionId{ (ULONGLONG)(INVALID_SESSION_ID) }, m_ullNextActionTime{}, m_ullLastUpdatedHeartbeatTime {} { aliveDummyCount.fetch_add(1); }
-	~DummyData() { aliveDummyCount.fetch_sub(1); m_dummyStatus = DummyStatus::DISCONNECTED; }
+	DummyData() : m_usExpectedRoomNum{}, m_wszExpectedRoomName{}, m_dummyStatus{ DummyStatus::DISCONNECTED }, m_ullSessionId{ (ULONGLONG)(INVALID_SESSION_ID) }, m_ullNextActionTime{}, m_ullLastUpdatedHeartbeatTime{}, m_ullUserId{}, m_ullLastSendTime{} { aliveDummyCount.fetch_add(1); }
+	~DummyData() { aliveDummyCount.fetch_sub(1); m_dummyStatus = DummyStatus::DISCONNECTED; m_ullUserId = 0; }
 
 	inline static std::atomic<int> aliveDummyCount = 0;
 	USHORT m_usExpectedRoomNum;
 	WCHAR m_wszExpectedRoomName[ROOM_NAME_MAX_LEN]{};
 	DummyStatus m_dummyStatus;
 	ULONGLONG m_ullSessionId;
+	ULONGLONG m_ullUserId;
 
 	ULONGLONG m_ullNextActionTime;
 	ULONGLONG m_ullLastUpdatedHeartbeatTime;
+	ULONGLONG m_ullLastSendTime;
 };
 
 using DummyPtr = std::shared_ptr<DummyData>;

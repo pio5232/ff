@@ -440,7 +440,7 @@ void jh_content::GameWorld::InvalidateWinner(ULONGLONG userId)
 	if (userId == m_ullExpectedWinnerId)
 	{
 		m_ullExpectedWinnerId = 0;
-		m_ullExpectedWinTime = MAXULONGLONG;
+		m_ullExpectedWinTime = ULLONG_MAX;
 
 		printf("[ Invalidate Winner : %llu\n", userId);
 

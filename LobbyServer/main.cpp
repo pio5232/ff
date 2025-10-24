@@ -27,7 +27,7 @@ int main()
 	//_CrtDumpMemoryLeaks();
 
 	//return 0; 
-	SET_LOG_LEVEL(LOG_LEVEL_NO_LOG);
+	SET_LOG_LEVEL(LOG_LEVEL_WARNING);
 
 	jh_content::LobbyServer lobbyServer;
 

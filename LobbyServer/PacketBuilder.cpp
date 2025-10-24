@@ -163,6 +163,17 @@ PacketPtr jh_content::PacketBuilder::BuildGameReadyNotifyPacket(ULONGLONG userId
 	return buffer;
 }
 
+PacketPtr jh_content::PacketBuilder::BuildEchoPacket(ULONGLONG data)
+{
+	jh_network::EchoPacket echoPacket;
+
+	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(echoPacket));
+
+	*buffer << echoPacket.size << echoPacket.type << echoPacket.m_data;
+
+	return buffer;
+}
+
 PacketPtr jh_content::PacketBuilder::BuildLanInfoPacket(WCHAR* ipStr, USHORT port, USHORT roomNum, ULONGLONG tok)
 {
 	jh_network::GameServerLanInfoPacket gameServerLanInfoPacket;

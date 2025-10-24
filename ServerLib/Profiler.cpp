@@ -24,7 +24,7 @@ void jh_utility::ProfileSample::Initialize()
 	memset(m_wszSampleName, NULL, sizeof(m_wszSampleName));
 	m_llStartTime.QuadPart = 0;
 	m_ullTotalTime = 0;
-	m_ullMinTime[0] = m_ullMinTime[1] = MAXULONGLONG;
+	m_ullMinTime[0] = m_ullMinTime[1] = ULLONG_MAX;
 	m_ullMaxTime[0] = m_ullMaxTime[1] = 0;
 	m_ullCallCount = 0;
 
@@ -51,7 +51,7 @@ void jh_utility::ThreadProfileData::Start(const WCHAR* tag)
 
 			m_samples[i].m_ullTotalTime = 0;
 
-			m_samples[i].m_ullMinTime[0] = m_samples[i].m_ullMinTime[1] = MAXULONGLONG;
+			m_samples[i].m_ullMinTime[0] = m_samples[i].m_ullMinTime[1] = ULLONG_MAX;
 			m_samples[i].m_ullMaxTime[0] = m_samples[i].m_ullMaxTime[1] = 0;
 			
 			m_samples[i].m_ullCallCount= 0;

@@ -138,12 +138,12 @@ namespace jh_network
 	};
 
 	// ECHO REQUEST / RESPONSE
-	//struct EchoPacket : public PacketHeader
-	//{
-	//public:
-	//	EchoPacket() : m_data(0) { size = sizeof(__int64), type = ECHO_PACKET; }
-	//	__int64 m_data;
-	//};
+	struct EchoPacket : public PacketHeader
+	{
+	public:
+		EchoPacket() : m_data(0) { size = sizeof(ULONGLONG), type = ECHO_PACKET; }
+		ULONGLONG m_data;
+	};
 
 	struct ErrorPacket : public PacketHeader
 	{

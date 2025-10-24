@@ -55,7 +55,7 @@ namespace jh_content
 		bool IsInVictoryZone(const Vector3& pos) const;
 
 		ULONGLONG m_ullExpectedWinnerId = 0;
-		ULONGLONG m_ullExpectedWinTime = MAXULONGLONG;
+		ULONGLONG m_ullExpectedWinTime = ULLONG_MAX;
 
 	private:
 		SendPacketFunc m_sendPacketFunc;

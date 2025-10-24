@@ -362,7 +362,7 @@ void jh_network::IocpServer::WorkerThreadFunc()
 			//DecreaseIoCount(sessionPtr);
 			InterlockedIncrement64(&m_llDisconnectedCount);
 			
-			Disconnect(sessionPtr->m_ullSessionId, L"연결 끊김");
+			Disconnect(sessionPtr->m_ullSessionId, L"gqcsRet False");
 
 			DecreaseIoCount(sessionPtr);
 
@@ -400,7 +400,7 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 	if (false == sessionPtr->m_recvBuffer.MoveRear(transferredBytes))
 	{
-		Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Overflow", true);
+		Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Overflow");
 
 		return ErrorCode::RECV_BUF_OVERFLOW;
 	}
@@ -436,7 +436,7 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 		//if (false == sessionPtr->m_recvBuffer.DequeueRetBool(pPacket->GetRearPtr(), header.size))
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
-			Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Deque Failed", true);
+			Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Deque Failed");
 
 			return ErrorCode::RECV_BUF_DEQUE_FAILED;
 		}
@@ -463,7 +463,7 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 		
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
-			Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Deque Failed", true);
+			Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Deque Failed");
 
 			return ErrorCode::RECV_BUF_DEQUE_FAILED;
 		}
@@ -502,14 +502,13 @@ ErrorCode jh_network::IocpServer::ProcessSend(Session* sessionPtr, DWORD transfe
 	return ErrorCode::NONE;
 }
 
-void jh_network::IocpServer::Disconnect(ULONGLONG sessionId, const WCHAR* reason, bool isCritical)
+void jh_network::IocpServer::Disconnect(ULONGLONG sessionId, const WCHAR* reason)
 {
 	Session* sessionPtr = TryAcquireSession(sessionId, PROF_WFUNC);
 
 	if (nullptr == sessionPtr)
 		return;
 
-	if(true == isCritical)
 	_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"Enter Disconnect Log - %s",reason);
 
 	// 연결 끊긴 상태가 아닌, 먼저 연결을 끊는 상황에서
@@ -865,7 +864,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 {
 	if (false == sessionPtr->m_recvBuffer.MoveRear(transferredBytes))
 	{
-		Disconnect(sessionPtr->m_ullSessionId);
+		Disconnect(sessionPtr->m_ullSessionId, L"recvBuffer MoveRear Failed");
 
 		return;
 	}
@@ -891,7 +890,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
-			Disconnect(sessionPtr->m_ullSessionId);
+			Disconnect(sessionPtr->m_ullSessionId, L"Echo Dequeue Failed");
 
 			return;
 		}
@@ -917,7 +916,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
-			Disconnect(sessionPtr->m_ullSessionId);
+			Disconnect(sessionPtr->m_ullSessionId, L"Dequeue Failed");
 
 			return;
 		}
@@ -942,12 +941,14 @@ void jh_network::IocpClient::ProcessSend(Session* sessionPtr, DWORD transferredB
 	return;
 }
 
-void jh_network::IocpClient::Disconnect(ULONGLONG sessionId)
+void jh_network::IocpClient::Disconnect(ULONGLONG sessionId, const WCHAR* reason)
 {
 	Session* sessionPtr = TryAcquireSession(sessionId);
 
 	if (nullptr == sessionPtr)
 		return;
+
+	_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"Enter Disconnect Log - %s", reason);
 
 	// 연결 끊긴 상태가 아닌, 먼저 연결을 끊는 상황에서
 	// 모두 완료 통지가 들어왔을 때 Disconnect()가 호출된다면
@@ -1145,7 +1146,7 @@ void jh_network::IocpClient::WorkerThread()
 		{			
 			InterlockedIncrement(&m_llDisconnectedCount);
 
-			Disconnect(sessionPtr->m_ullSessionId);
+			Disconnect(sessionPtr->m_ullSessionId, L"gqcs false");
 
 			DecreaseIoCount(sessionPtr);
 
@@ -1313,7 +1314,7 @@ void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
 	//InterlockedDecrement(&m_lSessionCount);
 	m_sessionCount.fetch_sub(1);
 
-	_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[DeleteSession] - 세션이 해제되었습니다.. Session ID [0x%0x]", sessionId);
+	_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L"[DeleteSession] - 세션이 해제되었습니다.. Session ID [0x%0x]", sessionId);
 
 	//_LOG(L"Session", LOG_LEVEL_DETAIL, L"Delete PushStack SessionIdx, SessionID : 0x%08x, SessionIdx : 0x%08x", sessionId, sessionIdx);
 

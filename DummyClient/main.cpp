@@ -75,7 +75,6 @@ int main()
         //Sleep(1000);
     }
 
-    GetRandDouble(1.0, 10.0, 2);
     dummyClient.Stop();
 }
 

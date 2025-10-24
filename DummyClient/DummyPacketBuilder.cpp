@@ -139,3 +139,18 @@ PacketPtr jh_content::DummyPacketBuilder::BuildRoomListRequestPacket()
 
     return buffer;
 }
+
+PacketPtr jh_content::DummyPacketBuilder::BuildEchoPacket()
+{
+    static ULONGLONG data = 0;
+
+    ULONGLONG incData = InterlockedIncrement64((LONGLONG*)&data);
+
+    jh_network::EchoPacket echoPacket;
+
+    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(echoPacket));
+
+    *buffer << echoPacket.size << echoPacket.type << incData;
+
+    return buffer;
+}

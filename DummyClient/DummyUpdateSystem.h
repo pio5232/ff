@@ -10,7 +10,9 @@ namespace jh_content
 	private:
 		struct alignas(64) LogicData
 		{
-			LogicData() : m_hLogicThread{}, m_hJobEvent{}, m_netJobQueue{}, m_sessionConnEventQueue{}, m_dummyUmap{} {}
+			LogicData() : m_hLogicThread{}, m_hJobEvent{}, m_netJobQueue{}, m_sessionConnEventQueue{}, m_dummyUmap{}, m_reSendTimeoutCnt{} {}
+
+			alignas(64) std::atomic<int> m_reSendTimeoutCnt;
 
 			HANDLE m_hLogicThread;
 			HANDLE m_hJobEvent;
@@ -19,6 +21,7 @@ namespace jh_content
 			std::unordered_map<ULONGLONG, DummyPtr> m_dummyUmap;
 			std::unordered_map<DummyPtr, int> m_dummyVectorIndexUMap;
 			std::vector<DummyPtr> m_dummyVector;
+			
 			
 		};
 
@@ -48,6 +51,7 @@ namespace jh_content
 
 		void ProcessDummyLogic(int threadNum);
 
+		void SendToDummy(DummyPtr& dummy, PacketPtr& packet, DummyStatus nextStauts = DummyStatus::NO_CHANGE);
 
 		void HandleRoomListResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleLogInResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
@@ -55,13 +59,23 @@ namespace jh_content
 		void HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleChatNotifyPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
+		void HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
+
+
 
 		bool IsValidThreadNum(int threadNum) { return threadNum >= 0 && threadNum < LOGIC_THREAD_COUNT; }
+
+		void CheckSendTimeOut(int threadNum);
+		int GetReSendTimeoutCnt();
+		ULONGLONG GetRTT() const;
+
 		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;
 		jh_network::IocpClient* m_pOwner;
 
 		LogicData m_logicData[LOGIC_THREAD_COUNT];
+		
 		alignas(64) std::atomic<bool> m_bRunnigFlag;
+		std::atomic<ULONGLONG> m_rtt;
 	};
 }
 

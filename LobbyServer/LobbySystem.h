@@ -66,6 +66,7 @@ namespace jh_content
 		ErrorCode HandleEnterRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
 		ErrorCode HandleLeaveRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
 		ErrorCode HandleGameReadyRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
+		ErrorCode HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet);
 
 		ErrorCode HandleHeartbeatPacket(ULONGLONG sessionId, PacketPtr& packet);
 

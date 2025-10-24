@@ -22,6 +22,7 @@ void jh_content::LobbySystem::Init()
 	m_packetFuncDic[jh_network::LEAVE_ROOM_REQUEST_PACKET] = &LobbySystem::HandleLeaveRoomRequestPacket;
 	m_packetFuncDic[jh_network::GAME_READY_REQUEST_PACKET] = &LobbySystem::HandleGameReadyRequestPacket;
 	m_packetFuncDic[jh_network::HEART_BEAT_PACKET] = &LobbySystem::HandleHeartbeatPacket;
+	m_packetFuncDic[jh_network::ECHO_PACKET] = &LobbySystem::HandleEchoPacket;
 
 	m_hJobEvent = CreateEvent(nullptr, false, false, nullptr);
 	if (nullptr == m_hJobEvent)
@@ -322,12 +323,13 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 
 	if (nullptr == userPtr)
 	{
-		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatToRoomRequestPacket] - 유저가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatToRoomRequestPacket] - User is not Exist. SessionId : [%llu]", sessionId);
 		
 		return ErrorCode::NOT_FOUND;
 	}
 
 	auto [isAlreadyInRoom, serverRoomNum] = userPtr->TryGetRoomId();
+	ULONGLONG userId = userPtr->GetUserId();
 	
 	if (false == isAlreadyInRoom || serverRoomNum != roomNum)
 	{
@@ -335,11 +337,10 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 
 		m_invalidChat++;
 
-		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L" [HandleMakeRoomRequestPacket] - SessionId : [0x%016llx], ClientRoomNum : [%hu], ServerRoomNum : [%hu]", roomNum,serverRoomNum);
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L" [HandleChatToRoomRequestPacket] - UserID : [%llu], ClientRoomNum : [%hu], ServerRoomNum : [%hu]", userId, roomNum,serverRoomNum);
 
 		return ErrorCode::NOT_FOUND;
 	}
-	ULONGLONG userId = userPtr->GetUserId();
 
 	jh_network::PacketHeader packetHeader;
 
@@ -592,7 +593,7 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 	if (false == isAlreadyInRoom || roomNum != leaveRoomRequestPacket.roomNum)
 	{
 		m_invalidLeave++;
-		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L" [HandleLeaveRoomRequestPacket] - SessionId : [0x%016llx], ClientRoomNum : [%hu], ServerRoomNum : [%hu]", leaveRoomRequestPacket.roomNum,roomNum);
+		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L" [HandleLeaveRoomRequestPacket] - UserID : [%llu], ClientRoomNum : [%hu], ServerRoomNum : [%hu], IsAlreadyInRoom : [%s]",userPtr->GetUserId(), leaveRoomRequestPacket.roomNum,roomNum, isAlreadyInRoom ? "true" : "false");
 
 		return ErrorCode::CANNOT_FIND_ROOM;
 	}
@@ -675,6 +676,19 @@ ErrorCode jh_content::LobbySystem::HandleGameReadyRequestPacket(ULONGLONG sessio
 		// ������ �������� �� �� ������ ��� �� �� �����ؾ��Ѵ�.
 
 	}
+}
+
+ErrorCode jh_content::LobbySystem::HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet)
+{
+	ULONGLONG data;
+
+	*packet >> data;
+
+	PacketPtr echoResponse = jh_content::PacketBuilder::BuildEchoPacket(data);
+	
+	m_pOwner->SendPacket(sessionId, echoResponse);
+
+	return ErrorCode::NONE;
 }
 
 ErrorCode jh_content::LobbySystem::HandleHeartbeatPacket(ULONGLONG sessionId, PacketPtr& packet)

@@ -56,7 +56,7 @@ jh_content::LobbyDummyClient::~LobbyDummyClient()
 
 void jh_content::LobbyDummyClient::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
 {
-	int threadNum = static_cast<int>(sessionId % LOGIC_THREAD_COUNT);
+	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
 	JobPtr job = MakeShared<jh_utility::Job>(g_memAllocator, sessionId, type, packet); //MakeJob(sessionId, type, packet);
 
@@ -65,7 +65,7 @@ void jh_content::LobbyDummyClient::OnRecv(ULONGLONG sessionId, PacketPtr packet,
 
 void jh_content::LobbyDummyClient::OnConnected(ULONGLONG sessionId)
 {
-	int threadNum = static_cast<int>(sessionId % LOGIC_THREAD_COUNT);
+	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
 	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memAllocator, sessionId, jh_utility::SessionConnectionEventType::CONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
@@ -74,7 +74,7 @@ void jh_content::LobbyDummyClient::OnConnected(ULONGLONG sessionId)
 
 void jh_content::LobbyDummyClient::OnDisconnected(ULONGLONG sessionId)
 {
-	int threadNum = static_cast<int>(sessionId % LOGIC_THREAD_COUNT);
+	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
 	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memAllocator, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
@@ -98,6 +98,9 @@ void jh_content::LobbyDummyClient::Monitor()
 	wprintf(L" [Content] MAX Sessions : %d\n", GetMaxSessionCount());
 	wprintf(L" [Content] Total Sessions : %d\n", GetSessionCount());
 	wprintf(L" [Content] Total Dummies : %d\n", DummyData::aliveDummyCount.load());
+
+	wprintf(L" [Content] Packet Re-Send Timeout Count [%d]s : %d\n", RE_SEND_TIMEOUT/1000, m_pDummySystem->GetReSendTimeoutCnt());
+	wprintf(L"[RTT] : [%llu]ms \n",m_pDummySystem->GetRTT());
 }
 
 void jh_content::LobbyDummyClient::BeginAction()

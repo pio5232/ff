@@ -20,8 +20,12 @@ unsigned jh_content::DummyUpdateSystem::LogicThreadMain(LPVOID lparam)
 
 void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 {
+	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[DummyLogic] - threadNum : [%d], ThreadID : [%u]", threadNum, GetCurrentThreadId());
+
 	const HANDLE jobEvent = m_logicData[threadNum].m_hJobEvent;
 	
+	static thread_local ULONGLONG lastSendCheckTime = 0;
+
 	while (true == m_bRunnigFlag.load())
 	{
 		WaitForSingleObject(jobEvent, 10);
@@ -32,13 +36,23 @@ void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 
 		ProcessDummyLogic(threadNum);
 
+		ULONGLONG curTime = jh_utility::GetTimeStamp();
+
+		// 1초에 한 번 체크
+		if (curTime - lastSendCheckTime > 2000)
+		{
+			lastSendCheckTime = curTime;
+			
+			CheckSendTimeOut(threadNum);
+		}
+
 	}
 
 	
 }
 
 
-jh_content::DummyUpdateSystem::DummyUpdateSystem(jh_network::IocpClient* owner) : m_pOwner{ owner }, m_bRunnigFlag{ true }
+jh_content::DummyUpdateSystem::DummyUpdateSystem(jh_network::IocpClient* owner) : m_pOwner{ owner }, m_bRunnigFlag{ true }, m_rtt{}
 {
 
 }
@@ -61,6 +75,7 @@ void jh_content::DummyUpdateSystem::Init()
 	m_packetFuncDic[jh_network::MAKE_ROOM_RESPONSE_PACKET] = &DummyUpdateSystem::HandleMakeRoomResponsePacket;
 	m_packetFuncDic[jh_network::ENTER_ROOM_RESPONSE_PACKET] = &DummyUpdateSystem::HandleEnterRoomResponsePacket;
 	m_packetFuncDic[jh_network::LEAVE_ROOM_RESPONSE_PACKET] = &DummyUpdateSystem::HandleLeaveRoomResponsePacket;
+	m_packetFuncDic[jh_network::ECHO_PACKET] = &DummyUpdateSystem::HandleEchoPacket;
 
 	WorkerTransData transData[LOGIC_THREAD_COUNT];
 
@@ -192,9 +207,7 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 		switch (sessionConnEvent->m_msgType)
 		{
 		case jh_utility::SessionConnectionEventType::CONNECT:
-		{
-			//DummyData dummy{ .m_dummyStatus{DummyStatus::SESSION_CONNECTED}, .m_ullSessionId{sessionId}, .m_ullLastUpdatedHeartbeatTime{jh_utility::GetTimeStamp()} };
-			
+		{			
 			DummyPtr dummy = MakeShared<DummyData>(g_memAllocator);
 			
 			_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_INFO, L"[ProcessSessionConnectionEvent] SessionID : [0x%08x]", sessionId);;
@@ -212,10 +225,12 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 
 			// 등록
 			PacketPtr hbPkt = jh_content::DummyPacketBuilder::BuildHeartbeatPacket(dummy->m_ullLastUpdatedHeartbeatTime);
-			m_pOwner->SendPacket(sessionId, hbPkt);
 
 			PacketPtr logInReqPkt = jh_content::DummyPacketBuilder::BuildLoginRequestPacket();
-			m_pOwner->SendPacket(sessionId, logInReqPkt);
+
+			m_pOwner->SendPacket(dummy->m_ullSessionId, hbPkt);
+
+			SendToDummy(dummy, logInReqPkt);
 		}
 		break;
 		case jh_utility::SessionConnectionEventType::DISCONNECT:
@@ -269,6 +284,7 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 			dummy->m_ullLastUpdatedHeartbeatTime = curTimeStamp;
 
 			PacketPtr hbPkt = jh_content::DummyPacketBuilder::BuildHeartbeatPacket(curTimeStamp);
+			
 			m_pOwner->SendPacket(dummy->m_ullSessionId, hbPkt);
 		}
 
@@ -280,9 +296,8 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 		case DummyStatus::IN_LOBBY:
 		{
 			PacketPtr roomListRqPkt = DummyPacketBuilder::BuildRoomListRequestPacket();
-			m_pOwner->SendPacket(dummy->m_ullSessionId, roomListRqPkt);
 
-			dummy->m_ullNextActionTime = MAXULONGLONG;
+			SendToDummy(dummy, roomListRqPkt);
 
 			break;
 		}
@@ -294,22 +309,48 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 			{
 				PacketPtr leaveRoomRqPkt = DummyPacketBuilder::BuildLeaveRoomRequestPacket(dummy->m_usExpectedRoomNum, dummy->m_wszExpectedRoomName);
 
-				m_pOwner->SendPacket(dummy->m_ullSessionId, leaveRoomRqPkt);
+				SendToDummy(dummy, leaveRoomRqPkt, DummyStatus::WAIT_LEAVE_ROOM);
+
+				//_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[ProcessDummyLogic] - INDEX : [%d], THREAD : [%u], Send LeavePacket, UserId : [%llu], RoomNum : [%hu], ActionTime : [%llu], curTime : [%llu]",threadNum, GetCurrentThreadId(), dummy->m_ullUserId, dummy->m_usExpectedRoomNum,dummy->m_ullNextActionTime, curTimeStamp);			
 			}
 			else
 			{
 				PacketPtr chatPkt = DummyPacketBuilder::BuildChatRequestPacket(dummy->m_usExpectedRoomNum);
 
+				ULONGLONG timeStamp = jh_utility::GetTimeStamp();
+				dummy->m_ullLastSendTime = timeStamp;
+
 				m_pOwner->SendPacket(dummy->m_ullSessionId, chatPkt);
+
+				dummy->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
+				//_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[ProcessDummyLogic] - INDEX : [%d], THREAD : [%u], Send Chatting, UserId : [%llu], RoomNum : [%hu], ActionTime : [%llu], curTime : [%llu]", threadNum, GetCurrentThreadId(), dummy->m_ullUserId, dummy->m_usExpectedRoomNum, dummy->m_ullNextActionTime, curTimeStamp);
 			}
 
-			dummy->m_ullNextActionTime = MAXULONGLONG;
+			break;
+		}
+		case DummyStatus::CHECK_RTT:
+		{
+			PacketPtr echoPkt = DummyPacketBuilder::BuildEchoPacket();
+
+			SendToDummy(dummy, echoPkt);
 
 			break;
 		}
 		}
 	}
 
+}
+
+void jh_content::DummyUpdateSystem::SendToDummy(DummyPtr& dummy, PacketPtr& packet, DummyStatus nextStauts)
+{
+	dummy->m_ullLastSendTime = jh_utility::GetTimeStamp();
+	
+	m_pOwner->SendPacket(dummy->m_ullSessionId, packet);
+
+	dummy->m_ullNextActionTime = ULLONG_MAX;
+
+	if (DummyStatus::NO_CHANGE != nextStauts)
+		dummy->m_dummyStatus = nextStauts;
 }
 
 void jh_content::DummyUpdateSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet, int threadNum)
@@ -330,6 +371,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 	if (DummyStatus::IN_LOBBY != dummy->m_dummyStatus)
 	{
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleRoomListResponsePacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
+		
 		return;
 	}
 
@@ -338,7 +380,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 	*packet >> roomCnt;
 
 	RoomInfo* roomInfo = static_cast<RoomInfo*>(g_memAllocator->Alloc(sizeof(RoomInfo) * roomCnt));
-	
+
 	for (int i = 0; i < roomCnt; i++)
 	{
 		*packet >> roomInfo[i];
@@ -347,7 +389,8 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 	if (roomCnt == 0)
 	{
 		PacketPtr makeRoomPkt = jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket();
-		m_pOwner->SendPacket(sessionId, makeRoomPkt);
+
+		SendToDummy(dummy, makeRoomPkt);
 	}
 	else
 	{
@@ -358,25 +401,24 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 		if (ran < 2)
 		{
 			PacketPtr makeRoomPkt = jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket();
-			m_pOwner->SendPacket(sessionId, makeRoomPkt);
+
+			SendToDummy(dummy, makeRoomPkt);
 		}
 		// 방 Enter
 		else
 		{
 			PacketPtr enterRoomPkt = jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(roomInfo[randRoomNum].m_usRoomNum, roomInfo[randRoomNum].m_wszRoomName);
-		
-			m_pOwner->SendPacket(sessionId, enterRoomPkt);
+
+			SendToDummy(dummy, enterRoomPkt, DummyStatus::WAIT_ENTER_ROOM);
 
 			dummy->m_usExpectedRoomNum = roomInfo[randRoomNum].m_usRoomNum;
 			wcscpy_s(dummy->m_wszExpectedRoomName, roomInfo[randRoomNum].m_wszRoomName);
 		}
 	}
-	
-	g_memAllocator->Free(roomInfo);
 
-	// Make, Enter 중 선택
-	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = MAXULONGLONG;
+	g_memAllocator->Free(roomInfo);
 }
+	// Make, Enter 중 선택}
 
 void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
@@ -387,12 +429,30 @@ void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionI
 	if (DummyStatus::SESSION_CONNECTED != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 	{
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleLogInResponsePacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
+	
 		return;
 	}
 
+	static thread_local ULONGLONG cnt = 0;
 
-	m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
-	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
+	cnt++;
+	if (1 == threadNum && 1 == cnt)
+	{
+		m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::CHECK_RTT;
+		m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + 1000;
+
+		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleLogInResponsePacket] - CHANGE Dummy Status : LOGIN -> CHECK_RTT, SessionID : [%llu]", sessionId);
+	}
+	else
+	{
+		ULONGLONG userId;
+
+		*packet >> userId;
+
+		m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullUserId = userId;
+		m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
+		m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
+	}
 }
 
 void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
@@ -410,18 +470,21 @@ void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessi
 	*packet >> responsePkt;
 
 	if (false == responsePkt.isMade)
+	{
+		m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
 		return;
-
+	}
 	dummy->m_usExpectedRoomNum = responsePkt.roomInfo.m_usRoomNum;
 	wcscpy_s(dummy->m_wszExpectedRoomName, responsePkt.roomInfo.m_wszRoomName);
+	dummy->m_dummyStatus = DummyStatus::WAIT_ENTER_ROOM;
 	
-	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = MAXULONGLONG;
+	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = ULLONG_MAX;
 }
 
 void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
-	// LOBBY || MAKE
-	if (DummyStatus::IN_LOBBY != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
+	// MAKE
+	if (DummyStatus::WAIT_ENTER_ROOM != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 	{
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleEnterRoomResponsePacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
 		return;
@@ -434,19 +497,19 @@ void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sess
 
 	if(true == bAllow)
 		m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_ROOM;
-	
+	else
+		m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
+
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
 }
 
 void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
-	if (DummyStatus::IN_ROOM != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
-	{
-		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatNotifyPacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
+	if (DummyStatus::WAIT_LEAVE_ROOM == m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus ||
+		DummyStatus::IN_ROOM == m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 		return;
-	}
-
-	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
+	
+	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatNotifyPacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
 
 	// ROOM
 }
@@ -454,7 +517,7 @@ void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, 
 void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
 	// ROOM
-	if (DummyStatus::IN_ROOM != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
+	if (DummyStatus::WAIT_LEAVE_ROOM != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 	{
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleMakeRoomResponsePacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
 		return;
@@ -466,4 +529,58 @@ void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sess
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
 	
+}
+
+void jh_content::DummyUpdateSystem::HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+{
+	// RTT 측정은 하나의 세션이 담당한다..
+
+	ULONGLONG curTime = jh_utility::GetTimeStamp();
+
+	DummyPtr& dummy = m_logicData[threadNum].m_dummyUmap[sessionId];
+	if (DummyStatus::CHECK_RTT != dummy->m_dummyStatus)
+	{
+		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleEchoPacket] - DummyStatus is not \"CHECK_RTT\". DummyStatus : [%d]",sessionId, (int)(m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus));
+		return;
+	}
+	
+	m_rtt.store(curTime - dummy->m_ullLastSendTime);
+	
+	dummy->m_ullNextActionTime = curTime + 1000;
+}
+
+void jh_content::DummyUpdateSystem::CheckSendTimeOut(int threadNum)
+{
+	std::vector<DummyPtr>& dummyVec = m_logicData[threadNum].m_dummyVector;
+
+	ULONGLONG curTime = jh_utility::GetTimeStamp();
+	
+	int resendTimeoutCnt = 0;
+	for (DummyPtr& dummy : dummyVec)
+	{
+		if (curTime - dummy->m_ullLastSendTime > RE_SEND_TIMEOUT)
+			resendTimeoutCnt++;
+	}
+
+	m_logicData[threadNum].m_reSendTimeoutCnt.exchange(resendTimeoutCnt);
+
+}
+
+int jh_content::DummyUpdateSystem::GetReSendTimeoutCnt()
+{
+	int cnt = 0;
+	for (int i = 0; i < LOGIC_THREAD_COUNT; i++)
+	{
+		int threadTimeoutCnt = m_logicData[i].m_reSendTimeoutCnt.exchange(0);
+		cnt += threadTimeoutCnt;
+	}
+	return cnt;
+}
+
+ULONGLONG jh_content::DummyUpdateSystem::GetRTT() const
+{
+	ULONGLONG rtt = m_rtt.load();
+	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[GetRTT] RTT : [%llu ms]", rtt);
+
+	return rtt;
 }

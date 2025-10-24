@@ -12,5 +12,7 @@ namespace jh_content
 		static PacketPtr BuildLeaveRoomRequestPacket(USHORT roomNum, const WCHAR* roomName);
 		static PacketPtr BuildChatRequestPacket(USHORT roomNum);
 		static PacketPtr BuildRoomListRequestPacket();
+
+		static PacketPtr BuildEchoPacket();
 	};
 }

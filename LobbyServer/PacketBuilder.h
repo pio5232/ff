@@ -17,6 +17,8 @@ namespace jh_content
 		
 		static PacketPtr BuildGameStartNotifyPacket();
 		static PacketPtr BuildGameReadyNotifyPacket(ULONGLONG userId, bool isReady);
+		
+		static PacketPtr BuildEchoPacket(ULONGLONG data);
 
 		static PacketPtr BuildLanInfoPacket(WCHAR* ipStr, USHORT port, USHORT roomNum, ULONGLONG tok);
 		static PacketPtr BuildGameServerSettingResponsePacket(USHORT roomNum, USHORT requiredUserCnt, USHORT maxUserCnt);

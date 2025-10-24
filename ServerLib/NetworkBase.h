@@ -62,7 +62,7 @@ namespace jh_network
 		ErrorCode ProcessRecv(Session* sessionPtr, DWORD transferredBytes);
 		ErrorCode ProcessSend(Session* sessionPtr, DWORD transferredBytes);
 
-		void Disconnect(ULONGLONG sessionId, const WCHAR* reason, bool isCritical = false);
+		void Disconnect(ULONGLONG sessionId, const WCHAR* reason);
 
 		void PostSend(Session* sessionPtr);
 		void PostRecv(Session* sessionPtr);
@@ -173,7 +173,7 @@ namespace jh_network
 		void ProcessRecv(Session* sessionPtr, DWORD transferredBytes);
 		void ProcessSend(Session* sessionPtr, DWORD transferredBytes);
 
-		void Disconnect(ULONGLONG sessionId);
+		void Disconnect(ULONGLONG sessionId, const WCHAR* reason);
 
 		void PostSend(Session* sessionPtr);
 		void PostRecv(Session* sessionPtr);
