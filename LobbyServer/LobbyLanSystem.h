@@ -25,7 +25,7 @@ namespace jh_content
 			SetEvent(m_hJobEvent);
 		}
 
-		static unsigned WINAPI LogicThreadMain(LPVOID lparam);
+		static unsigned WINAPI LogicThreadFunc(LPVOID lparam);
 		void LobbyLanLogic();
 		void Stop();
 		ErrorCode HandleLanInfoNotifyPacket(ULONGLONG sessionId, PacketPtr& packet);

@@ -34,10 +34,10 @@ namespace jh_content
 	struct RoomInfo
 	{
 		static const USHORT GetSize() { return sizeof(m_ullOwnerId) + sizeof(m_usRoomNum) + sizeof(m_usCurUserCnt) + sizeof(m_usMaxUserCnt) + sizeof(m_wszRoomName); }
-		ULONGLONG m_ullOwnerId;
-		USHORT m_usRoomNum;
-		USHORT m_usCurUserCnt;
-		USHORT m_usMaxUserCnt;
+		ULONGLONG m_ullOwnerId{};
+		USHORT m_usRoomNum{};
+		USHORT m_usCurUserCnt{};
+		USHORT m_usMaxUserCnt{};
 		WCHAR m_wszRoomName[ROOM_NAME_MAX_LEN]{};
 	};
 }

@@ -6,11 +6,12 @@
 // ----------------------
 namespace jh_utility
 {
-	// 네트워크로 들어온 packet에 대해서
-	// 어떤 쓰레드가 어떤 작업을 해야하는지, 그 작업에 대한 데이터가 들어있는 버퍼.
+	/// <summary>
+	/// 서버가 해야할 작업의 용도를 알리는 용도로 사용된다.
+	/// </summary>
 	struct Job
 	{
-		explicit Job(ULONGLONG id, USHORT type, PacketPtr packet) :
+		Job(ULONGLONG id, USHORT type, PacketPtr packet) :
 			m_llSessionId(id), m_wJobType(type), m_pPacket(packet) {}
 		ULONGLONG m_llSessionId;
 		USHORT m_wJobType; 
@@ -38,9 +39,12 @@ namespace jh_utility
 		DISCONNECT,
 	};
 
+	/// <summary>
+	/// Session의 연결 / 해제를 알리는 용도로 사용된다.
+	/// </summary>
 	struct SessionConnectionEvent
 	{
-		explicit SessionConnectionEvent(ULONGLONG id, jh_utility::SessionConnectionEventType msg) : m_ullSessionId(id), m_msgType(msg) {}
+		SessionConnectionEvent(ULONGLONG id, jh_utility::SessionConnectionEventType msg) : m_ullSessionId(id), m_msgType(msg) {}
 		~SessionConnectionEvent()
 		{
 			m_ullSessionId = INVALID_SESSION_ID;
@@ -56,39 +60,24 @@ namespace jh_utility
 		ULONGLONG m_ullSessionId; 
 		SessionConnectionEventType m_msgType;
 	};
+
+	struct DispatchJob
+	{
+		DispatchJob(ULONGLONG sessionId, PacketPtr& packetPtr);
+		DispatchJob(DWORD sessionCount, ULONGLONG* sessionIdList, PacketPtr& packetPtr);
+
+		~DispatchJob();
+		DWORD m_dwSessionCount{};
+		PacketPtr m_packet{};
+		union SessionInfo
+		{
+			ULONGLONG m_ullSingleSessionId;
+			ULONGLONG* m_pSessionIdList;
+		} m_sessionInfo{};
+	};
 }
 
 
 
 
 
-
-
-
-
-//namespace jh_utility
-//{
-//	using CallbackFunc = std::function<void()>;
-//	class Job
-//	{
-//	public:
-//
-//		Job(CallbackFunc&& callback) : _callback(std::move(callback)) {}
-//
-//		template <typename T, typename Ret, typename... Args>
-//		Job(std::shared_ptr<T> owner, Ret(T::* memFunc)(Args...), Args&&... args)
-//		{
-//			_callback = [owner, memFunc, args...]()
-//			{
-//				(owner.get()->*memFunc)(args...);
-//			};
-//		}
-//
-//		void Execute()
-//		{
-//			_callback();
-//		}
-//	private:
-//		CallbackFunc _callback;
-//	};
-//}

@@ -106,7 +106,6 @@ namespace jh_utility
 			}
 			catch (const std::exception& exception)
 			{
-
 				wprintf(L"Catch Exception - GetValue Key : [%s]\n", key);
 				return false;
 			}

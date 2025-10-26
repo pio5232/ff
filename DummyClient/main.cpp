@@ -7,7 +7,7 @@
 #include "LobbyDummyClient.h"
 
 std::atomic<bool> reconnectFlag = true;
-extern std::atomic<bool> clientSendFlag = true;
+std::atomic<bool> clientSendFlag = true;
 int main()
 {
     jh_content::LobbyDummyClient dummyClient;
@@ -52,8 +52,6 @@ int main()
                 int connectCount = diff > 100 ? 100 : diff;
 
                 dummyClient.Connect(connectCount);
-
-                Sleep(200);
             }
         }
 
@@ -64,14 +62,16 @@ int main()
             wprintf(L"            DUMMY CLIENT MONITORING\n");
             wprintf(L"=================================================\n");
             wprintf(L" Press 'Q' to shut down\n");
-            wprintf(L" Press 'R' to Reconnect, ReconnectMode    : [%s]\n", reconnectFlag ? L"YES" : L"NO");
-            wprintf(L" Press 'S' to SendMode,  SendMode         : [%s]\n", clientSendFlag ? L"YES" : L"NO");
+            wprintf(L" Press 'R' to Reconnect, ReconnectMode    : [%s]\n", reconnectFlag.load() ? L"YES" : L"NO");
+            wprintf(L" Press 'S' to SendMode,  SendMode         : [%s]\n", clientSendFlag.load() ? L"YES" : L"NO");
             wprintf(L"-------------------------------------------------\n");
 
             dummyClient.Monitor();
 
             prevTime = curTime;
         }
+
+        Sleep(500);
         //Sleep(1000);
     }
 

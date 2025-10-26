@@ -7,6 +7,8 @@
 #include "ws2tcpip.h"
 #include "Session.h"
 #include "Memory.h"
+#include "Job.h"
+
 //#define ECHO
 
 #pragma comment (lib, "ws2_32.lib")
@@ -14,7 +16,8 @@
 		  IocpServer
 	-----------------------*/
 
-jh_network::IocpServer::IocpServer(const WCHAR* serverName) : m_hCompletionPort(nullptr), m_listenSock(INVALID_SOCKET), m_pcwszServerName(serverName), m_pSessionArray(nullptr), m_wszIp{}
+jh_network::IocpServer::IocpServer(const WCHAR* serverName) : m_hCompletionPort(nullptr), m_listenSock(INVALID_SOCKET), m_pcwszServerName(serverName), m_pSessionArray(nullptr), m_wszIp{},
+m_hWorkerThreads{}, m_hAcceptThread{}, m_hDispatchThread{}, m_hStopEvent{}, m_hSendEvent{}
 {
 	m_dwConcurrentWorkerThreadCount = 0;
 	m_lingerOption = {};
@@ -34,6 +37,7 @@ jh_network::IocpServer::IocpServer(const WCHAR* serverName) : m_hCompletionPort(
 	
 	m_lTotalRecvCount = 0;
 	m_lTotalSendCount = 0;
+	
 	//m_packetPool = new jh_utility::LockFreeMemoryPool<jh_utility::SerializationBuffer>(0, true, true);
 
 }
@@ -51,70 +55,89 @@ jh_network::IocpServer::~IocpServer()
 
 bool jh_network::IocpServer::Start()
 {
-	DWORD concurrentThreadCnt = m_dwConcurrentWorkerThreadCount;
-
-	if (0 == concurrentThreadCnt)
+	if (0 == m_dwConcurrentWorkerThreadCount)
 	{
 		SYSTEM_INFO sys;
 		GetSystemInfo(&sys);
 
-		concurrentThreadCnt = sys.dwNumberOfProcessors;
+		m_dwConcurrentWorkerThreadCount = sys.dwNumberOfProcessors;
 	}
 
-	_LOG(m_pcwszServerName, LOG_LEVEL_INFO, L"Concurrent ThreadCount : %u", concurrentThreadCnt);
+	_LOG(m_pcwszServerName, LOG_LEVEL_INFO, L"Concurrent ThreadCount : %u", m_dwConcurrentWorkerThreadCount);
 
-	m_hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, concurrentThreadCnt);
+	m_hCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, m_dwConcurrentWorkerThreadCount);
 
-	if (m_hCompletionPort == NULL)
+	if (NULL == m_hCompletionPort)
 	{
 		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"IOCP Handle is Null");
 
 		return false;
 	}
 
-	m_workerThreads.reserve(concurrentThreadCnt);
-
-	for (int i = 0; i < concurrentThreadCnt; i++)
-	{
-		m_workerThreads.push_back(std::thread([this]() {this->WorkerThreadFunc(); }));
-	}
-
 	m_listenSock = socket(AF_INET, SOCK_STREAM, 0);
-	if (m_listenSock == INVALID_SOCKET)
+	if (INVALID_SOCKET == m_listenSock)
 	{
 		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"ListenSocket is Invalid");
 
 		return false;
 	}
 
-	
-	SOCKADDR_IN sockaddrIn;
-	sockaddrIn.sin_family = AF_INET;
-	sockaddrIn.sin_port = htons(m_usPort);
-	sockaddrIn.sin_addr = NetAddress::IpToAddr(m_wszIp);
+	SOCKADDR_IN sockaddrIn{AF_INET, htons(m_usPort), NetAddress::IpToAddr(m_wszIp) };
+	//sockaddrIn.sin_family = AF_INET;
+	//sockaddrIn.sin_port = htons(m_usPort);
+	//sockaddrIn.sin_addr = NetAddress::IpToAddr(m_wszIp);
 
 	DWORD bindRet = bind(m_listenSock, (SOCKADDR*)&sockaddrIn, sizeof(SOCKADDR_IN));
 
-	if (bindRet == SOCKET_ERROR)
+	if (SOCKET_ERROR == bindRet)
 	{
 		int getLastError = WSAGetLastError();
 
-		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Bind is Failed %d",getLastError);
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Bind is Failed. GetLastError : %d",getLastError);
 
 		return false;
 	}
 
-	DWORD setLingerRet = setsockopt(m_listenSock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
-	if (setLingerRet == SOCKET_ERROR)
+	int sndBuffSize = 0;
+	DWORD zeroCpyRet = setsockopt(m_listenSock, SOL_SOCKET, SO_SNDBUF, (char*)&sndBuffSize, sizeof(sndBuffSize));
+	if (SOCKET_ERROR == zeroCpyRet)
 	{
 		int getLastError = WSAGetLastError();
-		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Set Linger Failed GetLastError : %i",getLastError);
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Set ZeroCpy Failed. GetLastError : %d", getLastError);
+
+		return false;
+
+	}
+	DWORD setLingerRet = setsockopt(m_listenSock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
+	if (SOCKET_ERROR == setLingerRet)
+	{
+		int getLastError = WSAGetLastError();
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"Set Linger Failed. GetLastError : %d",getLastError);
 		
 		return false;
 	}
 
-	// TODO_
-	m_acceptThread = std::thread([this]() { this->AcceptThreadFunc(); });
+	if (false == CreateServerThreads())
+		return false;
+
+	// AUTO, NON-SIGNALED
+	m_hStopEvent = CreateEvent(nullptr, false, false, nullptr);
+	if (nullptr == m_hStopEvent)
+	{
+		int getLastError = WSAGetLastError();
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"StopEvent Creation is Failed. GetLastError : %d", getLastError);
+
+		return false;
+	}
+
+	m_hSendEvent = CreateEvent(nullptr, false, false, nullptr);
+	if (nullptr == m_hSendEvent)
+	{
+		int getLastError = WSAGetLastError();
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"SendEvent Creation is Failed. GetLastError : %d", getLastError);
+
+		return false;
+	}
 
 	BeginAction();
 
@@ -137,25 +160,62 @@ void jh_network::IocpServer::Listen()
 void jh_network::IocpServer::Stop()
 {
 	EndAction();
+	
+	SetEvent(m_hStopEvent);
+
+	{
+		DWORD waitSingleRet = WaitForSingleObject(m_hDispatchThread, INFINITE);
+		if (waitSingleRet != WAIT_OBJECT_0)
+		{
+			DWORD gle = GetLastError();
+			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Stop] - m_hDispatchThread Wait return Error : [%u]", gle);
+		}
+	}
 
 	closesocket(m_listenSock);
-
 	m_listenSock = INVALID_SOCKET;
+	
+	{
+		DWORD waitSingleRet = WaitForSingleObject(m_hAcceptThread, INFINITE);
+		if (waitSingleRet != WAIT_OBJECT_0)
+		{
+			DWORD gle = GetLastError();
+			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Stop] - m_hAccept Wait return Error : [%u]", gle);
+		}
+	}
 
-	if (m_acceptThread.joinable())
-		m_acceptThread.join();
-
-	for (int i = 0; i < m_workerThreads.size(); i++)
+	for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
 	{
 		PostQueuedCompletionStatus(m_hCompletionPort, 0, 0, nullptr);
 	}
 
-	for (auto& t : m_workerThreads)
 	{
-		if (t.joinable())
-			t.join();
+		DWORD waitMultipleRet = WaitForMultipleObjects(m_dwConcurrentWorkerThreadCount, m_hWorkerThreads, true, INFINITE);
+
+		if (waitMultipleRet != WAIT_OBJECT_0)
+		{
+			DWORD gle = GetLastError();
+			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Stop] - m_hWorkerThreads Wait return Error : [%u]", gle);
+		}
+
+		for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
+		{
+			CloseHandle(m_hWorkerThreads[i]);
+			m_hWorkerThreads[i] = nullptr;
+		}
 	}
-	
+
+	CloseHandle(m_hStopEvent);
+	CloseHandle(m_hSendEvent);
+	CloseHandle(m_hDispatchThread);
+	CloseHandle(m_hAcceptThread);
+
+	m_hSendEvent = nullptr;
+	m_hStopEvent = nullptr;
+	m_hDispatchThread = nullptr;
+	m_hAcceptThread = nullptr;
+
+
 	if (nullptr != m_hCompletionPort)
 	{
 		CloseHandle(m_hCompletionPort);
@@ -191,6 +251,46 @@ void jh_network::IocpServer::ForceStop()
 }
 
 
+bool jh_network::IocpServer::CreateServerThreads()
+{
+	m_hWorkerThreads = static_cast<HANDLE*>(g_memAllocator->Alloc(sizeof(HANDLE) * m_dwConcurrentWorkerThreadCount));
+
+	for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
+	{
+		m_hWorkerThreads[i] = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, WorkerThreadFunc, this, 0, nullptr));
+
+		if (nullptr == m_hWorkerThreads[i])
+		{
+			DWORD gle = GetLastError();
+			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"WorkerThread Creation is Failed, Error Code : [%u]", gle);
+
+			g_memAllocator->Free(m_hWorkerThreads);
+			return false;
+		}
+	}
+
+	// TODO_
+	m_hAcceptThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, AcceptThreadFunc, this, 0, nullptr));
+	if (nullptr == m_hAcceptThread)
+	{
+		DWORD gle = GetLastError();
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"AcceptThread Creation is Failed, Error Code : [%u]", gle);
+
+		return false;
+	}
+
+	m_hDispatchThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, DispatchThreadFunc, this, 0, nullptr));
+	if (nullptr == m_hDispatchThread)
+	{
+		DWORD gle = GetLastError();
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"DispatchThread Creation is Failed, Error Code : [%u]", gle);
+
+		return false;
+	}
+
+	return true;
+}
+
 void jh_network::IocpServer::DeleteSession(ULONGLONG sessionId)
 {
 	if (sessionId == INVALID_SESSION_ID)
@@ -210,8 +310,7 @@ void jh_network::IocpServer::DeleteSession(ULONGLONG sessionId)
 		return;
 	}
 
-	int a;
-	if (int a = InterlockedCompareExchange(&sessionPtr->m_lIoCount, SESSION_DELETE_FLAG, 0) != 0)
+	if (InterlockedCompareExchange(&sessionPtr->m_lIoCount, SESSION_DELETE_FLAG, 0) != 0)
 	{
 		_LOG(m_pcwszServerName, LOG_LEVEL_INFO, L"Delete SessION -> session is Using");
 		return;
@@ -251,6 +350,33 @@ void jh_network::IocpServer::DecreaseIoCount(Session* sessionPtr)
 	if (0 == ioCount)
 		DeleteSession(sessionPtr->m_ullSessionId);
 
+}
+
+unsigned __stdcall jh_network::IocpServer::WorkerThreadFunc(LPVOID lparam)
+{
+	IocpServer* instance = reinterpret_cast<IocpServer*>(lparam);
+
+	instance->WorkerThreadMain();
+
+	return 0;
+}
+
+unsigned __stdcall jh_network::IocpServer::AcceptThreadFunc(LPVOID lparam)
+{
+	IocpServer* instance = reinterpret_cast<IocpServer*>(lparam);
+
+	instance->AcceptThreadMain();
+
+	return 0;
+}
+
+unsigned __stdcall jh_network::IocpServer::DispatchThreadFunc(LPVOID lparam)
+{
+	IocpServer* instance = reinterpret_cast<IocpServer*>(lparam);
+
+	instance->DispatchThreadMain();
+
+	return 0;
 }
 
 //void jh_network::IocpServer::DecreaseIoCount(Session* sessionPtr, SessionJob job)
@@ -328,7 +454,7 @@ jh_network::Session* jh_network::IocpServer::TryAcquireSession(ULONGLONG session
 	return sessionPtr;
 }
 
-void jh_network::IocpServer::WorkerThreadFunc()
+void jh_network::IocpServer::WorkerThreadMain()
 {
 	while (1)
 	{
@@ -627,7 +753,7 @@ void jh_network::IocpServer::PostRecv(Session* sessionPtr)
 	if (InterlockedAnd8(&sessionPtr->m_bConnectedFlag, 1) == 0)
 		return;
 
-	WSABUF buf[2];
+	WSABUF buf[2]{};
 
 	int directEnqueueSize = sessionPtr->m_recvBuffer.DirectEnqueueSize();
 	int remainderSize = sessionPtr->m_recvBuffer.GetFreeSize() - directEnqueueSize;
@@ -678,6 +804,13 @@ void jh_network::IocpServer::PostRecv(Session* sessionPtr)
 		InterlockedIncrement(&m_lAsyncRecvCount);
 	}
 	InterlockedIncrement(&m_lTotalRecvCount);
+}
+
+void jh_network::IocpServer::RequestSend(ULONGLONG sessionId, PacketPtr& packet)
+{
+	jh_utility::DispatchJob* dispatchJob = jh_memory::ObjectPool<jh_utility::DispatchJob>::Alloc(sessionId, packet);
+
+	RequestSend(dispatchJob);
 }
 
 void jh_network::IocpServer::UpdateHeartbeat(ULONGLONG sessionId, ULONGLONG timeStamp)
@@ -758,11 +891,11 @@ void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, PacketPtr& packet)
 
 
 
-void jh_network::IocpServer::AcceptThreadFunc()
+void jh_network::IocpServer::AcceptThreadMain()
 {
 	while (1)
 	{
-		SOCKADDR_IN clientInfo;
+		SOCKADDR_IN clientInfo{};
 		int infoSize = sizeof(clientInfo);
 		SOCKET clientSock = accept(m_listenSock, (SOCKADDR*)&clientInfo, &infoSize);
 
@@ -784,7 +917,7 @@ void jh_network::IocpServer::AcceptThreadFunc()
 		
 		if (nullptr == newSession)
 		{
-			_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"[AcceptThreadFunc] 세션이 nullptr입니다.");
+			_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"[AcceptThreadMain] 세션이 nullptr입니다.");
 
 			closesocket(clientSock);
 			continue;
@@ -793,6 +926,61 @@ void jh_network::IocpServer::AcceptThreadFunc()
 		OnConnected(newSession->m_ullSessionId);
 
 		PostRecv(newSession);
+	}
+}
+
+void jh_network::IocpServer::DispatchThreadMain()
+{
+	HANDLE handles[2]{ m_hStopEvent, m_hSendEvent };
+
+	while (1)
+	{
+		DWORD ret = WaitForMultipleObjects(2, handles, false, INFINITE);
+		
+		// StopEvent
+		if (WAIT_OBJECT_0 == ret)
+		{
+			break;
+		}
+		// SendEvent
+		if (WAIT_OBJECT_0 + 1 == ret)
+		{
+			DispatchPacket();
+		}
+		else
+		{
+			DWORD gle = GetLastError();
+			_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"[DispatchThreadMain] WaitMultiple Ret Error : [%u].",gle);
+		}
+	}
+}
+
+
+void jh_network::IocpServer::DispatchPacket()
+{
+	static thread_local std::queue<jh_utility::DispatchJob*> dispatchQ;
+
+	m_dispatchJobQ.Swap(dispatchQ);
+
+	while (dispatchQ.size())
+	{
+		jh_utility::DispatchJob* dispatchJob = dispatchQ.front();
+
+		dispatchQ.pop();
+
+		if (1 == dispatchJob->m_dwSessionCount)
+		{
+			SendPacket(dispatchJob->m_sessionInfo.m_ullSingleSessionId, dispatchJob->m_packet);
+		}
+		else
+		{
+			for (int i = 0; i < dispatchJob->m_dwSessionCount; i++)
+			{
+				SendPacket(dispatchJob->m_sessionInfo.m_pSessionIdList[i], dispatchJob->m_packet);
+			}
+		}
+
+		jh_memory::ObjectPool<jh_utility::DispatchJob>::Free(dispatchJob);
 	}
 }
 
@@ -985,7 +1173,7 @@ void jh_network::IocpClient::PostSend(Session* sessionPtr)
 
 	sessionPtr->m_sendQ.Swap(tempQ);
 
-	int popCount = tempQ.size();
+	size_t popCount = tempQ.size();
 
 	while (tempQ.size() > 0)
 	{
@@ -1030,7 +1218,7 @@ void jh_network::IocpClient::PostRecv(Session* sessionPtr)
 	if (InterlockedAnd8(&sessionPtr->m_bConnectedFlag, 1) == 0)
 		return;
 
-	WSABUF buf[2];
+	WSABUF buf[2]{};
 
 	int directEnqueueSize = sessionPtr->m_recvBuffer.DirectEnqueueSize();
 	int remainderSize = sessionPtr->m_recvBuffer.GetFreeSize() - directEnqueueSize;
@@ -1091,12 +1279,12 @@ unsigned WINAPI jh_network::IocpClient::WorkerThreadFunc(LPVOID lparam)
 {
 	IocpClient* instance = reinterpret_cast<IocpClient*>(lparam);
 
-	instance->WorkerThread();
+	instance->WorkerThreadMain();
 
 	return 0;
 }
 
-void jh_network::IocpClient::WorkerThread()
+void jh_network::IocpClient::WorkerThreadMain()
 {
 	while (1)
 	{
@@ -1215,14 +1403,13 @@ jh_network::Session* jh_network::IocpClient::CreateSession(SOCKET sock, const SO
 
 	if (false == m_sessionIndexStack.TryPop(availableIndex))
 	{
-		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L"[CreateSession] Available Session Count is 0. Current Session Count : [%u]", m_sessionCount.load());
+		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L"[CreateSession] Available Session Count is 0. Current Session Count : [%u]", m_lSessionCount);
 
 		return nullptr;
 	}
 
 	// 세션 수를 증가하고.
-	//InterlockedIncrement(&m_lSessionCount);
-	m_sessionCount.fetch_add(1);
+	InterlockedIncrement(&m_lSessionCount);
 
 	Session* sessionPtr = &m_pClientSessionArr[availableIndex];
 
@@ -1250,8 +1437,7 @@ jh_network::Session* jh_network::IocpClient::CreateSession(SOCKET sock, const SO
 	{
 		m_sessionIndexStack.Push(availableIndex);
 
-		//InterlockedDecrement(&m_lSessionCount);
-		m_sessionCount.fetch_sub(1);
+		InterlockedDecrement(&m_lSessionCount);
 
 		_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"CreateSession - Session Register Failed");
 
@@ -1281,8 +1467,7 @@ void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
 		return;
 	}
 
-	int a;
-	if (int a = InterlockedCompareExchange(&sessionPtr->m_lIoCount, SESSION_DELETE_FLAG, 0) != 0)
+	if (InterlockedCompareExchange(&sessionPtr->m_lIoCount, SESSION_DELETE_FLAG, 0) != 0)
 	{
 		_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L" [DeleteSession] - 사용중인 세션입니다. SessionId : [%llu]", sessionId);
 		return;
@@ -1297,8 +1482,7 @@ void jh_network::IocpClient::DeleteSession(ULONGLONG sessionId)
 
 	m_sessionIndexStack.Push(sessionIdx);
 
-	//InterlockedDecrement(&m_lSessionCount);
-	m_sessionCount.fetch_sub(1);
+	InterlockedDecrement(&m_lSessionCount);
 
 	_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L"[DeleteSession] - 세션이 해제되었습니다.. Session ID [0x%0x]", sessionId);
 
@@ -1329,9 +1513,9 @@ bool jh_network::IocpClient::InitSessionArray(DWORD maxSessionCount)
 
 	m_sessionIndexStack.Reserve(m_dwMaxSessionCnt);
 
-	for (int i = 0; i < m_dwMaxSessionCnt; i++)
+	for (DWORD dw = 0; dw < m_dwMaxSessionCnt; dw++)
 	{
-		m_sessionIndexStack.Push(i);
+		m_sessionIndexStack.Push(dw);
 	}
 
 	return true;
@@ -1353,8 +1537,7 @@ void jh_network::IocpClient::ForceStop()
 		sessionPtr->Reset();
 		m_sessionIndexStack.Push(sessionIdx);
 
-		m_sessionCount.fetch_sub(1);
-		//InterlockedDecrement(&m_lSessionCount);
+		InterlockedDecrement(&m_lSessionCount);
 	}
 }
 
@@ -1371,7 +1554,7 @@ jh_network::IocpClient::IocpClient(const WCHAR* clientName) : m_pcwszClientName(
 	m_llDisconnectedCount = 0;
 	m_llTotalDisconnectedCount = 0;
 
-	m_sessionCount = 0;
+	m_lSessionCount = 0;
 	
 	m_llTotalConnectedSessionCount = 0;
 
@@ -1427,7 +1610,12 @@ void jh_network::IocpClient::Stop()
 		}
 
 		DWORD ret = WaitForMultipleObjects(m_dwConcurrentWorkerThreadCount, m_hWorkerThreads, true, INFINITE);
-		
+		if (!(WAIT_OBJECT_0 <= ret && (WAIT_OBJECT_0 + m_dwConcurrentWorkerThreadCount) > ret))
+		{
+			DWORD gle = GetLastError();
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Stop] - WaitForMultipleObject return Error : [%u]",gle);
+		}
+
 		for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
 		{
 			CloseHandle(m_hWorkerThreads[i]);
@@ -1449,7 +1637,7 @@ void jh_network::IocpClient::Stop()
 
 void jh_network::IocpClient::Connect(int cnt)
 {
-	SOCKADDR_IN serverAddr;
+	SOCKADDR_IN serverAddr{};
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(m_usTargetPort);
 	serverAddr.sin_addr = NetAddress::IpToAddr(m_wszTargetIp);

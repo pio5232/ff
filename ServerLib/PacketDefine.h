@@ -1,5 +1,6 @@
 #pragma once
- 
+#pragma warning(disable : 4200)
+
 using serializationBuffer = jh_utility::SerializationBuffer;
 
 using namespace jh_content;

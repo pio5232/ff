@@ -146,11 +146,11 @@ namespace jh_utility
 			return popCount;
 		}
 
-		void Swap(std::queue<T>& vec)
+		void Swap(std::queue<T>& q)
 		{
 			SRWLockGuard lockGuard(&m_lock);
 			
-			std::swap(m_queue, vec);
+			std::swap(m_queue, q);
 		}
 		int GetUseSize()
 		{
@@ -258,9 +258,9 @@ struct Vector3
 	{
 		int powCount = 2;
 
-		return sqrt(pow(x, powCount) + pow(y, powCount) + pow(z, powCount));
+		return static_cast<float>(sqrt(pow(x, powCount) + pow(y, powCount) + pow(z, powCount)));
 	}
-	float sqrMagnitude() { return x * x + y * y + z * z; }
+	float sqrMagnitude() const { return x * x + y * y + z * z; }
 
 	static float Dot(const Vector3& from, const Vector3& to)
 	{

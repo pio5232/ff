@@ -97,7 +97,7 @@ void jh_content::LobbyDummyClient::Monitor()
 
 	wprintf(L" [Content] MAX Sessions : %d\n", GetMaxSessionCount());
 	wprintf(L" [Content] Total Sessions : %d\n", GetSessionCount());
-	wprintf(L" [Content] Total Dummies : %d\n", DummyData::aliveDummyCount.load());
+	wprintf(L" [Content] Total Dummies : %d\n", DummyData::aliveDummyCount);
 
 	wprintf(L" [Content] Packet Re-Send Timeout Count [%d]s : %d\n", RE_SEND_TIMEOUT/1000, m_pDummySystem->GetReSendTimeoutCnt());
 	wprintf(L"[RTT] : [%llu]ms \n",m_pDummySystem->GetRTT());

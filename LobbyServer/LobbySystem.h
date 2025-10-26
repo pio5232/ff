@@ -35,8 +35,8 @@ namespace jh_content
 			SetEvent(m_hJobEvent);
 		}
 
-		static unsigned WINAPI LogicThreadMain(LPVOID lparam);
-		void Logic();
+		static unsigned WINAPI LogicThreadFunc(LPVOID lparam);
+		void LogicThreadMain();
 
 		void Init();
 		// 로직 스레드의 실행을 종료

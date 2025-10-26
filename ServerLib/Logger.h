@@ -104,7 +104,7 @@ do {																			\
 
 		ULONGLONG m_ullLogCounter;
 
-		char m_bIsRunning;
+		volatile char m_bIsRunning;
 		bool m_bCasOpen;
 		HANDLE m_hThread;
 		HANDLE m_hLogEvent;

@@ -24,7 +24,7 @@ jh_content::RoomInfo jh_content::Room::GetRoomInfo() const
 
 
 jh_content::Room::Room(ULONGLONG ownerId, USHORT maxUserCnt, USHORT roomNum, WCHAR* roomName) : m_roomInfo{ .m_ullOwnerId = ownerId,.m_usRoomNum = roomNum,
-.m_usCurUserCnt = 0, .m_usMaxUserCnt = maxUserCnt,.m_wszRoomName{} }, m_usReadyCnt(0), m_sendPacketFunc{}
+.m_usCurUserCnt = 0, .m_usMaxUserCnt = maxUserCnt,.m_wszRoomName{} }, m_usReadyCnt(0), m_unicastFunc{}, m_broadcastFunc {}
 {
 	aliveRoomCount.fetch_add(1);
 
@@ -130,6 +130,7 @@ bool jh_content::Room::UpdateUserReadyStatus(UserPtr userPtr, bool isReady, bool
 	if (userId == m_roomInfo.m_ullOwnerId && m_usReadyCnt == GetCurUserCnt() && m_roomState == RoomState::IDLE)
 	{
 		m_roomState = RoomState::RUNNING;
+		return true;
 
 		jh_network::GameStartNotifyPacket startNotifyPacket;
 
@@ -137,7 +138,6 @@ bool jh_content::Room::UpdateUserReadyStatus(UserPtr userPtr, bool isReady, bool
 
 		BroadCast(sendBuffer);
 
-		return true;
 	}
 
 	if (sendOpt)
@@ -153,6 +153,12 @@ bool jh_content::Room::UpdateUserReadyStatus(UserPtr userPtr, bool isReady, bool
 void jh_content::Room::BroadCast(PacketPtr& packet, ULONGLONG excludedUserId)
 {
 	PRO_START_AUTO_FUNC;
+	
+	std::vector<ULONGLONG> vec;
+
+	size_t mapSize = m_userMap.size();
+	vec.reserve(mapSize);
+
 	for (const auto& [_userId, _userWptr] : m_userMap)
 	{
 		UserPtr _userPtr = _userWptr.lock();
@@ -165,12 +171,14 @@ void jh_content::Room::BroadCast(PacketPtr& packet, ULONGLONG excludedUserId)
 
 		ULONGLONG _sessionId = _userPtr->GetSessionId();
 
-		m_sendPacketFunc(_sessionId, packet);
+		vec.push_back(_sessionId);
 	}
+	
+	m_broadcastFunc(static_cast<DWORD>(vec.size()),vec.data(), packet);
 	
 }
 
 void jh_content::Room::Unicast(PacketPtr& packet, ULONGLONG sessionId)
 {
-	m_sendPacketFunc(sessionId, packet);
+	m_unicastFunc(sessionId, packet);
 }

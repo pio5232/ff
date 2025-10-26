@@ -83,7 +83,7 @@ jh_content::LobbyServer::~LobbyServer()
 void jh_content::LobbyServer::BeginAction()
 {
 	Listen();
-	
+
 	m_pLanServer->Start();
 
 	m_pLanServer->Listen();
@@ -94,7 +94,7 @@ void jh_content::LobbyServer::EndAction()
 	m_pLobbySystem->Stop();
 
 	m_pLanServer->Stop();
-
+	
 }
 //void OnRecv(LONGLONG sessionId, PacketPtr packet, WORD type) override;
 //void OnConnected(LONGLONG sessionId) override;

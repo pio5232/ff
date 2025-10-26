@@ -36,7 +36,7 @@ void jh_content::LobbyLanSystem::ProcessNetJob()
 	}
 }
 
-unsigned __stdcall jh_content::LobbyLanSystem::LogicThreadMain(LPVOID lparam)
+unsigned __stdcall jh_content::LobbyLanSystem::LogicThreadFunc(LPVOID lparam)
 {
 	jh_content::LobbyLanSystem* lobbyLanInstance = static_cast<LobbyLanSystem*>(lparam);
 
@@ -104,7 +104,7 @@ void jh_content::LobbyLanSystem::Init()
 	}
 
 	LPVOID param = this;
-	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbyLanSystem::LogicThreadMain, param, 0, nullptr));
+	m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, LobbyLanSystem::LogicThreadFunc, param, 0, nullptr));
 
 	if (nullptr == m_hLogicThread)
 	{

@@ -102,8 +102,8 @@ namespace jh_network
 		//void Init(SOCKET m_socket, const SOCKADDR_IN* pSockAddr);
 
 	private:
-		LONGLONG GetSessionId() { return m_ullSessionId & SESSION_ID_MASKING_BIT; }
-		LONGLONG GetSessionIdx() { return m_ullSessionId >> SESSION_IDX_SHIFT_BIT; }
+		LONGLONG GetSessionId() const { return m_ullSessionId & SESSION_ID_MASKING_BIT; }
+		LONGLONG GetSessionIdx() const { return m_ullSessionId >> SESSION_IDX_SHIFT_BIT; }
 	public:
 		LONGLONG m_ullSessionId;
 		SOCKET m_socket;

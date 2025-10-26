@@ -2,7 +2,7 @@
 #include "DummyUpdateSystem.h"
 #include "DummyPacketBuilder.h"
 #include "Memory.h"
-unsigned jh_content::DummyUpdateSystem::LogicThreadMain(LPVOID lparam)
+unsigned jh_content::DummyUpdateSystem::LogicThreadFunc(LPVOID lparam)
 {
 	WorkerTransData* data = static_cast<WorkerTransData*>(lparam);
 	
@@ -26,7 +26,7 @@ void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 	
 	static thread_local ULONGLONG lastSendCheckTime = 0;
 
-	while (true == m_bRunnigFlag.load())
+	while (true == m_bRunnigFlag)
 	{
 		WaitForSingleObject(jobEvent, 10);
 
@@ -53,14 +53,14 @@ void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 }
 
 
-jh_content::DummyUpdateSystem::DummyUpdateSystem(jh_network::IocpClient* owner) : m_pOwner{ owner }, m_bRunnigFlag{ true }, m_rtt{}
+jh_content::DummyUpdateSystem::DummyUpdateSystem(jh_network::IocpClient* owner) : m_pOwner{ owner }, m_bRunnigFlag{ 1 }, m_ullRtt{}
 {
 
 }
 
 jh_content::DummyUpdateSystem::~DummyUpdateSystem()
 {
-	if (false != m_bRunnigFlag)
+	if (0 != m_bRunnigFlag)
 	{
 		Stop();
 	}
@@ -97,7 +97,7 @@ void jh_content::DummyUpdateSystem::Init()
 		transData[i].m_pThis = this;
 		transData[i].m_iThreadNum = i;
 
-		logicData.m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, DummyUpdateSystem::LogicThreadMain, &transData[i], 0, nullptr));
+		logicData.m_hLogicThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, DummyUpdateSystem::LogicThreadFunc, &transData[i], 0, nullptr));
 
 		if (nullptr == logicData.m_hLogicThread)
 		{
@@ -111,7 +111,7 @@ void jh_content::DummyUpdateSystem::Init()
 
 void jh_content::DummyUpdateSystem::Stop()
 {
-	m_bRunnigFlag.store(false);
+	InterlockedExchange8(&m_bRunnigFlag, 0);
 	
 	for (int i = 0; i < LOGIC_THREAD_COUNT; i++)
 	{
@@ -283,7 +283,7 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 
 	for (DummyPtr& dummy : dummyVec)
 	{
-		if (false == clientSendFlag.load())
+		if (0 == clientSendFlag)
 			continue;
 
 		if (curTimeStamp - dummy->m_ullLastUpdatedHeartbeatTime > 5000)
@@ -564,7 +564,7 @@ void jh_content::DummyUpdateSystem::HandleEchoPacket(ULONGLONG sessionId, Packet
 		return;
 	}
 	
-	m_rtt.store(curTime - dummy->m_ullLastSendTime);
+	InterlockedExchange64((LONGLONG*)& m_ullRtt, curTime - dummy->m_ullLastSendTime);
 	
 	dummy->m_ullNextActionTime = curTime + 1000;
 }
@@ -587,8 +587,7 @@ void jh_content::DummyUpdateSystem::CheckSendTimeOut(int threadNum)
 		}
 	}
 
-	m_logicData[threadNum].m_reSendTimeoutCnt.exchange(resendTimeoutCnt);
-
+	InterlockedExchange(&m_logicData[threadNum].m_reSendTimeoutCnt, resendTimeoutCnt);
 }
 
 int jh_content::DummyUpdateSystem::GetReSendTimeoutCnt()
@@ -596,7 +595,7 @@ int jh_content::DummyUpdateSystem::GetReSendTimeoutCnt()
 	int cnt = 0;
 	for (int i = 0; i < LOGIC_THREAD_COUNT; i++)
 	{
-		int threadTimeoutCnt = m_logicData[i].m_reSendTimeoutCnt.exchange(0);
+		int threadTimeoutCnt = InterlockedExchange(&m_logicData[i].m_reSendTimeoutCnt, 0);
 		cnt += threadTimeoutCnt;
 	}
 	return cnt;
@@ -604,7 +603,7 @@ int jh_content::DummyUpdateSystem::GetReSendTimeoutCnt()
 
 ULONGLONG jh_content::DummyUpdateSystem::GetRTT() const
 {
-	ULONGLONG rtt = m_rtt.load();
+	ULONGLONG rtt = m_ullRtt;
 	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[GetRTT] RTT : [%llu ms]", rtt);
 
 	return rtt;

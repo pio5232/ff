@@ -30,7 +30,7 @@ void jh_content::EchoSystem::Init()
 
 	if (nullptr == m_hLogicThread)
 	{
-		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"Echo System - Logic Handle is NULL");
+		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"Echo System - LogicThreadMain Handle is NULL");
 		jh_utility::CrashDump::Crash();
 	}
 

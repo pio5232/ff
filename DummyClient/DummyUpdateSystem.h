@@ -12,7 +12,7 @@ namespace jh_content
 		{
 			LogicData() : m_hLogicThread{}, m_hJobEvent{}, m_netJobQueue{}, m_sessionConnEventQueue{}, m_dummyUmap{}, m_reSendTimeoutCnt{} {}
 
-			alignas(64) std::atomic<int> m_reSendTimeoutCnt;
+			alignas(64) LONG m_reSendTimeoutCnt;
 
 			HANDLE m_hLogicThread;
 			HANDLE m_hJobEvent;
@@ -35,7 +35,7 @@ namespace jh_content
 		void ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet, int threadNum);
 	
 	public:
-		static unsigned WINAPI LogicThreadMain(LPVOID lparam);
+		static unsigned WINAPI LogicThreadFunc(LPVOID lparam);
 		void DummyLogic(int threadNum);
 
 		DummyUpdateSystem(jh_network::IocpClient* owner);
@@ -61,8 +61,6 @@ namespace jh_content
 		void HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 
-
-
 		bool IsValidThreadNum(int threadNum) { return threadNum >= 0 && threadNum < LOGIC_THREAD_COUNT; }
 
 		void CheckSendTimeOut(int threadNum);
@@ -74,8 +72,8 @@ namespace jh_content
 
 		LogicData m_logicData[LOGIC_THREAD_COUNT];
 		
-		alignas(64) std::atomic<bool> m_bRunnigFlag;
-		std::atomic<ULONGLONG> m_rtt;
+		alignas(64) volatile char m_bRunnigFlag;
+		alignas(64) ULONGLONG m_ullRtt;
 	};
 }
 

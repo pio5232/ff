@@ -202,7 +202,7 @@ void jh_content::GameServer::Monitor()
 //	int prevCnt = _loadCompletedCnt.fetch_add(1);
 //	if (prevCnt == (_gameInfo.m_usRequiredUserCnt.load() - 1))
 //	{
-//		printf("Check Loading & Start Logic!!! [player+ai count : %d]\n", _gameInfo.m_usMaxUserCnt);
+//		printf("Check Loading & Start LogicThreadMain!!! [player+ai count : %d]\n", _gameInfo.m_usMaxUserCnt);
 //		jh_network::GameStartNotifyPacket gameStartNotifyPacket;
 //
 //		// 이거 추후에 패킷 구조 바뀌게되면 (Header말고 데이터 있으면 따로 <<를 통해서 넣어주는 구조로 다시 만들어야함.) AAA
@@ -211,7 +211,7 @@ void jh_content::GameServer::Monitor()
 //		jh_content::UserManager::GetInstance().SendToAllPlayer(sendBuffer);
 //
 //		_gameWorld->Start();
-//		// Start Logic
+//		// Start LogicThreadMain
 //		// StartPacket. timestamp 포함해서 보내기
 //	}
 //}

@@ -20,10 +20,9 @@ enum class DummyStatus : byte
 };
 struct DummyData
 {
-	DummyData() : m_usExpectedRoomNum{}, m_wszExpectedRoomName{}, m_dummyStatus{ DummyStatus::DISCONNECTED }, m_ullSessionId{ (ULONGLONG)(INVALID_SESSION_ID) }, m_ullNextActionTime{}, m_ullLastUpdatedHeartbeatTime{}, m_ullUserId{}, m_ullLastSendTime{} { aliveDummyCount.fetch_add(1); }
-	~DummyData() { aliveDummyCount.fetch_sub(1); m_dummyStatus = DummyStatus::DISCONNECTED; m_ullUserId = 0; }
+	DummyData() : m_usExpectedRoomNum{}, m_wszExpectedRoomName{}, m_dummyStatus{ DummyStatus::DISCONNECTED }, m_ullSessionId{ (ULONGLONG)(INVALID_SESSION_ID) }, m_ullNextActionTime{}, m_ullLastUpdatedHeartbeatTime{}, m_ullUserId{}, m_ullLastSendTime{} { InterlockedIncrement(&aliveDummyCount); }
+	~DummyData() { InterlockedDecrement(&aliveDummyCount); m_dummyStatus = DummyStatus::DISCONNECTED; m_ullUserId = 0; }
 
-	inline static std::atomic<int> aliveDummyCount = 0;
 	USHORT m_usExpectedRoomNum;
 	WCHAR m_wszExpectedRoomName[ROOM_NAME_MAX_LEN]{};
 	DummyStatus m_dummyStatus;
@@ -33,6 +32,8 @@ struct DummyData
 	ULONGLONG m_ullNextActionTime;
 	ULONGLONG m_ullLastUpdatedHeartbeatTime;
 	ULONGLONG m_ullLastSendTime;
+
+	static alignas(64) LONG aliveDummyCount;
 };
 
 using DummyPtr = std::shared_ptr<DummyData>;

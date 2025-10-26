@@ -64,10 +64,17 @@ namespace jh_network
 
 		void Disconnect(ULONGLONG sessionId, const WCHAR* reason);
 
+		// WSASEND / WSARECV를 등록
 		void PostSend(Session* sessionPtr);
 		void PostRecv(Session* sessionPtr);
 
-		//void SendPacket(LONGLONG sessionId, jh_utility::SerializationBuffer* sendBuf);
+		// DISPATCH Q에 등록
+		// 여러개의 세션 정보 등록 후 전송 예약
+		void RequestSend(jh_utility::DispatchJob* dispatchJobPtr) { m_dispatchJobQ.Push(dispatchJobPtr); }
+
+		// 1개의 Session에 전송 예약
+		void RequestSend(ULONGLONG sessionId, PacketPtr& packet);
+
 		void SendPacket(ULONGLONG sessionId, PacketPtr& packet);
 
 		void UpdateHeartbeat(ULONGLONG sessionId, ULONGLONG now);
@@ -91,11 +98,11 @@ namespace jh_network
 		LONG GetAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
 		LONG GetAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
 
-		LONGLONG GetTotalAcceptedCount() { return m_llTotalAcceptedSessionCount; }
-		LONGLONG GetDisconnectedCount() { return m_llDisconnectedCount; }
-		LONGLONG GetTotalDisconnectedCount() { return m_llTotalDisconnectedCount; }
+		LONGLONG GetTotalAcceptedCount() const { return m_llTotalAcceptedSessionCount; }
+		LONGLONG GetDisconnectedCount() const { return m_llDisconnectedCount; }
+		LONGLONG GetTotalDisconnectedCount() const { return m_llTotalDisconnectedCount; }
 
-		SOCKET GetListenSock() { return m_listenSock; }
+		SOCKET GetListenSock() const { return m_listenSock; }
 		
 		// session 수를 제외한 다른 옵션들을 설정.
 		void InitServerConfig(WCHAR* ip, WORD port, DWORD concurrentWorkerThreadCount, WORD lingerOnOff, WORD lingerTime, ULONGLONG timeOut);
@@ -103,17 +110,29 @@ namespace jh_network
 		Session* TryAcquireSession(ULONGLONG sessionId, const WCHAR* caller); // sessionPtr을 사용할 때마다 해제중인지 확인하고, 참조 카운트를 증가시킨다.
 
 	private:
+		bool CreateServerThreads();
 
 		void DeleteSession(ULONGLONG sessionId);
 		void DecreaseIoCount(Session* sessionPtr);
 
-		void WorkerThreadFunc();
-		void AcceptThreadFunc();
+		static unsigned WINAPI WorkerThreadFunc(LPVOID lparam);
+		static unsigned WINAPI AcceptThreadFunc(LPVOID lparam);
+		static unsigned WINAPI DispatchThreadFunc(LPVOID lparam);
 
+		void WorkerThreadMain();
+		void AcceptThreadMain();
+		void DispatchThreadMain();
+
+		void DispatchPacket();
 		Session* CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr);
 		HANDLE m_hCompletionPort;
-		std::vector<std::thread> m_workerThreads;
 
+		HANDLE* m_hWorkerThreads;
+		HANDLE m_hAcceptThread;
+		HANDLE m_hDispatchThread;
+		HANDLE m_hStopEvent;
+		HANDLE m_hSendEvent;
+		
 																// 설정 값
 		WCHAR m_wszIp[IP_STRING_LEN]; // 원본 20				// ip
 		USHORT m_usPort;											// 포트 번호
@@ -130,10 +149,8 @@ namespace jh_network
 		// Session을 Find하는 구조에서 병목이 적어야 한다는 게 내 생각
 		jh_network::Session* m_pSessionArray;
 		jh_utility::LockStack<DWORD> m_sessionIndexStack;
-
+		jh_utility::LockQueue<jh_utility::DispatchJob*> m_dispatchJobQ;
 		ActiveSessionManager m_activeSessionManager;
-
-		std::thread m_acceptThread;
 
 		alignas(64) LONG m_lSessionCount;						// 현재 접속중인 세션 수
 		alignas(64) LONGLONG m_llTotalAcceptedSessionCount;		// 시작부터 연결된 세션의 개수 
@@ -183,7 +200,7 @@ namespace jh_network
 
 		static unsigned WINAPI WorkerThreadFunc(LPVOID lparam);
 
-		void WorkerThread();
+		void WorkerThreadMain();
 
 		Session* CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr);
 		
@@ -193,16 +210,16 @@ namespace jh_network
 
 		void ForceStop(); // 강제 종료
 		
-		int GetMaxSessionCount() { return m_dwMaxSessionCnt; }
-		LONG GetSessionCount() { return m_sessionCount.load(); }
+		int GetMaxSessionCount() const { return m_dwMaxSessionCnt; }
+		LONG GetSessionCount() const { return m_lSessionCount; }
 		LONG GetTotalRecvCount() { return InterlockedExchange(&m_lTotalRecvCount, 0); }
 		LONG GetTotalSendCount() { return InterlockedExchange(&m_lTotalSendCount, 0); }
 		LONG GetAsyncRecvCount() { return InterlockedExchange(&m_lAsyncRecvCount, 0); }
 		LONG GetAsyncSendCount() { return InterlockedExchange(&m_lAsyncSendCount, 0); }
 
-		LONGLONG GetTotalConnectedCount() { return m_llTotalConnectedSessionCount; }
-		LONGLONG GetDisconnectedCount() { return m_llDisconnectedCount; }
-		LONGLONG GetTotalDisconnectedCount() { return m_llTotalDisconnectedCount; }
+		LONGLONG GetTotalConnectedCount() const { return m_llTotalConnectedSessionCount; }
+		LONGLONG GetDisconnectedCount() const { return m_llDisconnectedCount; }
+		LONGLONG GetTotalDisconnectedCount() const { return m_llTotalDisconnectedCount; }
 	protected:
 		virtual void BeginAction() {}
 		virtual void EndAction() {}
@@ -230,7 +247,7 @@ namespace jh_network
 		HANDLE m_hCompletionPort;
 		HANDLE* m_hWorkerThreads;
 
-		alignas(64) std::atomic<LONG> m_sessionCount;						// 현재 연결된 Session의 수.
+		alignas(64) LONG m_lSessionCount;						// 현재 연결된 Session의 수.
 		alignas(64) LONGLONG m_llTotalConnectedSessionCount;		// 시작부터 연결된 세션의 총 합
 
 		alignas(64) LONG m_llDisconnectedCount; // 상대쪽에서 연결을 끊은 횟수
