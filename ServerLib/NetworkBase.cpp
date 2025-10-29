@@ -937,6 +937,7 @@ void jh_network::IocpServer::DispatchThreadMain()
 	{
 		DWORD ret = WaitForMultipleObjects(2, handles, false, INFINITE);
 		
+		PRO_START("Dispatch 1 Cycle");
 		// StopEvent
 		if (WAIT_OBJECT_0 == ret)
 		{
@@ -952,6 +953,7 @@ void jh_network::IocpServer::DispatchThreadMain()
 			DWORD gle = GetLastError();
 			_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"[DispatchThreadMain] WaitMultiple Ret Error : [%u].",gle);
 		}
+		PRO_END("Dispatch 1 Cycle");
 	}
 }
 

@@ -35,6 +35,7 @@ jh_utility::DispatchJob::DispatchJob(DWORD sessionCount, ULONGLONG* sessionIdLis
     ULONGLONG* idList = static_cast<ULONGLONG*>(g_memAllocator->Alloc(copyBytes));
 
     m_dwSessionCount = sessionCount;
+    m_sessionInfo.m_pSessionIdList = idList;
     m_packet = packetPtr;
 
     memcpy_s(m_sessionInfo.m_pSessionIdList, copyBytes, sessionIdList, copyBytes);

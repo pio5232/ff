@@ -70,7 +70,7 @@ namespace jh_network
 
 		// DISPATCH Q에 등록
 		// 여러개의 세션 정보 등록 후 전송 예약
-		void RequestSend(jh_utility::DispatchJob* dispatchJobPtr) { m_dispatchJobQ.Push(dispatchJobPtr); }
+		void RequestSend(jh_utility::DispatchJob* dispatchJobPtr) { m_dispatchJobQ.Push(dispatchJobPtr); SetEvent(m_hSendEvent); }
 
 		// 1개의 Session에 전송 예약
 		void RequestSend(ULONGLONG sessionId, PacketPtr& packet);

@@ -530,13 +530,7 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 	switch (res)
 	{
 	case jh_content::Room::RoomEnterResult::SUCCESS:
-	{
-		{
-			PacketPtr enterRoomNotifyPkt = jh_content::PacketBuilder::BuildEnterRoomNotifyPacket(userId);
-
-			roomPtr->BroadCast(enterRoomNotifyPkt, userId);
-		}
-		
+	{	
 		// 방에 접속한 유저들의 정보를 전달
 		std::vector<ULONGLONG> userIdAndReadyList;
 
@@ -562,6 +556,13 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 		PacketPtr enterRoomResponsePkt = jh_content::PacketBuilder::BuildEnterRoomResponsePacket(true, userIdAndReadyList);
 
 		m_pOwner->RequestSend(sessionId, enterRoomResponsePkt);
+
+		{
+			PacketPtr enterRoomNotifyPkt = jh_content::PacketBuilder::BuildEnterRoomNotifyPacket(userId);
+
+			roomPtr->BroadCast(enterRoomNotifyPkt, userId);
+		}
+
 		//m_pOwner->SendPacket(sessionId, enterRoomResponsePkt);
 
 		break;
@@ -632,11 +633,12 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 		return ErrorCode::CANNOT_FIND_ROOM;
 	}
 
-	bool isRoomEmpty = roomPtr->LeaveRoom(userPtr);
 
-	//PacketPtr leaveRoomResPkt = jh_content::PacketBuilder::BuildLeaveRoomResponsePacket();
-	//
+	PacketPtr leaveRoomResPkt = jh_content::PacketBuilder::BuildLeaveRoomResponsePacket();
 	//m_pOwner->SendPacket(sessionId, leaveRoomResPkt);
+	m_pOwner->RequestSend(sessionId, leaveRoomResPkt);
+
+	bool isRoomEmpty = roomPtr->LeaveRoom(userPtr);
 	
 	if (isRoomEmpty == true)
 		m_pRoomManager->DestroyRoom(roomPtr->GetRoomNum());

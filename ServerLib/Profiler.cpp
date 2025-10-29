@@ -121,9 +121,6 @@ void jh_utility::ThreadProfileData::Reset()
 {
 	for (int i = 0; i < MAX_SAMPLE_COUNT; i++)
 	{
-		if (false == m_samples[i].m_bUseFlag)
-			break;
-
 		m_samples[i].Initialize();
 	}
 }

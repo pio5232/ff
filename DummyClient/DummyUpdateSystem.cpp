@@ -375,6 +375,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 {
 	PRO_START_AUTO_FUNC;
 	
+
 	DummyPtr dummy = m_logicData[threadNum].m_dummyUmap[sessionId];
 	// LOBBY 
 	if (DummyStatus::IN_LOBBY != dummy->m_dummyStatus)
@@ -412,21 +413,24 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 			PacketPtr makeRoomPkt = jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket();
 
 			SendToDummy(dummy, makeRoomPkt);
+
 		}
 		// 방 Enter
 		else
 		{
 			PacketPtr enterRoomPkt = jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(roomInfo[randRoomNum].m_usRoomNum, roomInfo[randRoomNum].m_wszRoomName);
 
-			SendToDummy(dummy, enterRoomPkt, DummyStatus::WAIT_ENTER_ROOM);
-
 			dummy->m_usExpectedRoomNum = roomInfo[randRoomNum].m_usRoomNum;
 			wcscpy_s(dummy->m_wszExpectedRoomName, roomInfo[randRoomNum].m_wszRoomName);
+			
+			SendToDummy(dummy, enterRoomPkt, DummyStatus::WAIT_ENTER_ROOM);
 		}
 	}
 
 	g_memAllocator->Free(roomInfo);
 }
+
+
 	// Make, Enter 중 선택}
 
 void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
@@ -453,6 +457,7 @@ void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionI
 		m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + 1000;
 
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleLogInResponsePacket] - CHANGE Dummy Status : LOGIN -> CHECK_RTT, SessionID : [%llu]", sessionId);
+	
 	}
 	else
 	{
@@ -464,17 +469,19 @@ void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionI
 		m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
 		m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
 	}
+
 }
 
 void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
-
+	
 	DummyPtr dummy = m_logicData[threadNum].m_dummyUmap[sessionId];
 	// LOBBY
 	if (DummyStatus::IN_LOBBY != dummy->m_dummyStatus)
 	{
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleMakeRoomResponsePacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
+		
 		return;
 	}
 
@@ -485,6 +492,8 @@ void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessi
 	if (false == responsePkt.isMade)
 	{
 		m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
+
+
 		return;
 	}
 	dummy->m_usExpectedRoomNum = responsePkt.roomInfo.m_usRoomNum;
@@ -492,6 +501,8 @@ void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessi
 	dummy->m_dummyStatus = DummyStatus::WAIT_ENTER_ROOM;
 	
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = ULLONG_MAX;
+
+
 }
 
 void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
@@ -502,6 +513,7 @@ void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sess
 	if (DummyStatus::WAIT_ENTER_ROOM != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 	{
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleEnterRoomResponsePacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
+		
 		return;
 	}
 
@@ -516,6 +528,7 @@ void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sess
 		m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
 
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
+
 }
 
 void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
@@ -524,8 +537,10 @@ void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, 
 
 	if (DummyStatus::WAIT_LEAVE_ROOM == m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus ||
 		DummyStatus::IN_ROOM == m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
+	{
+
 		return;
-	
+	}
 	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatNotifyPacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
 
 	// ROOM
@@ -539,6 +554,7 @@ void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sess
 	if (DummyStatus::WAIT_LEAVE_ROOM != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
 	{
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleMakeRoomResponsePacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
+
 		return;
 	}
 
@@ -547,7 +563,7 @@ void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sess
 
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
-	
+
 }
 
 void jh_content::DummyUpdateSystem::HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
@@ -561,11 +577,12 @@ void jh_content::DummyUpdateSystem::HandleEchoPacket(ULONGLONG sessionId, Packet
 	if (DummyStatus::CHECK_RTT != dummy->m_dummyStatus)
 	{
 		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleEchoPacket] - DummyStatus is not \"CHECK_RTT\". DummyStatus : [%d]",sessionId, (int)(m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus));
+
 		return;
 	}
 	
 	InterlockedExchange64((LONGLONG*)& m_ullRtt, curTime - dummy->m_ullLastSendTime);
-	
+
 	dummy->m_ullNextActionTime = curTime + 1000;
 }
 
@@ -583,7 +600,6 @@ void jh_content::DummyUpdateSystem::CheckSendTimeOut(int threadNum)
 		if (curTime - dummy->m_ullLastSendTime > RE_SEND_TIMEOUT)
 		{
 			resendTimeoutCnt++;
-
 		}
 	}
 
