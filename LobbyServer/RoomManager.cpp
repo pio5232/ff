@@ -97,7 +97,7 @@ RoomPtr jh_content::RoomManager::CreateRoom(UserPtr userPtr, WCHAR* roomName)
 
 	roomNumGen = (roomNumGen % UINT16_MAX) + 1;
 
-	RoomPtr roomPtr = MakeShared<jh_content::Room>(g_memAllocator, userPtr->GetUserId(), m_usMaxRoomUserCnt, roomNumGen, roomName);
+	RoomPtr roomPtr = MakeShared<jh_content::Room>(g_memSystem, userPtr->GetUserId(), m_usMaxRoomUserCnt, roomNumGen, roomName);
 
 	m_roomMap.insert({ roomNumGen, roomPtr });
 

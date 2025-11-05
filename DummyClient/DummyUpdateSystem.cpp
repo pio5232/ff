@@ -72,10 +72,12 @@ void jh_content::DummyUpdateSystem::Init()
 
 	m_packetFuncDic[jh_network::ROOM_LIST_RESPONSE_PACKET] = &DummyUpdateSystem::HandleRoomListResponsePacket;
 	m_packetFuncDic[jh_network::CHAT_NOTIFY_PACKET] = &DummyUpdateSystem::HandleChatNotifyPacket;
+	m_packetFuncDic[jh_network::CHAT_TO_ROOM_RESPONSE_PACKET] = &DummyUpdateSystem::HandleChatResponsePacket;
 	m_packetFuncDic[jh_network::LOG_IN_RESPONSE_PACKET] = &DummyUpdateSystem::HandleLogInResponsePacket;
 	m_packetFuncDic[jh_network::MAKE_ROOM_RESPONSE_PACKET] = &DummyUpdateSystem::HandleMakeRoomResponsePacket;
 	m_packetFuncDic[jh_network::ENTER_ROOM_RESPONSE_PACKET] = &DummyUpdateSystem::HandleEnterRoomResponsePacket;
 	m_packetFuncDic[jh_network::LEAVE_ROOM_RESPONSE_PACKET] = &DummyUpdateSystem::HandleLeaveRoomResponsePacket;
+	m_packetFuncDic[jh_network::ERROR_PACKET] = &DummyUpdateSystem::HandleErrorPacket;
 	m_packetFuncDic[jh_network::ECHO_PACKET] = &DummyUpdateSystem::HandleEchoPacket;
 
 	WorkerTransData transData[LOGIC_THREAD_COUNT];
@@ -213,7 +215,7 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 		{
 		case jh_utility::SessionConnectionEventType::CONNECT:
 		{			
-			DummyPtr dummy = MakeShared<DummyData>(g_memAllocator);
+			DummyPtr dummy = MakeShared<DummyData>(g_memSystem);
 			
 			_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_INFO, L"[ProcessSessionConnectionEvent] SessionID : [0x%08x]", sessionId);;
 
@@ -283,8 +285,6 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 
 	for (DummyPtr& dummy : dummyVec)
 	{
-		if (0 == clientSendFlag)
-			continue;
 
 		if (curTimeStamp - dummy->m_ullLastUpdatedHeartbeatTime > 5000)
 		{
@@ -294,6 +294,9 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 			
 			m_pOwner->SendPacket(dummy->m_ullSessionId, hbPkt);
 		}
+
+		if (0 == clientSendFlag)
+			continue;
 
 		if (dummy->m_ullNextActionTime > curTimeStamp)
 			continue;
@@ -324,12 +327,8 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 			{
 				PacketPtr chatPkt = DummyPacketBuilder::BuildChatRequestPacket(dummy->m_usExpectedRoomNum);
 
-				ULONGLONG timeStamp = jh_utility::GetTimeStamp();
-				dummy->m_ullLastSendTime = timeStamp;
+				SendToDummy(dummy, chatPkt, DummyStatus::IN_ROOM_WAIT_CHAT);
 
-				m_pOwner->SendPacket(dummy->m_ullSessionId, chatPkt);
-
-				dummy->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
 				//_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[ProcessDummyLogic] - INDEX : [%d], THREAD : [%u], Send Chatting, UserId : [%llu], RoomNum : [%hu], ActionTime : [%llu], curTime : [%llu]", threadNum, GetCurrentThreadId(), dummy->m_ullUserId, dummy->m_usExpectedRoomNum, dummy->m_ullNextActionTime, curTimeStamp);
 			}
 
@@ -343,6 +342,7 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 
 			break;
 		}
+		default:break;
 		}
 	}
 
@@ -389,7 +389,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 
 	*packet >> roomCnt;
 
-	RoomInfo* roomInfo = static_cast<RoomInfo*>(g_memAllocator->Alloc(sizeof(RoomInfo) * roomCnt));
+	RoomInfo* roomInfo = static_cast<RoomInfo*>(g_memSystem->Alloc(sizeof(RoomInfo) * roomCnt));
 
 	for (int i = 0; i < roomCnt; i++)
 	{
@@ -427,7 +427,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 		}
 	}
 
-	g_memAllocator->Free(roomInfo);
+	g_memSystem->Free(roomInfo);
 }
 
 
@@ -535,15 +535,28 @@ void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, 
 {
 	PRO_START_AUTO_FUNC;
 
-	if (DummyStatus::WAIT_LEAVE_ROOM == m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus ||
-		DummyStatus::IN_ROOM == m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
+	const DummyStatus flag = (DummyStatus)((USHORT)DummyStatus::WAIT_LEAVE_ROOM | (USHORT)DummyStatus::IN_ROOM | (USHORT)DummyStatus::IN_ROOM_WAIT_CHAT);
+	if (((USHORT)flag & (USHORT)m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus) != 0)
 	{
-
 		return;
 	}
 	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatNotifyPacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
 
 	// ROOM
+}
+
+void jh_content::DummyUpdateSystem::HandleChatResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+{
+	PRO_START_AUTO_FUNC;
+
+	if (DummyStatus::IN_ROOM_WAIT_CHAT != m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus)
+	{
+		_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[HandleMakeRoomResponsePacket] - m_dummyStatus가 올바르지 않습니다 Session : [%llu], status : [%d]", sessionId, m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus);
+
+		return;
+	}
+	m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_ROOM;
+	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
 }
 
 void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
@@ -560,6 +573,28 @@ void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sess
 
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_usExpectedRoomNum = 0;
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_wszExpectedRoomName[0] = L'\0';
+
+	m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
+	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
+
+}
+void jh_content::DummyUpdateSystem::HandleErrorPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+{
+	PRO_START_AUTO_FUNC;
+
+	USHORT PacketErrorCode;
+
+	*packet >> PacketErrorCode;
+
+	DummyUpdateSystem::LogicData::ErrorAggregator& agg = m_logicData[threadNum].m_errorAggregator;
+
+	switch (PacketErrorCode)
+	{
+	case jh_network::PacketErrorCode::REQUEST_DESTROYED_ROOM: InterlockedIncrement(&agg.m_llDestroyedRoom); break;
+	case jh_network::PacketErrorCode::REQUEST_DIFF_ROOM_NAME: InterlockedIncrement(&agg.m_llDiffRoomName); break;
+	case jh_network::PacketErrorCode::FULL_ROOM: InterlockedIncrement(&agg.m_llFullRoom); break;
+	case jh_network::PacketErrorCode::ALREADY_RUNNING_ROOM: InterlockedIncrement(&agg.m_llAlreadyRunningRoom); break;
+	}
 
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
@@ -597,25 +632,19 @@ void jh_content::DummyUpdateSystem::CheckSendTimeOut(int threadNum)
 	int resendTimeoutCnt = 0;
 	for (DummyPtr& dummy : dummyVec)
 	{
-		if (curTime - dummy->m_ullLastSendTime > RE_SEND_TIMEOUT)
+		if ((curTime - dummy->m_ullLastSendTime) > RE_SEND_TIMEOUT)
 		{
 			resendTimeoutCnt++;
+
+			_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"Thread Num  : [%u], Userid : [%llu], status : [%hu]", threadNum, dummy->m_ullUserId, (USHORT)dummy->m_dummyStatus);
+
 		}
 	}
 
+	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"Thread Num  : [%u], Total : [%d]" , threadNum, resendTimeoutCnt);
 	InterlockedExchange(&m_logicData[threadNum].m_reSendTimeoutCnt, resendTimeoutCnt);
 }
 
-int jh_content::DummyUpdateSystem::GetReSendTimeoutCnt()
-{
-	int cnt = 0;
-	for (int i = 0; i < LOGIC_THREAD_COUNT; i++)
-	{
-		int threadTimeoutCnt = InterlockedExchange(&m_logicData[i].m_reSendTimeoutCnt, 0);
-		cnt += threadTimeoutCnt;
-	}
-	return cnt;
-}
 
 ULONGLONG jh_content::DummyUpdateSystem::GetRTT() const
 {
@@ -623,4 +652,22 @@ ULONGLONG jh_content::DummyUpdateSystem::GetRTT() const
 	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[GetRTT] RTT : [%llu ms]", rtt);
 
 	return rtt;
+}
+
+
+jh_content::DummyUpdateSystem::EtcData jh_content::DummyUpdateSystem::UpdateEtc()
+{
+	EtcData etc{};
+
+	for (int i = 0; i < LOGIC_THREAD_COUNT; i++)
+	{
+		etc.m_lReSendTimeoutCount += InterlockedExchange(&m_logicData[i].m_reSendTimeoutCnt, 0);
+
+		etc.m_llDestroyedRoomErrorCount += InterlockedExchange(&m_logicData[i].m_errorAggregator.m_llDestroyedRoom, 0);
+		etc.m_llDiffRoomNameErrorCount += InterlockedExchange(&m_logicData[i].m_errorAggregator.m_llDiffRoomName, 0);
+		etc.m_llFullRoomErrorCount += InterlockedExchange(&m_logicData[i].m_errorAggregator.m_llFullRoom, 0);
+		etc.m_llAlreadyRunningRoomErrorCount += InterlockedExchange(&m_logicData[i].m_errorAggregator.m_llAlreadyRunningRoom, 0);
+	}
+
+	return etc;
 }

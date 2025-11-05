@@ -102,20 +102,20 @@ void jh_content::LobbyServer::EndAction()
 
 void jh_content::LobbyServer::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
 {
-	JobPtr job = MakeShared<jh_utility::Job>(g_memAllocator, sessionId, type, packet); //MakeJob(sessionId, type, packet);
+	JobPtr job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet); //MakeJob(sessionId, type, packet);
 
 	m_pLobbySystem->EnqueueJob(job);
 }
 void jh_content::LobbyServer::OnConnected(ULONGLONG sessionId)
 {
-	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memAllocator, sessionId, jh_utility::SessionConnectionEventType::CONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
 	m_pLobbySystem->EnqueueSessionConnEvent(sessionConnEvent);
 }
 
 void jh_content::LobbyServer::OnDisconnected(ULONGLONG sessionId)
 {
-	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memAllocator, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT); // MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
+	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT); // MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
 
 	m_pLobbySystem->EnqueueSessionConnEvent(sessionConnEvent);
 }

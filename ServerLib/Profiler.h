@@ -10,16 +10,16 @@
 #define PROF_WIDE1(x) PROF_WIDE2(x)
 #define PROF_WFUNC PROF_WIDE1(__FUNCTION__)
 
-#define PRO_START_AUTO_FUNC jh_utility::AutoProfiling ra(PROF_WFUNC)
+#define PRO_START_AUTO_FUNC jh_utility::AutoProfiler ra(PROF_WFUNC)
 
-#define PRO_START(x) jh_utility::ProfileManager::GetInstance().Start(L##x)
-#define PRO_END(x) jh_utility::ProfileManager::GetInstance().Stop(L##x)
+#define PRO_START(x) jh_utility::Profiler::GetInstance().Start(L##x)
+#define PRO_END(x) jh_utility::Profiler::GetInstance().Stop(L##x)
 
 //#define PRO_START(x) CProfileManager::GetInstance().Start(L##x)
 //#define PRO_END(x) CProfileManager::GetInstance().Stop(L##x)
 
-#define PRO_RESET jh_utility::ProfileManager::GetInstance().DataReset()
-#define PRO_SAVE(FILE_NAME) jh_utility::ProfileManager::GetInstance().ProfileDataOutText(L##FILE_NAME) 
+#define PRO_RESET jh_utility::Profiler::GetInstance().DataReset()
+#define PRO_SAVE(FILE_NAME) jh_utility::Profiler::GetInstance().ProfileDataOutText(L##FILE_NAME) 
 #define ARRAY_SIZE(ARR) (sizeof(ARR) / sizeof(ARR[0]))
 
 #define MILLI_SCALE(qpfrequency) ((double)1'000 / (double)qpfrequency)
@@ -58,17 +58,17 @@ namespace jh_utility
 		void Stop(const WCHAR* tag);
 
 		void Reset();
-	
+
 		ProfileSample m_samples[MAX_SAMPLE_COUNT];
 	};
 
-	class ProfileManager
+	class Profiler
 	{
 	public:
 
-		static ProfileManager& GetInstance()
+		static Profiler& GetInstance()
 		{
-			static ProfileManager instance;
+			static Profiler instance;
 
 			return instance;
 		}
@@ -82,34 +82,34 @@ namespace jh_utility
 	private:
 		LARGE_INTEGER m_llQueryPerformanceFrequency;
 
-		ProfileManager();
-		~ProfileManager();
-		
-		ProfileManager(const ProfileManager&) = delete;
-		ProfileManager& operator=(const ProfileManager&) = delete;
+		Profiler();
+		~Profiler();
+
+		Profiler(const Profiler&) = delete;
+		Profiler& operator=(const Profiler&) = delete;
 
 		SRWLOCK m_lock;
 
 		// 전체 종료를 위한 동적할당 포인터 모음
 		std::map<DWORD, ThreadProfileData*> m_profilerMap;
-	
+
 		// 완전히 동기화하지 않고 그 순간의 데이터를 출력한다.
 		// 오차가 있을 수 있다.
 
 	};
 
-	class AutoProfiling
+	class AutoProfiler
 	{
-		public :
-			AutoProfiling(const WCHAR* functionName) : currentFunctionName{ functionName } 
-			{
-				jh_utility::ProfileManager::GetInstance().Start(currentFunctionName);
-			}
-			~AutoProfiling() {
-				
-				jh_utility::ProfileManager::GetInstance().Stop(currentFunctionName);
-				currentFunctionName = nullptr;
-			}
+	public:
+		AutoProfiler(const WCHAR* functionName) : currentFunctionName{ functionName }
+		{
+			jh_utility::Profiler::GetInstance().Start(currentFunctionName);
+		}
+		~AutoProfiler() {
+
+			jh_utility::Profiler::GetInstance().Stop(currentFunctionName);
+			currentFunctionName = nullptr;
+		}
 
 	private:
 		const WCHAR* currentFunctionName = nullptr;

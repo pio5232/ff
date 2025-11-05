@@ -60,21 +60,6 @@ namespace jh_utility
 		ULONGLONG m_ullSessionId; 
 		SessionConnectionEventType m_msgType;
 	};
-
-	struct DispatchJob
-	{
-		DispatchJob(ULONGLONG sessionId, PacketPtr& packetPtr);
-		DispatchJob(DWORD sessionCount, ULONGLONG* sessionIdList, PacketPtr& packetPtr);
-
-		~DispatchJob();
-		DWORD m_dwSessionCount{};
-		PacketPtr m_packet{};
-		union SessionInfo
-		{
-			ULONGLONG m_ullSingleSessionId;
-			ULONGLONG* m_pSessionIdList;
-		} m_sessionInfo{};
-	};
 }
 
 

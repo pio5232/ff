@@ -4,7 +4,6 @@
 #include "UserManager.h"
 #include "NetworkBase.h"
 #include "User.h"
-#include "Memory.h"
 
 void jh_content::LobbySystem::Init()
 {
@@ -128,7 +127,7 @@ void jh_content::LobbySystem::LogicThreadMain()
 
 	while (true == m_bRunningFlag.load())
 	{
-		WaitForSingleObject(m_hJobEvent, 3000);
+		WaitForSingleObject(m_hJobEvent, 1000);
 		
 		// Session 연결에 대한 처리
 		ProcessSessionConnectionEvent();
@@ -141,7 +140,7 @@ void jh_content::LobbySystem::LogicThreadMain()
 
 		ULONGLONG currentTime = jh_utility::GetTimeStamp();
 
-		if (currentTime - lastUpdateTime > LOBBY_TIMEOUT_CHECK_INTERVAL)
+		if ((currentTime - lastUpdateTime) > LOBBY_TIMEOUT_CHECK_INTERVAL)
 		{
 			m_pOwner->CheckHeartbeatTimeout(currentTime);
 
@@ -158,6 +157,7 @@ ErrorCode jh_content::LobbySystem::ProcessPacket(ULONGLONG sessionId, DWORD pack
 
 	return (this->*m_packetFuncDic[packetType])(sessionId, packet);
 }
+#include "UserManager.h"
 
 void jh_content::LobbySystem::ProcessNetJob()
 {
@@ -261,10 +261,12 @@ void jh_content::LobbySystem::ProcessLanRequest()
 ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
 	PRO_START_AUTO_FUNC;
+
 	_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"HandleRoomListRequest for session %lld", sessionId);
 
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
 
+	_LOG(L"Packet", LOG_LEVEL_WARNING, L"[HandleRoomListRequestPacket] userId : [%llu]", userPtr->GetUserId());
 	if (nullptr == userPtr)
 	{
 		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleRoomListRequestPacket] - User is Not Exist. SessionId : [%llu]", sessionId);
@@ -278,9 +280,7 @@ ErrorCode jh_content::LobbySystem::HandleRoomListRequestPacket(ULONGLONG session
 	
 	//std::cout << "[HandleRoomListRequestPacket] send pending Size : " << responsePacket->GetDataSize() << " capa : " << responsePacket->GetBufferSize() << "\n";
 
-	m_pOwner->RequestSend(sessionId, responsePkt);
-
-	//m_pOwner->SendPacket(sessionId, responsePacket);
+	m_pOwner->SendPacket(sessionId, responsePkt);
 	
 	return ErrorCode::NONE;
 }
@@ -298,12 +298,12 @@ ErrorCode jh_content::LobbySystem::HandleLogInRequestPacket(ULONGLONG sessionId,
 	UserPtr userPtr = m_pUserManager->CreateUser(sessionId);
 	
 	ULONGLONG userId = userPtr->GetUserId();
+	_LOG(L"Packet", LOG_LEVEL_WARNING, L"[HandleLogInRequestPacket] userId : [%llu]", userPtr->GetUserId());
 
 	PacketPtr logInResponsePkt = jh_content::PacketBuilder::BuildLogInResponsePacket(userId);
 
-	m_pOwner->RequestSend(sessionId, logInResponsePkt);
+	m_pOwner->SendPacket(sessionId, logInResponsePkt);
 
-	//m_pOwner->SendPacket(sessionId, sendBuffer);
 	return ErrorCode::NONE;
 }
 ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
@@ -315,7 +315,7 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 
 	*packet >> roomNum >> messageLen;
 	
-	std::shared_ptr<char> payLoad(static_cast<char*>(g_memAllocator->Alloc(messageLen)),[](char* p) { g_memAllocator->Free(p); });
+	std::shared_ptr<char> payLoad(static_cast<char*>(g_memSystem->Alloc(messageLen)),[](char* p) { g_memSystem->Free(p); });
 	
 	//char* payLoad = static_cast<char*>(malloc(messageLen * MESSAGE_SIZE));
 
@@ -332,7 +332,8 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 
 	auto [isAlreadyInRoom, serverRoomNum] = userPtr->TryGetRoomId();
 	ULONGLONG userId = userPtr->GetUserId();
-	
+	_LOG(L"Packet", LOG_LEVEL_WARNING, L"[HandleChatToRoomRequestPacket] userId : [%llu]", userId);
+
 	if (false == isAlreadyInRoom || serverRoomNum != roomNum)
 	{
 		//_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatToRoomRequestPacket] - Invalid Room Info . SessionId : [%llu]", sessionId);
@@ -350,22 +351,21 @@ ErrorCode jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessi
 	packetHeader.type = jh_network::CHAT_TO_ROOM_RESPONSE_PACKET;
 
 	// --- ChatRoomResponsePacket
-	PacketPtr chatResponsePkt = MakeSharedBuffer(g_memAllocator,sizeof(packetHeader));
+	PacketPtr chatResponsePkt = MakeSharedBuffer(g_memSystem,sizeof(packetHeader));
 	*chatResponsePkt << packetHeader;
 	
-	m_pOwner->RequestSend(sessionId, chatResponsePkt);
-	//m_pOwner->SendPacket(sessionId, responseBuffer);
+	m_pOwner->SendPacket(sessionId, chatResponsePkt);
 	
 	// --- NotifyPacket
 	packetHeader.size = sizeof(userId) + sizeof(messageLen) + messageLen;
 	packetHeader.type = jh_network::CHAT_NOTIFY_PACKET;
 
-	PacketPtr notifyBuffer = MakeSharedBuffer(g_memAllocator, sizeof(packetHeader) + packetHeader.size);
+	PacketPtr notifyBuffer = MakeSharedBuffer(g_memSystem, sizeof(packetHeader) + packetHeader.size);
 	*notifyBuffer << packetHeader << userId << messageLen;
 
 	notifyBuffer->PutData(reinterpret_cast<const char*>(payLoad.get()), messageLen);
 
-	//g_memAllocator->Free(payLoad);
+	//g_memSystem->Free(payLoad);
 
 	RoomPtr roomPtr = m_pRoomManager->GetRoom(roomNum);
 
@@ -388,6 +388,7 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 	packet->GetData(reinterpret_cast<char*>(&roomName), sizeof(roomName));
 
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
+	_LOG(L"Packet", LOG_LEVEL_WARNING, L"[HandleMakeRoomRequestPacket] userId : [%llu]", userPtr->GetUserId());
 
 	if (userPtr == nullptr)
 	{
@@ -414,12 +415,11 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 	if (newRoomPtr == nullptr)
 	{
 		makeRoomResponsePkt.isMade = false;
-		PacketPtr responsePkt = MakeSharedBuffer(g_memAllocator, sizeof(makeRoomResponsePkt));
+		PacketPtr responsePkt = MakeSharedBuffer(g_memSystem, sizeof(makeRoomResponsePkt));
 
 		*responsePkt << makeRoomResponsePkt;
 
-		m_pOwner->RequestSend(sessionId, responsePkt);
-		//m_pOwner->SendPacket(sessionId, packetBuffer);
+		m_pOwner->SendPacket(sessionId, responsePkt);
 		//printf("EnterRoom Response Packet Send -- [bAllow = false]");
 		
 		return ErrorCode::CREATE_ROOM_FAILED;
@@ -428,17 +428,11 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 	{
 		auto unicastFunc = [this](ULONGLONG sessionId, PacketPtr& _packet)
 			{
-				m_pOwner->RequestSend(sessionId, _packet);
+				m_pOwner->SendPacket(sessionId, _packet);
 			};
 
-		auto broadcastFunc = [this](DWORD sessionCount, ULONGLONG* sessionIdList, PacketPtr& _packet)
-			{
-				jh_utility::DispatchJob* dispatchJob = jh_memory::ObjectPool<jh_utility::DispatchJob>::Alloc(sessionCount, sessionIdList, _packet);
 
-				m_pOwner->RequestSend(dispatchJob);
-			};
 		newRoomPtr->SetUnicastFunc(unicastFunc);
-		newRoomPtr->SetBroadcastFunc(broadcastFunc);
 
 		makeRoomResponsePkt.isMade = true;
 
@@ -448,12 +442,11 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 		makeRoomResponsePkt.roomInfo.m_usRoomNum = newRoomPtr->GetRoomNum();
 		wmemcpy_s(makeRoomResponsePkt.roomInfo.m_wszRoomName, ROOM_NAME_MAX_LEN, roomName, ROOM_NAME_MAX_LEN);
 
-		PacketPtr responsePkt = MakeSharedBuffer(g_memAllocator, sizeof(makeRoomResponsePkt));
+		PacketPtr responsePkt = MakeSharedBuffer(g_memSystem, sizeof(makeRoomResponsePkt));
 
 		*responsePkt << makeRoomResponsePkt;
 
-		m_pOwner->RequestSend(sessionId, responsePkt);
-		//m_pOwner->SendPacket(sessionId, responsePkt);
+		m_pOwner->SendPacket(sessionId, responsePkt);
 	}
 
 	newRoomPtr->TryEnterRoom(userPtr);
@@ -465,8 +458,7 @@ ErrorCode jh_content::LobbySystem::HandleMakeRoomRequestPacket(ULONGLONG session
 
 		PacketPtr enterRoomResponsePkt = jh_content::PacketBuilder::BuildEnterRoomResponsePacket(true, emptyVector);
 
-		m_pOwner->RequestSend(sessionId, enterRoomResponsePkt);
-		//m_pOwner->SendPacket(sessionId, enterRoomResponsePkt);
+		m_pOwner->SendPacket(sessionId, enterRoomResponsePkt);
 	}
 
 	return ErrorCode::NONE;
@@ -485,8 +477,7 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 	{
 		PacketPtr errorPkt = jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode::REQUEST_DESTROYED_ROOM);
 
-		m_pOwner->RequestSend(sessionId, errorPkt);
-		//m_pOwner->SendPacket(sessionId, errorPkt);
+		m_pOwner->SendPacket(sessionId, errorPkt);
 
 		//printf("Invalid Access - Destroyed Room");
 		return ErrorCode::CANNOT_FIND_ROOM;
@@ -496,14 +487,14 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 	{
 		PacketPtr errorPkt = jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode::REQUEST_DIFF_ROOM_NAME);
 
-		m_pOwner->RequestSend(sessionId, errorPkt);
-		//m_pOwner->SendPacket(sessionId, errorPkt);
+		m_pOwner->SendPacket(sessionId, errorPkt);
 
 		//printf("EnterRoom - Room name is Diffrent\n");
 		return ErrorCode::CANNOT_FIND_ROOM;
 	}
 
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
+	_LOG(L"Packet", LOG_LEVEL_WARNING, L"[HandleEnterRoomRequestPacket] userId : [%llu]", userPtr->GetUserId());
 
 	if (userPtr == nullptr)
 	{
@@ -555,7 +546,7 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 
 		PacketPtr enterRoomResponsePkt = jh_content::PacketBuilder::BuildEnterRoomResponsePacket(true, userIdAndReadyList);
 
-		m_pOwner->RequestSend(sessionId, enterRoomResponsePkt);
+		m_pOwner->SendPacket(sessionId, enterRoomResponsePkt);
 
 		{
 			PacketPtr enterRoomNotifyPkt = jh_content::PacketBuilder::BuildEnterRoomNotifyPacket(userId);
@@ -571,8 +562,7 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 	{
 		PacketPtr errorPkt = jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode::FULL_ROOM);
 
-		m_pOwner->RequestSend(sessionId, errorPkt);
-		//m_pOwner->SendPacket(sessionId, errorPkt);
+		m_pOwner->SendPacket(sessionId, errorPkt);
 
 		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[HandleEnterRoomRequestPacket] - 인원이 가득 차서 참가할 수 없습니다. UserId : [%llu]",userId);
 		
@@ -582,8 +572,7 @@ ErrorCode jh_content::LobbySystem::HandleEnterRoomRequestPacket(ULONGLONG sessio
 	{
 		PacketPtr errorPkt = jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode::ALREADY_RUNNING_ROOM);
 
-		m_pOwner->RequestSend(sessionId, errorPkt);
-		//m_pOwner->SendPacket(sessionId, errorPkt);
+		m_pOwner->SendPacket(sessionId, errorPkt);
 
 		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[HandleEnterRoomRequestPacket] - 이미 게임을 시작한 방입니다. UserId : [%llu]",userId);
 		
@@ -601,6 +590,7 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 	*packet >> leaveRoomRequestPacket;
 
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
+	_LOG(L"Packet", LOG_LEVEL_WARNING, L"[HandleLeaveRoomRequestPacket] userId : [%llu]", userPtr->GetUserId());
 
 	if (userPtr == nullptr)
 	{
@@ -635,8 +625,7 @@ ErrorCode jh_content::LobbySystem::HandleLeaveRoomRequestPacket(ULONGLONG sessio
 
 
 	PacketPtr leaveRoomResPkt = jh_content::PacketBuilder::BuildLeaveRoomResponsePacket();
-	//m_pOwner->SendPacket(sessionId, leaveRoomResPkt);
-	m_pOwner->RequestSend(sessionId, leaveRoomResPkt);
+	m_pOwner->SendPacket(sessionId, leaveRoomResPkt);
 
 	bool isRoomEmpty = roomPtr->LeaveRoom(userPtr);
 	
@@ -655,6 +644,7 @@ ErrorCode jh_content::LobbySystem::HandleGameReadyRequestPacket(ULONGLONG sessio
 	*packet >> requestPacket.isReady;
 
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
+	_LOG(L"Packet", LOG_LEVEL_WARNING, L"[HandleGameReadyRequestPacket] userId : [%llu]", userPtr->GetUserId());
 
 	// �濡 �������� ���� �����ε� �غ� ��Ŷ�� ����.
 	if (!userPtr)
@@ -707,8 +697,7 @@ ErrorCode jh_content::LobbySystem::HandleEchoPacket(ULONGLONG sessionId, PacketP
 
 	PacketPtr echoPkt = jh_content::PacketBuilder::BuildEchoPacket(data);
 	
-	m_pOwner->RequestSend(sessionId, echoPkt);
-	//m_pOwner->SendPacket(sessionId, echoPkt);
+	m_pOwner->SendPacket(sessionId, echoPkt);
 
 	return ErrorCode::NONE;
 }
@@ -788,6 +777,5 @@ void jh_content::LobbySystem::HandleGameSettingRequest(ULONGLONG lanSessionId, P
 
 	PacketPtr gameServerSettingResponsePkt = jh_content::PacketBuilder::BuildGameServerSettingResponsePacket(roomNum, requiredUserCnt, maxUserCnt);
 
-	lanServer->RequestSend(lanSessionId, gameServerSettingResponsePkt);
-	//lanServer->SendPacket(lanSessionId, sendBuffer);
+	lanServer->SendPacket(lanSessionId, gameServerSettingResponsePkt);
 }

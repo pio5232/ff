@@ -67,7 +67,7 @@ void jh_content::SectorManager::SendAllEntityInfo()
 				aroundEntityInfos.push_back(entity);
 			}
 
-			PacketPtr sendBuffer = MakeSharedBuffer(g_memAllocator, sizeof(jh_network::MakeOtherCharacterPacket) * aroundEntityInfos.size());
+			PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(jh_network::MakeOtherCharacterPacket) * aroundEntityInfos.size());
 
 			for (const EntityPtr& entity : aroundEntityInfos)
 			{

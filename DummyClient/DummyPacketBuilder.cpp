@@ -5,7 +5,7 @@
 PacketPtr jh_content::DummyPacketBuilder::BuildLoginRequestPacket()
 {
     jh_network::LogInRequestPacket logInReqPkt;
-    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(logInReqPkt));
+    PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(logInReqPkt));
 
     *buffer << logInReqPkt.size << logInReqPkt.type << (ULONGLONG)1 << (ULONGLONG)2;
 
@@ -16,7 +16,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildHeartbeatPacket(ULONGLONG timeSta
 {
     jh_network::HeartbeatPacket hbPkt;
 
-    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(hbPkt));
+    PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(hbPkt));
 
     *buffer << hbPkt.size << hbPkt.type << timeStamp;
     
@@ -34,7 +34,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket()
 
     swprintf_s(roomName, ROOM_NAME_MAX_LEN, L"R_%lld", roomNum);
 
-    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(makeRoomRequestPkt));
+    PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(makeRoomRequestPkt));
 
     *buffer << makeRoomRequestPkt.size << makeRoomRequestPkt.type;
 
@@ -47,7 +47,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(USHORT roo
 {
     jh_network::EnterRoomRequestPacket enterRoomRequestPkt;
     
-    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(enterRoomRequestPkt));
+    PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(enterRoomRequestPkt));
 
     *buffer << enterRoomRequestPkt.size << enterRoomRequestPkt.type << roomNum;
 
@@ -60,7 +60,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildLeaveRoomRequestPacket(USHORT roo
 {
     jh_network::LeaveRoomRequestPacket leaveRoomRequestPkt;
 
-    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(leaveRoomRequestPkt));
+    PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(leaveRoomRequestPkt));
 
     *buffer << leaveRoomRequestPkt.size << leaveRoomRequestPkt.type << roomNum;
 
@@ -120,7 +120,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildChatRequestPacket(USHORT roomNum)
     // ROOMNUM, MSGLEN, MSG
     USHORT pktSize = sizeof(USHORT) * 2 + msgLen;
 
-    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(jh_network::PacketHeader) + pktSize);
+    PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(jh_network::PacketHeader) + pktSize);
 
     *buffer << pktSize << static_cast<USHORT>(jh_network::CHAT_TO_ROOM_REQUEST_PACKET) << roomNum << msgLen;
 
@@ -133,7 +133,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildRoomListRequestPacket()
 {
     jh_network::RoomListRequestPacket roomListRequestPkt;
 
-    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(roomListRequestPkt));
+    PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(roomListRequestPkt));
 
     *buffer << roomListRequestPkt.size << roomListRequestPkt.type;
 
@@ -148,7 +148,7 @@ PacketPtr jh_content::DummyPacketBuilder::BuildEchoPacket()
 
     jh_network::EchoPacket echoPacket;
 
-    PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(echoPacket));
+    PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(echoPacket));
 
     *buffer << echoPacket.size << echoPacket.type << incData;
 

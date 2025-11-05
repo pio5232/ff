@@ -5,7 +5,7 @@ PacketPtr jh_content::PacketBuilder::BuildEchoPacket(WORD len, ULONGLONG data)
 {
 	//jh_utility::SerializationBuffer* pPacket = g_packetPool->Alloc();
 	//PacketPtr packet = PacketPtr::Make();
-	PacketPtr packet = MakeSharedBuffer(g_memAllocator, 10);
+	PacketPtr packet = MakeSharedBuffer(g_memSystem, 10);
 
 	*packet << len << data;
 	//*pPacket << len << data;

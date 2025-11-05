@@ -1,9 +1,9 @@
 #include "LibraryPch.h"
 #include "GlobalInstance.h"
-#include "Memory.h"
+#include "MemorySystem.h"
 
 jh_utility::FileLogger* g_logger = nullptr;
-jh_memory::MemoryAllocator* g_memAllocator = nullptr;
+jh_memory::MemorySystem* g_memSystem = nullptr;
 
 //jh_utility::ClearPool<jh_utility::ClearRefPtr<jh_utility::SerializationBuffer>::RefData>* g_packetPool = nullptr;
 
@@ -17,7 +17,7 @@ public:
 	{
 		PRO_RESET;
 
-		g_memAllocator = new jh_memory::MemoryAllocator();
+		g_memSystem = new jh_memory::MemorySystem();
 		g_logger = new jh_utility::FileLogger();
 		//g_packetPool = new jh_utility::ClearPool<jh_utility::SerializationBuffer>(true);
 
@@ -35,7 +35,7 @@ public:
 		PRO_SAVE("ProfileData.TXT");
 
 		delete g_logger;
-		delete g_memAllocator;
+		delete g_memSystem;
 		//delete g_packetPool;
 		//delete g_jobPool;
 		//delete g_systemJobPool;

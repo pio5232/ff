@@ -102,11 +102,11 @@ void jh_utility::FileLogger::LogThreadFunc()
 				}
 			}
 
-			g_memAllocator->Free(logInfo->m_pPath);
-			g_memAllocator->Free(logInfo->m_pHeader);
-			g_memAllocator->Free(logInfo->m_pMsg);
+			g_memSystem->Free(logInfo->m_pPath);
+			g_memSystem->Free(logInfo->m_pHeader);
+			g_memSystem->Free(logInfo->m_pMsg);
 
-			g_memAllocator->Free(logInfo);
+			g_memSystem->Free(logInfo);
 		}
 	}
 }
@@ -161,13 +161,13 @@ jh_utility::FileLogger::~FileLogger()
 	{
 		LogInfo* logInfo = remainingLogInfoQ.front();
 		
-		g_memAllocator->Free(logInfo->m_pPath);
-		g_memAllocator->Free(logInfo->m_pHeader);
-		g_memAllocator->Free(logInfo->m_pMsg);
+		g_memSystem->Free(logInfo->m_pPath);
+		g_memSystem->Free(logInfo->m_pHeader);
+		g_memSystem->Free(logInfo->m_pMsg);
 
 		remainingLogInfoQ.pop();
 
-		g_memAllocator->Free(logInfo);
+		g_memSystem->Free(logInfo);
 	}
 
 	//if (nullptr != m_pInstance)
@@ -182,9 +182,9 @@ void jh_utility::FileLogger::WriteLog(const WCHAR* logType, LogLevel logLevel, c
 	if (m_eLogLevel > logLevel)
 		return;
 
-	WCHAR* filePathBuffer = static_cast<WCHAR*>(g_memAllocator->Alloc(DEFAULT_FILE_PATH_SIZE * sizeof(WCHAR)));
-	WCHAR* logHeaderBuffer = static_cast<WCHAR*>(g_memAllocator->Alloc(DEFAULT_LOG_INFO_SIZE * sizeof(WCHAR)));
-	WCHAR* logBodyBuffer = static_cast<WCHAR*>(g_memAllocator->Alloc(DEFAULT_LOG_SIZE * sizeof(WCHAR)));
+	WCHAR* filePathBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_FILE_PATH_SIZE * sizeof(WCHAR)));
+	WCHAR* logHeaderBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_LOG_INFO_SIZE * sizeof(WCHAR)));
+	WCHAR* logBodyBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_LOG_SIZE * sizeof(WCHAR)));
 
 	const size_t maxFileNameBufferSize = DEFAULT_FILE_PATH_SIZE;// sizeof(filePathBuffer) / sizeof(filePathBuffer[0]);
 	const size_t maxLogInfoBuffeSize = DEFAULT_LOG_INFO_SIZE; // sizeof(logInfoBuffer) / sizeof(logInfoBuffer[0]);
@@ -203,7 +203,7 @@ void jh_utility::FileLogger::WriteLog(const WCHAR* logType, LogLevel logLevel, c
 		StringCchPrintf(logBodyBuffer, DEFAULT_LOG_SIZE, L" [ WriteLog - LogFormat Size > DEFAULT_LOG_SIZE ]\n");
 	}
 
-	LogInfo* logInfo = static_cast<LogInfo*>(g_memAllocator->Alloc(sizeof(LogInfo)));
+	LogInfo* logInfo = static_cast<LogInfo*>(g_memSystem->Alloc(sizeof(LogInfo)));
 
 	logInfo->m_pPath = filePathBuffer;
 	logInfo->m_pHeader = logHeaderBuffer;

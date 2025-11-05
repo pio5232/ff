@@ -2,7 +2,7 @@
 
 namespace jh_memory
 {
-	class MemoryAllocator;
+	class MemorySystem;
 }
 namespace jh_utility
 {
@@ -11,7 +11,8 @@ namespace jh_utility
 	class SerializationBuffer
 	{
 	public:
-		SerializationBuffer(jh_memory::MemoryAllocator* memoryAllocator, size_t iBufferSize);
+		SerializationBuffer(jh_memory::MemorySystem* memorySystem, size_t iBufferSize);
+
 		~SerializationBuffer();
 
 		SerializationBuffer(const SerializationBuffer& other) = delete;
@@ -116,7 +117,7 @@ namespace jh_utility
 		int m_iRear;
 		char* m_chpBuffer;
 
-		jh_memory::MemoryAllocator* m_pMemoryAllocator;
+		jh_memory::MemorySystem* m_pMemorySystem;
 	};
 }
 

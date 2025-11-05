@@ -25,7 +25,7 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userI
 		return nullptr;
 	}
 
-	UserPtr userPtr = MakeShared<jh_content::User>(g_memAllocator, sessionId, userId);
+	UserPtr userPtr = MakeShared<jh_content::User>(g_memSystem, sessionId, userId);
 	
 	m_sessionIdToUserUMap.insert({ sessionId, userPtr });
 	m_userIdToUserUMap.insert({ userId, userPtr });

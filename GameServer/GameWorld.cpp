@@ -153,7 +153,7 @@ void jh_content::GameWorld::ProcessTimerActions()
 void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 {
 	//AIPlayerPtr aiPlayer = //std::make_shared<jh_content::AIPlayer>(worldPtr);
-	AIPlayerPtr aiPlayer = MakeShared<AIPlayer>(g_memAllocator, worldPtr);
+	AIPlayerPtr aiPlayer = MakeShared<AIPlayer>(g_memSystem, worldPtr);
 
 	AddEntity(aiPlayer);
 
@@ -161,7 +161,7 @@ void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 
 GamePlayerPtr jh_content::GameWorld::CreateGamePlayer(UserPtr userPtr)
 {
-	GamePlayerPtr gamePlayerPtr = MakeShared<jh_content::GamePlayer>(g_memAllocator, userPtr, this);
+	GamePlayerPtr gamePlayerPtr = MakeShared<jh_content::GamePlayer>(g_memSystem, userPtr, this);
 
 	printf("CreatePlayer - GameSession User ID = [ %llu ]\n ", gamePlayerPtr->GetEntityId());
 	return gamePlayerPtr;

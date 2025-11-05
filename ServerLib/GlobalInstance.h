@@ -7,7 +7,12 @@ namespace jh_utility
 	class FileLogger;
 }
 
-extern jh_memory::MemoryAllocator* g_memAllocator;
+namespace jh_memory
+{
+	class MemorySystem;
+}
+
+extern jh_memory::MemorySystem* g_memSystem;
 extern jh_utility::FileLogger* g_logger;
 //extern jh_utility::NodeMemoryPool<jh_utility::SerializationBuffer>* g_packetPool;
 

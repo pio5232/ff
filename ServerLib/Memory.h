@@ -1,221 +1,121 @@
 #pragma once
 
-#include <cassert>
-#include "MemoryHeader.h"
+// 프로파일링 플래그
+//#define JH_MEM_PROFILE_FLAG
+
+// alloc / free 계산용 플래그 
+//#define JH_MEM_ALLOC_CHECK_FLAG
+
+
+// 메모리 추가/제거 카운팅을 위한 정보. 디버깅할때만 플래그를 이용해 탐지하도록 한다.
+#ifdef JH_MEM_ALLOC_CHECK_FLAG
+	#define ALLOC_COUNT_CHECK(x) \
+	do {	\
+	{		\
+	x		\
+	}		\
+	} while(0);
+#else 
+	#define ALLOC_COUNT_CHECK(x)
+#endif
+
+#ifdef JH_MEM_PROFILE_FLAG
+#define MEMORY_POOL_PROFILE_FLAG PRO_START_AUTO_FUNC
+#else
+#define MEMORY_POOL_PROFILE_FLAG 
+#endif
+
 
 namespace jh_memory
 {
-    class MemoryPool
-    {
-    public:
 
-        MemoryPool(size_t blockSize) : m_blockSize(blockSize), m_pTopNode(nullptr)
-        {
-            InitializeSRWLock(&m_lock);
+	/// <summary>
+	/// m_pNextNode : Node들의 연결을 나타낸다.
+	/// 
+	/// +---------------------- NodeStack ----------------------+
+	/// |	[(BNode]	->	[Node]	->	[Node]	->	[Node]		|
+	/// |	NodeStack 내의 연결은 m_pNextNode를 통해 이루어진다.|
+	/// +---------------------- NodeStack ----------------------+ 
+	///			|
+	///			|	
+	///			|
+	/// +---------------------- NodeStack ----------------------+
+	/// |	[Node]	->	[Node]	->	[Node]	->	[Node]		|
+	/// |	NodeStack 내의 연결은 m_pNextNode를 통해 이루어진다.|
+	/// +---------------------- NodeStack ----------------------+ 
 
-            m_chunks.reserve(s_defaultReserveSize);
-        }
+	/// NodeStack 간의 연결은 m_pNextBlock을 통해 이루어진다.
+	/// m_pNextBlock은 Blcok 내의 첫 Node만 활용하도록 한다.
+	/// 또한 m_llNextComplexBlock : LEVEL 2에서 관리되어야 한다.
+	/// 
+	/// [LEVEL 1] MemoryAllocator를 통해서 사용될 때 Node의 구조
+	/// [	[size_t]					[Data]				[ ]						]
+	/// 
+	/// [LEVEL 2] memoryPool을 통해서 사용될 때 Node의 구조
+	/// [	[m_llNextComplexBlock]		[m_blockSize]		[m_pNextNode]			]
+	///  
+	/// 현재 Block과 Node의 차이
+	/// 
+	/// 기본 : Node*로 관리되는 연결리스트 형태
+	/// Block : 각 연결리스트를 의미 
+	/// 
+	/// </summary>
+	struct Node
+	{
+		LONGLONG m_llNextComplexBlock; // L2 에서 Block의 할당/해제에 사용된다. 앞에 counter가 붙는다.
+		size_t m_blockSize; // L2 에서 Block의 할당/해제에 사용된다
+		Node* m_pNextNode;
+	};
 
-        ~MemoryPool()
-        {
-            for (char* chunk : m_chunks)
-            {
-                delete[] chunk;
-            }
-        }
+	// 64 / 128 / 256 / 512 / 1024 / 2048 / 4096
+	// MemoryPool의 개수. 사이즈별로 존재한다.
+	constexpr size_t kPoolCount = 7;
+	constexpr size_t kPoolSizeArr[kPoolCount] = { {64}, { 128 }, { 256 }, { 512 }, { 1024 }, { 2048 }, { 4096 } };
 
-        void* Alloc()
-        {
-            SRWLockGuard lockGuard(&m_lock);
+	// Level 3에서 얻어오는 사이즈를 정하기 위한 수
+	// MemoryPool Size * kMaxBlockCount 와 kAllocationGranularity를 통해 할당받을 사이즈를 정의한다.
+	constexpr size_t kAllocationGranularity = 4096 * 16;
+	constexpr size_t kNodeCountToCreate = 4096;
 
-            // 필요하면 생성
-            if (m_pTopNode == nullptr)
-            {
-                AllocateNewChunk();
-            }
+	// MemoryPool에서 관리되는 1블럭당 연결된 Node의 수
+	constexpr size_t kNodeCountPerBlock = 512;
 
-            Node* top = m_pTopNode;
-            m_pTopNode = top->next;
-            return top;
-        }
+	constexpr size_t kBlockCountToCreate = kNodeCountToCreate / kNodeCountPerBlock;
 
-        void Dealloc(void* ptr)
-        {
-            SRWLockGuard lockGuard(&m_lock);
+	// Pool에서 관리할 수 있는 최대 사이즈. 이 사이즈를 넘어가면 new / delete를 통해 할당/해제를 진행한다.
+	constexpr size_t kMaxAllocSize = 4096;
 
-            Node* node = static_cast<Node*>(ptr);
-            node->next = m_pTopNode;
-            m_pTopNode = node;
-        }
+	constexpr size_t kPageSize = 4096;
 
-    private:
-        struct Node
-        {
-            Node* next;
-        };
+	// [카운터] [포인터] 된 값의 마스킹을 위한 값
+	constexpr ULONGLONG kPointerMask = 0x00007fffffffffff;
+	constexpr int kCounterShift = 47;
 
-        static constexpr int s_chunkSize = 128;
-        static constexpr int s_defaultReserveSize = 20;
-        // 노드 쪼개기
-        void AllocateNewChunk()
-        {
-            char* newChunk = new char[m_blockSize * s_chunkSize];
-            m_chunks.push_back(newChunk);
+	inline consteval std::array<int, kMaxAllocSize + 1> CreatePoolTable()
+	{
+		std::array<int, kMaxAllocSize + 1> poolTable{};
 
-            for (int i = 0; i < s_chunkSize; ++i)
-            {
-                Node* node = reinterpret_cast<Node*>(newChunk + (i * m_blockSize));
-                node->next = m_pTopNode;
-                m_pTopNode = node;
-            }
-        }
+		int targetSize = 0;
+		int size = 1;
+		int tableIndex = 0;
 
-        SRWLOCK m_lock;
-        size_t m_blockSize;
-        Node* m_pTopNode;
-        std::vector<char*> m_chunks; // 할당된 청크들을 관리하기 위한 리스트
-    };
+		for (targetSize = 64; targetSize <= kMaxAllocSize; targetSize *= 2)
+		{
+			while (size <= targetSize)
+			{
+				poolTable[size] = tableIndex;
+				size++;
+			}
+
+			tableIndex++;
+		}
+		return poolTable;
+	}
+
+	class PageAllocator; // LEVEL 3
+	class MemoryPool; // LEVEL 2
+	class MemoryAllocator; // LEVEL 1
 
 
-    // 사용자는 MemoryAllocator를 사용
-    class MemoryAllocator
-    {
-    private:
-        enum
-        {
-            // ~1024까지 32단위, ~2048까지 128단위, ~4096까지 256단위
-            POOL_COUNT = (1024 / 32) + (1024 / 128) + (2048 / 256),
-            MAX_ALLOC_SIZE = 4096
-        };
-
-    public:
-        MemoryAllocator()
-        {
-            int size = 0;
-            int tableIndex = 0;
-
-            for (size = 32; size < 1024; size += 32)
-            {
-                MemoryPool* pool = new MemoryPool(size);
-                m_pools.push_back(pool);
-
-                while (tableIndex <= size)
-                {
-                    m_poolTable[tableIndex] = pool;
-                    tableIndex++;
-                }
-            }
-
-            for (; size < 2048; size += 128)
-            {
-                MemoryPool* pool = new MemoryPool(size);
-                m_pools.push_back(pool);
-
-                while (tableIndex <= size)
-                {
-                    m_poolTable[tableIndex] = pool;
-                    tableIndex++;
-                }
-            }
-
-            for (; size <= 4096; size += 256)
-            {
-                MemoryPool* pool = new MemoryPool(size);
-                m_pools.push_back(pool);
-
-                while (tableIndex <= size)
-                {
-                    m_poolTable[tableIndex] = pool;
-                    tableIndex++;
-                }
-            }
-        }
-
-        ~MemoryAllocator()
-        {
-            for (MemoryPool* pool : m_pools)
-            {
-                delete pool;
-            }
-        }
-
-        void* Alloc(size_t size)
-        {
-            size_t totalSize = size + sizeof(MemoryHeader);
-
-            MemoryHeader* header = nullptr;
-            MemoryPool* ownerPool;
-
-            if (totalSize > MAX_ALLOC_SIZE)
-            {
-                header = static_cast<MemoryHeader*>(malloc(totalSize));
-
-                if (header == nullptr)
-                    jh_utility::CrashDump::Crash();
-
-                ownerPool = nullptr;
-            }
-            else
-            {
-                ownerPool = m_poolTable[totalSize];
-                header = static_cast<MemoryHeader*>(ownerPool->Alloc());
-            }
-
-            // [크기] [포인터]  저장 후 포인터 반환
-            return MemoryHeader::AttachHeader(header, ownerPool);
-        }
-
-        void Free(void* ptr)
-        {
-            MemoryHeader* header = MemoryHeader::DetachHeader(ptr);
-
-            // header->ownerPool == nullptr -> Size가 max보다 크다
-            // header->ownerPool != nullptr -> 그 포인터로 바로 반환하면 된다.
-
-            if (header->m_pOwnerPool != nullptr)
-            {
-                header->m_pOwnerPool->Dealloc(header);
-            }
-            // nullptr -> 크기가 max보다 큰 경우 malloc으로 할당받았기 때문에 free로 바로 해제시킨다.
-            else
-            {
-                free(header);
-            }
-        }
-
-    private:
-
-        std::vector<MemoryPool*> m_pools;
-        MemoryPool* m_poolTable[MAX_ALLOC_SIZE + 1];
-    };
+	inline constexpr std::array<int, kMaxAllocSize + 1> poolTable = CreatePoolTable(); // Size 요청에 따른 인덱스 탐색을 위한 맵핑 테이블
 }
-
-namespace jh_utility
-{
-    class SerializationBuffer;
-}
-
-
-template<typename T, typename... Args>
-std::shared_ptr<T> MakeShared(jh_memory::MemoryAllocator* allocator, Args&&... args)
-{
-    if (allocator == nullptr)
-        return nullptr;
-
-    // malloc에 실패하면 crash
-    void* rawPtr = allocator->Alloc(sizeof(T));
-
-    T* t = new (rawPtr) T(std::forward<Args>(args)...);
-
-    auto deleter = [allocator](T* obj)
-        {
-            obj->~T();
-
-            allocator->Free(obj);
-        };
-
-    // raw 포인터와 삭제자를 등록 -> 생성
-    return std::shared_ptr<T>(t, deleter);
-}
-
-PacketPtr MakeSharedBuffer(jh_memory::MemoryAllocator* allocator, size_t bufferSize);

@@ -58,7 +58,7 @@ void jh_content::LobbyDummyClient::OnRecv(ULONGLONG sessionId, PacketPtr packet,
 {
 	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
-	JobPtr job = MakeShared<jh_utility::Job>(g_memAllocator, sessionId, type, packet); //MakeJob(sessionId, type, packet);
+	JobPtr job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet); //MakeJob(sessionId, type, packet);
 
 	m_pDummySystem->EnqueueJob(job, threadNum);
 }
@@ -67,7 +67,7 @@ void jh_content::LobbyDummyClient::OnConnected(ULONGLONG sessionId)
 {
 	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
-	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memAllocator, sessionId, jh_utility::SessionConnectionEventType::CONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
 	m_pDummySystem->EnqueueSessionConnEvent(sessionConnEvent, threadNum);
 }
@@ -76,7 +76,7 @@ void jh_content::LobbyDummyClient::OnDisconnected(ULONGLONG sessionId)
 {
 	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
-	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memAllocator, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
 	m_pDummySystem->EnqueueSessionConnEvent(sessionConnEvent, threadNum);
 }
@@ -99,7 +99,17 @@ void jh_content::LobbyDummyClient::Monitor()
 	wprintf(L" [Content] Total Sessions : %d\n", GetSessionCount());
 	wprintf(L" [Content] Total Dummies : %d\n", DummyData::aliveDummyCount);
 
-	wprintf(L" [Content] Packet Re-Send Timeout Count [%d]s : %d\n", RE_SEND_TIMEOUT/1000, m_pDummySystem->GetReSendTimeoutCnt());
+	DummyUpdateSystem::EtcData etcData = m_pDummySystem->UpdateEtc();
+
+	wprintf(L" [Content] Packet Re-Send Timeout Count [%d]s : %d\n", RE_SEND_TIMEOUT/1000, etcData.m_lReSendTimeoutCount);
+	
+	wprintf(L" [Content] Enter Failed.. DestroyedRoom_Count : [%d]\n",etcData.m_llDestroyedRoomErrorCount);
+	wprintf(L" [Content] Enter Failed.. DiffRoom_Count : [%d]\n", etcData.m_llDiffRoomNameErrorCount);
+	wprintf(L" [Content] Enter Failed.. FullRoom_Count : [%d]\n", etcData.m_llFullRoomErrorCount);
+	wprintf(L" [Content] Enter Failed.. AlreadyRunning_Count : [%d]\n", etcData.m_llAlreadyRunningRoomErrorCount);
+
+
+
 	wprintf(L"[RTT] : [%llu]ms \n",m_pDummySystem->GetRTT());
 }
 

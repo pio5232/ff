@@ -7,12 +7,31 @@ namespace jh_content
 	public:
 		using PacketFunc = void(DummyUpdateSystem::*)(ULONGLONG, PacketPtr&, int);
 		
+		struct EtcData
+		{
+			LONG m_llDestroyedRoomErrorCount = 0;
+			LONG m_llDiffRoomNameErrorCount = 0;
+			LONG m_llFullRoomErrorCount = 0;
+			LONG m_llAlreadyRunningRoomErrorCount = 0;
+			LONG m_lReSendTimeoutCount = 0;
+		};
 	private:
+
 		struct alignas(64) LogicData
 		{
+		
+			struct ErrorAggregator
+			{
+				alignas(32) LONG m_llDestroyedRoom = 0;
+				alignas(32) LONG m_llDiffRoomName = 0;
+				alignas(32) LONG m_llFullRoom = 0;
+				alignas(32) LONG m_llAlreadyRunningRoom = 0;
+			};
+		public:
 			LogicData() : m_hLogicThread{}, m_hJobEvent{}, m_netJobQueue{}, m_sessionConnEventQueue{}, m_dummyUmap{}, m_reSendTimeoutCnt{} {}
 
-			alignas(64) LONG m_reSendTimeoutCnt;
+			ErrorAggregator m_errorAggregator;
+			alignas(32) LONG m_reSendTimeoutCnt;
 
 			HANDLE m_hLogicThread;
 			HANDLE m_hJobEvent;
@@ -58,13 +77,17 @@ namespace jh_content
 		void HandleMakeRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleChatNotifyPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
+		void HandleChatResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		void HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 
+		void HandleErrorPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum);
 		bool IsValidThreadNum(int threadNum) { return threadNum >= 0 && threadNum < LOGIC_THREAD_COUNT; }
 
+
+		EtcData UpdateEtc();
 		void CheckSendTimeOut(int threadNum);
-		int GetReSendTimeoutCnt();
+
 		ULONGLONG GetRTT() const;
 
 		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;

@@ -17,7 +17,7 @@
 	-----------------------*/
 
 jh_network::IocpServer::IocpServer(const WCHAR* serverName) : m_hCompletionPort(nullptr), m_listenSock(INVALID_SOCKET), m_pcwszServerName(serverName), m_pSessionArray(nullptr), m_wszIp{},
-m_hWorkerThreads{}, m_hAcceptThread{}, m_hDispatchThread{}, m_hStopEvent{}, m_hSendEvent{}
+m_hWorkerThreads{}, m_hAcceptThread{}
 {
 	m_dwConcurrentWorkerThreadCount = 0;
 	m_lingerOption = {};
@@ -120,25 +120,6 @@ bool jh_network::IocpServer::Start()
 	if (false == CreateServerThreads())
 		return false;
 
-	// AUTO, NON-SIGNALED
-	m_hStopEvent = CreateEvent(nullptr, false, false, nullptr);
-	if (nullptr == m_hStopEvent)
-	{
-		int getLastError = WSAGetLastError();
-		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"StopEvent Creation is Failed. GetLastError : %d", getLastError);
-
-		return false;
-	}
-
-	m_hSendEvent = CreateEvent(nullptr, false, false, nullptr);
-	if (nullptr == m_hSendEvent)
-	{
-		int getLastError = WSAGetLastError();
-		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"SendEvent Creation is Failed. GetLastError : %d", getLastError);
-
-		return false;
-	}
-
 	BeginAction();
 
 	return true;
@@ -160,17 +141,6 @@ void jh_network::IocpServer::Listen()
 void jh_network::IocpServer::Stop()
 {
 	EndAction();
-	
-	SetEvent(m_hStopEvent);
-
-	{
-		DWORD waitSingleRet = WaitForSingleObject(m_hDispatchThread, INFINITE);
-		if (waitSingleRet != WAIT_OBJECT_0)
-		{
-			DWORD gle = GetLastError();
-			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Stop] - m_hDispatchThread Wait return Error : [%u]", gle);
-		}
-	}
 
 	closesocket(m_listenSock);
 	m_listenSock = INVALID_SOCKET;
@@ -205,14 +175,7 @@ void jh_network::IocpServer::Stop()
 		}
 	}
 
-	CloseHandle(m_hStopEvent);
-	CloseHandle(m_hSendEvent);
-	CloseHandle(m_hDispatchThread);
 	CloseHandle(m_hAcceptThread);
-
-	m_hSendEvent = nullptr;
-	m_hStopEvent = nullptr;
-	m_hDispatchThread = nullptr;
 	m_hAcceptThread = nullptr;
 
 
@@ -253,7 +216,7 @@ void jh_network::IocpServer::ForceStop()
 
 bool jh_network::IocpServer::CreateServerThreads()
 {
-	m_hWorkerThreads = static_cast<HANDLE*>(g_memAllocator->Alloc(sizeof(HANDLE) * m_dwConcurrentWorkerThreadCount));
+	m_hWorkerThreads = static_cast<HANDLE*>(g_memSystem->Alloc(sizeof(HANDLE) * m_dwConcurrentWorkerThreadCount));
 
 	for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
 	{
@@ -264,7 +227,7 @@ bool jh_network::IocpServer::CreateServerThreads()
 			DWORD gle = GetLastError();
 			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"WorkerThread Creation is Failed, Error Code : [%u]", gle);
 
-			g_memAllocator->Free(m_hWorkerThreads);
+			g_memSystem->Free(m_hWorkerThreads);
 			return false;
 		}
 	}
@@ -275,15 +238,6 @@ bool jh_network::IocpServer::CreateServerThreads()
 	{
 		DWORD gle = GetLastError();
 		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"AcceptThread Creation is Failed, Error Code : [%u]", gle);
-
-		return false;
-	}
-
-	m_hDispatchThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, DispatchThreadFunc, this, 0, nullptr));
-	if (nullptr == m_hDispatchThread)
-	{
-		DWORD gle = GetLastError();
-		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"DispatchThread Creation is Failed, Error Code : [%u]", gle);
 
 		return false;
 	}
@@ -369,16 +323,6 @@ unsigned __stdcall jh_network::IocpServer::AcceptThreadFunc(LPVOID lparam)
 
 	return 0;
 }
-
-unsigned __stdcall jh_network::IocpServer::DispatchThreadFunc(LPVOID lparam)
-{
-	IocpServer* instance = reinterpret_cast<IocpServer*>(lparam);
-
-	instance->DispatchThreadMain();
-
-	return 0;
-}
-
 //void jh_network::IocpServer::DecreaseIoCount(Session* sessionPtr, SessionJob job)
 //{
 //	LONG m_lIoCount = InterlockedDecrement(&sessionPtr->m_lIoCount);
@@ -559,8 +503,8 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		//jh_utility::SerializationBuffer* packet = static_cast<jh_utility::SerializationBuffer*>(g_memAllocator->Alloc(header));
-		PacketPtr packet = MakeSharedBuffer(g_memAllocator, header);
+		//jh_utility::SerializationBuffer* packet = static_cast<jh_utility::SerializationBuffer*>(g_memSystem->Alloc(header));
+		PacketPtr packet = MakeSharedBuffer(g_memSystem, header);
 
 
 		//if (false == sessionPtr->m_recvBuffer.DequeueRetBool(pPacket->GetRearPtr(), header.size))
@@ -589,7 +533,7 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memAllocator, header.size);
+		PacketPtr packet = MakeSharedBuffer(g_memSystem, header.size);
 		
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
@@ -806,12 +750,6 @@ void jh_network::IocpServer::PostRecv(Session* sessionPtr)
 	InterlockedIncrement(&m_lTotalRecvCount);
 }
 
-void jh_network::IocpServer::RequestSend(ULONGLONG sessionId, PacketPtr& packet)
-{
-	jh_utility::DispatchJob* dispatchJob = jh_memory::ObjectPool<jh_utility::DispatchJob>::Alloc(sessionId, packet);
-
-	RequestSend(dispatchJob);
-}
 
 void jh_network::IocpServer::UpdateHeartbeat(ULONGLONG sessionId, ULONGLONG timeStamp)
 {
@@ -929,63 +867,6 @@ void jh_network::IocpServer::AcceptThreadMain()
 	}
 }
 
-void jh_network::IocpServer::DispatchThreadMain()
-{
-	HANDLE handles[2]{ m_hStopEvent, m_hSendEvent };
-
-	while (1)
-	{
-		DWORD ret = WaitForMultipleObjects(2, handles, false, INFINITE);
-		
-		PRO_START("Dispatch 1 Cycle");
-		// StopEvent
-		if (WAIT_OBJECT_0 == ret)
-		{
-			break;
-		}
-		// SendEvent
-		if (WAIT_OBJECT_0 + 1 == ret)
-		{
-			DispatchPacket();
-		}
-		else
-		{
-			DWORD gle = GetLastError();
-			_LOG(m_pcwszServerName, LOG_LEVEL_WARNING, L"[DispatchThreadMain] WaitMultiple Ret Error : [%u].",gle);
-		}
-		PRO_END("Dispatch 1 Cycle");
-	}
-}
-
-
-void jh_network::IocpServer::DispatchPacket()
-{
-	static thread_local std::queue<jh_utility::DispatchJob*> dispatchQ;
-
-	m_dispatchJobQ.Swap(dispatchQ);
-
-	while (dispatchQ.size())
-	{
-		jh_utility::DispatchJob* dispatchJob = dispatchQ.front();
-
-		dispatchQ.pop();
-
-		if (1 == dispatchJob->m_dwSessionCount)
-		{
-			SendPacket(dispatchJob->m_sessionInfo.m_ullSingleSessionId, dispatchJob->m_packet);
-		}
-		else
-		{
-			for (int i = 0; i < dispatchJob->m_dwSessionCount; i++)
-			{
-				SendPacket(dispatchJob->m_sessionInfo.m_pSessionIdList[i], dispatchJob->m_packet);
-			}
-		}
-
-		jh_memory::ObjectPool<jh_utility::DispatchJob>::Free(dispatchJob);
-	}
-}
-
 jh_network::Session* jh_network::IocpServer::CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr)
 {
 	// 여기부터 세션빼서 내껄로 사용하는거 적기,
@@ -1080,7 +961,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memAllocator, header);
+		PacketPtr packet = MakeSharedBuffer(g_memSystem, header);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
@@ -1106,7 +987,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memAllocator, header.size);
+		PacketPtr packet = MakeSharedBuffer(g_memSystem, header.size);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
@@ -1658,17 +1539,7 @@ void jh_network::IocpClient::Connect(int cnt)
 			closesocket(sock);
 			return;
 		}
-		DWORD setLingerRet = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
 
-		if (SOCKET_ERROR == setLingerRet)
-		{
-			int getLastError = WSAGetLastError();
-
-			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] SetLingerOpt 실패. GetLastError : [%d]", getLastError);
-
-			closesocket(sock);
-			return;
-		}
 		// connectEx 사용 시 bind 필요
 		sockaddr_in clientAddr{};
 		clientAddr.sin_family = AF_INET;
@@ -1688,6 +1559,19 @@ void jh_network::IocpClient::Connect(int cnt)
 
 			return;
 		}
+
+		DWORD setLingerRet = setsockopt(sock, SOL_SOCKET, SO_LINGER, (char*)&m_lingerOption, sizeof(linger));
+
+		if (SOCKET_ERROR == setLingerRet)
+		{
+			int getLastError = WSAGetLastError();
+
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[Connect] SetLingerOpt 실패. GetLastError : [%d]", getLastError);
+
+			closesocket(sock);
+			return;
+		}
+
 		Session* session = CreateSession(sock, &serverAddr);
 
 		if (nullptr == session)

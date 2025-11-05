@@ -15,7 +15,7 @@ namespace jh_memory
 		template <typename... Args>
 		static T* Alloc(Args&&... args)
 		{
-			T* obj= static_cast<T*>(g_memAllocator->Alloc(sizeof(T)));
+			T* obj= static_cast<T*>(g_memSystem->Alloc(sizeof(T)));
 
 			if (nullptr == obj)
 				return nullptr;
@@ -36,7 +36,7 @@ namespace jh_memory
 
 			obj->~T();
 
-			g_memAllocator->Free(obj);
+			g_memSystem->Free(obj);
 		}
 	};
 }

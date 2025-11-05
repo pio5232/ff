@@ -77,16 +77,25 @@
     <ClInclude Include="GlobalInstance.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="MemoryPool.h">
+    <ClInclude Include="ObjectPool.h">
       <Filter>Memory</Filter>
     </ClInclude>
     <ClInclude Include="Memory.h">
       <Filter>Memory</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryAllocator.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryPool.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PageAllocator.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
     <ClInclude Include="MemoryHeader.h">
       <Filter>Memory</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectPool.h">
+    <ClInclude Include="MemorySystem.h">
       <Filter>Memory</Filter>
     </ClInclude>
   </ItemGroup>
@@ -142,19 +151,28 @@
     <ClCompile Include="GlobalInstance.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryPool.cpp">
-      <Filter>Memory</Filter>
-    </ClCompile>
     <ClCompile Include="Define.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectPool.cpp">
+      <Filter>Memory</Filter>
+    </ClCompile>
     <ClCompile Include="Memory.cpp">
+      <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryAllocator.cpp">
+      <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryPool.cpp">
+      <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="PageAllocator.cpp">
       <Filter>Memory</Filter>
     </ClCompile>
     <ClCompile Include="MemoryHeader.cpp">
       <Filter>Memory</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectPool.cpp">
+    <ClCompile Include="MemorySystem.cpp">
       <Filter>Memory</Filter>
     </ClCompile>
   </ItemGroup>

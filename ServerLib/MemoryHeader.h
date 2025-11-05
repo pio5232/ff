@@ -1,5 +1,6 @@
 #pragma once
 
+
 namespace jh_memory
 {
 	class MemoryPool;
@@ -7,12 +8,13 @@ namespace jh_memory
 	struct MemoryHeader
 	{
 		// [MemoryHeader][Data]
-		MemoryHeader(MemoryPool* pOwnerPool) : m_pOwnerPool(pOwnerPool) {}
+		MemoryHeader(size_t size) : m_size{ size } {}
 
-		static void* AttachHeader(MemoryHeader* header, MemoryPool* owner)
+		static void* AttachHeader(MemoryHeader* header, size_t size)
 		{
 			// placement new
-			new(header)MemoryHeader(owner);
+
+			new (header) MemoryHeader(size);
 
 			return reinterpret_cast<void*>(++header);
 		}
@@ -22,6 +24,6 @@ namespace jh_memory
 			return reinterpret_cast<MemoryHeader*>(ptr) - 1;
 		}
 
-		MemoryPool* m_pOwnerPool;
+		const size_t m_size;
 	};
 }

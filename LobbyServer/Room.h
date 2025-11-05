@@ -8,7 +8,7 @@ namespace jh_content
 	{
 	public:
 		using UnicastFunc = std::function<void(ULONGLONG, PacketPtr&)>;
-		using BroadcastFunc = std::function<void(DWORD, ULONGLONG*, PacketPtr&)>;
+		//using BroadcastFunc = std::function<void(DWORD, ULONGLONG*, PacketPtr&)>;
 
 		enum class RoomState : byte
 		{
@@ -49,7 +49,7 @@ namespace jh_content
 		static int GetAliveRoomCount() { return aliveRoomCount; }
 
 		void SetUnicastFunc(UnicastFunc unicastFunc) { m_unicastFunc = unicastFunc; }
-		void SetBroadcastFunc(BroadcastFunc broadcastFunc) { m_broadcastFunc = broadcastFunc; }
+		//void SetBroadcastFunc(BroadcastFunc broadcastFunc) { m_broadcastFunc = broadcastFunc; }
 
 		void BroadCast(PacketPtr& packet, ULONGLONG excludedId = 0); // 패킷, 방번호, 제외할 UserID (없으면 0)
 		void Unicast(PacketPtr& packet, ULONGLONG sessionId);
@@ -63,6 +63,6 @@ namespace jh_content
 		std::unordered_map<ULONGLONG, std::weak_ptr<jh_content::User>> m_userMap; // USER ID - USER  
 
 		UnicastFunc m_unicastFunc;
-		BroadcastFunc m_broadcastFunc;
+		//BroadcastFunc m_broadcastFunc;
 	};
 }

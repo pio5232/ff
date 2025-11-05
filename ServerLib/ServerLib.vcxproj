@@ -159,8 +159,12 @@
     <ClInclude Include="CrashDump.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Memory.h" />
+    <ClInclude Include="MemoryAllocator.h" />
     <ClInclude Include="MemoryHeader.h" />
+    <ClInclude Include="MemoryPool.h" />
+    <ClInclude Include="MemorySystem.h" />
     <ClInclude Include="ObjectPool.h" />
+    <ClInclude Include="PageAllocator.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="RingBuffer.h" />
@@ -172,7 +176,6 @@
     <ClInclude Include="GlobalInstance.h" />
     <ClInclude Include="Job.h" />
     <ClInclude Include="LibraryPch.h" />
-    <ClInclude Include="MemoryPool.h" />
     <ClInclude Include="NetworkBase.h" />
     <ClInclude Include="NetworkUtils.h" />
     <ClInclude Include="PacketDefine.h" />
@@ -199,8 +202,12 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">LibraryPch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="Memory.cpp" />
+    <ClCompile Include="MemoryAllocator.cpp" />
     <ClCompile Include="MemoryHeader.cpp" />
+    <ClCompile Include="MemoryPool.cpp" />
+    <ClCompile Include="MemorySystem.cpp" />
     <ClCompile Include="ObjectPool.cpp" />
+    <ClCompile Include="PageAllocator.cpp" />
     <ClCompile Include="Parser.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">LibraryPch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">LibraryPch.h</PrecompiledHeaderFile>
@@ -249,7 +256,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">LibraryPch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="MemoryPool.cpp" />
     <ClCompile Include="NetworkBase.cpp">
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">LibraryPch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">LibraryPch.h</PrecompiledHeaderFile>

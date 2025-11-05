@@ -9,7 +9,7 @@ PacketPtr jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCod
 
 	errorPacket.packetErrorCode = errorCode;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(errorPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(errorPacket));
 
 	*buffer << errorPacket.size << errorPacket.type << errorPacket.packetErrorCode;
 
@@ -21,7 +21,7 @@ PacketPtr jh_content::PacketBuilder::BuildLogInResponsePacket(ULONGLONG userId)
 {
 	jh_network::LogInResponsePacket logInResponsePacket; 
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(logInResponsePacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(logInResponsePacket));
 
 	*buffer << logInResponsePacket.size << logInResponsePacket.type << userId;
 
@@ -40,7 +40,7 @@ PacketPtr jh_content::PacketBuilder::BuildMakeRoomResponsePacket(bool isMade, UL
 	makeRoomResponsePacket.roomInfo.m_usMaxUserCnt = maxUserCnt;
 	wmemcpy_s(makeRoomResponsePacket.roomInfo.m_wszRoomName, ROOM_NAME_MAX_LEN, roomName, ROOM_NAME_MAX_LEN);
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(makeRoomResponsePacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(makeRoomResponsePacket));
 
 	*buffer << makeRoomResponsePacket.size << makeRoomResponsePacket.type << makeRoomResponsePacket.isMade << makeRoomResponsePacket.roomInfo;
 
@@ -53,7 +53,7 @@ PacketPtr jh_content::PacketBuilder::BuildEnterRoomNotifyPacket(ULONGLONG userId
 
 	enterRoomNotifyPacket.enterUserId = userId;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(enterRoomNotifyPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(enterRoomNotifyPacket));
 
 	*buffer << enterRoomNotifyPacket.size << enterRoomNotifyPacket.type << enterRoomNotifyPacket.enterUserId;
 
@@ -69,7 +69,7 @@ PacketPtr jh_content::PacketBuilder::BuildEnterRoomResponsePacket(bool isAllowed
 
 	enterRoomResponsePacket.size = sizeof(bool) + sizeof(USHORT) + sizeof(ULONGLONG) * userIdAndReadyList.size();
 	
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(enterRoomResponsePacket) + enterRoomResponsePacket.size);
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(enterRoomResponsePacket) + enterRoomResponsePacket.size);
 
 	*buffer << enterRoomResponsePacket.size << enterRoomResponsePacket.type << enterRoomResponsePacket.bAllow << enterRoomResponsePacket.idCnt;
 
@@ -87,7 +87,7 @@ PacketPtr jh_content::PacketBuilder::BuildLeaveRoomNotifyPacket(ULONGLONG userId
 
 	leaveRoomNotifyPacket.leaveUserId = userId;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(leaveRoomNotifyPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(leaveRoomNotifyPacket));
 
 	*buffer << leaveRoomNotifyPacket.size << leaveRoomNotifyPacket.type << leaveRoomNotifyPacket.leaveUserId;
 
@@ -98,7 +98,7 @@ PacketPtr jh_content::PacketBuilder::BuildLeaveRoomResponsePacket()
 {
 	jh_network::LeaveRoomResponsePacket leaveRoomResPacket;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(leaveRoomResPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(leaveRoomResPacket));
 
 	*buffer << leaveRoomResPacket.size << leaveRoomResPacket.type;
 
@@ -113,7 +113,7 @@ PacketPtr jh_content::PacketBuilder::BuildRoomListResponsePacket(std::vector<jh_
 	header.size = sizeof(roomCnt) + roomCnt * jh_content::RoomInfo::GetSize();
 	header.type = jh_network::ROOM_LIST_RESPONSE_PACKET;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(jh_network::RoomListResponsePacket) + roomCnt * jh_content::RoomInfo::GetSize());
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(jh_network::RoomListResponsePacket) + roomCnt * jh_content::RoomInfo::GetSize());
 
 	*buffer << header.size << header.type << roomCnt;
 
@@ -132,7 +132,7 @@ PacketPtr jh_content::PacketBuilder::BuildOwnerChangeNotifyPacket(ULONGLONG newO
 	jh_network::OwnerChangeNotifyPacket ownerChangeNotifyPacket;
 	ownerChangeNotifyPacket.userId = newOwnerUserId;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(ownerChangeNotifyPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(ownerChangeNotifyPacket));
 
 	*buffer << ownerChangeNotifyPacket.size << ownerChangeNotifyPacket.type << ownerChangeNotifyPacket.userId;
 
@@ -143,7 +143,7 @@ PacketPtr jh_content::PacketBuilder::BuildGameStartNotifyPacket()
 {
 	jh_network::GameStartNotifyPacket gameStartNotifyPacket;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(gameStartNotifyPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(gameStartNotifyPacket));
 
 	*buffer << gameStartNotifyPacket.size << gameStartNotifyPacket.type;
 	return buffer;
@@ -156,7 +156,7 @@ PacketPtr jh_content::PacketBuilder::BuildGameReadyNotifyPacket(ULONGLONG userId
 	gameReadyNotifyPacket.userId = userId;
 	gameReadyNotifyPacket.isReady = isReady;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(gameReadyNotifyPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(gameReadyNotifyPacket));
 
 	*buffer << gameReadyNotifyPacket.size << gameReadyNotifyPacket.type << gameReadyNotifyPacket.isReady << gameReadyNotifyPacket.userId;
 
@@ -167,7 +167,7 @@ PacketPtr jh_content::PacketBuilder::BuildEchoPacket(ULONGLONG data)
 {
 	jh_network::EchoPacket echoPacket;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(echoPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(echoPacket));
 
 	*buffer << echoPacket.size << echoPacket.type << echoPacket.m_data;
 
@@ -178,7 +178,7 @@ PacketPtr jh_content::PacketBuilder::BuildLanInfoPacket(WCHAR* ipStr, USHORT por
 {
 	jh_network::GameServerLanInfoPacket gameServerLanInfoPacket;
 	
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(gameServerLanInfoPacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(gameServerLanInfoPacket));
 	
 	*buffer << gameServerLanInfoPacket.size << gameServerLanInfoPacket.type;
 
@@ -194,7 +194,7 @@ PacketPtr jh_content::PacketBuilder::BuildGameServerSettingResponsePacket(USHORT
 {
 	jh_network::GameServerSettingResponsePacket gameServerSettingResponsePacket;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memAllocator, sizeof(gameServerSettingResponsePacket));
+	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(gameServerSettingResponsePacket));
 
 	*buffer << gameServerSettingResponsePacket.size << gameServerSettingResponsePacket.type << roomNum << requiredUserCnt << maxUserCnt;
 

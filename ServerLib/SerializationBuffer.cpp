@@ -6,13 +6,13 @@ using namespace jh_utility;
 
 ULONGLONG SerializationBuffer::g_ullPacketCount = 0;
 
-SerializationBuffer::SerializationBuffer(jh_memory::MemoryAllocator* memoryAllocator, size_t iBufferSize) :m_iBufferCapacity(iBufferSize), m_iFront(0), m_iRear(0), /*m_iDataSize(0),*/ m_pMemoryAllocator(memoryAllocator)
+SerializationBuffer::SerializationBuffer(jh_memory::MemorySystem* memorySystem, size_t iBufferSize) : m_iBufferCapacity(iBufferSize), m_iFront(0), m_iRear(0),m_pMemorySystem(memorySystem)
 {
-	if (m_pMemoryAllocator == nullptr)
+	if (m_pMemorySystem == nullptr)
 		m_chpBuffer = new char[m_iBufferCapacity];
 	else
 	{
-		m_chpBuffer = static_cast<char*>(m_pMemoryAllocator->Alloc(iBufferSize));
+		m_chpBuffer = static_cast<char*>(m_pMemorySystem->Alloc(iBufferSize));
 		
 		InterlockedIncrement64((LONGLONG*)&g_ullPacketCount);
 	}
@@ -21,11 +21,11 @@ SerializationBuffer::SerializationBuffer(jh_memory::MemoryAllocator* memoryAlloc
 
 SerializationBuffer::~SerializationBuffer()
 {
-	if (m_pMemoryAllocator == nullptr)
+	if (m_pMemorySystem == nullptr)
 		delete[] m_chpBuffer;
 	else
 	{
-		m_pMemoryAllocator->Free(m_chpBuffer);
+		m_pMemorySystem->Free(m_chpBuffer);
 
 		InterlockedDecrement64((LONGLONG*)&g_ullPacketCount);
 	}
@@ -40,7 +40,7 @@ jh_utility::SerializationBuffer::SerializationBuffer(SerializationBuffer&& other
 	other.m_iFront = m_iFront;
 	other.m_iRear = m_iRear;
 	other.m_chpBuffer = m_chpBuffer;
-	other.m_pMemoryAllocator = m_pMemoryAllocator;
+	other.m_pMemorySystem = m_pMemorySystem;
 
 	memset(this, 0, sizeof(SerializationBuffer));
 }
@@ -51,7 +51,7 @@ SerializationBuffer& jh_utility::SerializationBuffer::operator=(SerializationBuf
 	other.m_iFront = m_iFront;
 	other.m_iRear = m_iRear;
 	other.m_chpBuffer = m_chpBuffer;
-	other.m_pMemoryAllocator = m_pMemoryAllocator;
+	other.m_pMemorySystem = m_pMemorySystem;
 
 	memset(this, 0, sizeof(SerializationBuffer));
 

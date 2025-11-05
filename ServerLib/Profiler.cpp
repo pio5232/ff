@@ -1,9 +1,11 @@
 #include "LibraryPch.h"
+
 #include <sstream>
 #include <iomanip>
 #include <utility>
 #include <string>
 #include <strsafe.h>
+#include "Profiler.h"
 // Working Set과 Current Set을 분리하자
 // Working Set : Start -> End할 때 등록
 
@@ -53,8 +55,8 @@ void jh_utility::ThreadProfileData::Start(const WCHAR* tag)
 
 			m_samples[i].m_ullMinTime[0] = m_samples[i].m_ullMinTime[1] = ULLONG_MAX;
 			m_samples[i].m_ullMaxTime[0] = m_samples[i].m_ullMaxTime[1] = 0;
-			
-			m_samples[i].m_ullCallCount= 0;
+
+			m_samples[i].m_ullCallCount = 0;
 
 			m_samples[i].m_dwThreadId = GetCurrentThreadId();
 
@@ -126,10 +128,10 @@ void jh_utility::ThreadProfileData::Reset()
 }
 
 /// +-------------------+
-///	|	ProfileManager	|
+///	|	Profiler	|
 ///	+-------------------+
 /// 
-void jh_utility::ProfileManager::Start(const WCHAR* funcName)
+void jh_utility::Profiler::Start(const WCHAR* funcName)
 {
 	if (nullptr == tls_pProfiler)
 	{
@@ -138,11 +140,13 @@ void jh_utility::ProfileManager::Start(const WCHAR* funcName)
 		DWORD currentThreadId = GetCurrentThreadId();
 		// 스레드가 재사용된 경우 기존에 등록된 스레드ID의 동적할당 데이터 해제
 		{
+
 			SRWLockGuard lockGuard(&m_lock);
 
-			if (m_profilerMap.end() == m_profilerMap.find(currentThreadId))
+			auto it = m_profilerMap.find(currentThreadId);
+			if (it != m_profilerMap.end())
 			{
-				delete m_profilerMap[currentThreadId];
+				delete it->second;
 			}
 
 			// 없었던 경우는 등록, 있었던 경우는 변경
@@ -153,7 +157,7 @@ void jh_utility::ProfileManager::Start(const WCHAR* funcName)
 	tls_pProfiler->Start(funcName);
 }
 
-void jh_utility::ProfileManager::Stop(const WCHAR* funcName)
+void jh_utility::Profiler::Stop(const WCHAR* funcName)
 {
 	if (nullptr == tls_pProfiler)
 		CrashDump::Crash();
@@ -161,7 +165,7 @@ void jh_utility::ProfileManager::Stop(const WCHAR* funcName)
 	tls_pProfiler->Stop(funcName);
 }
 
-jh_utility::ProfileManager::ProfileManager()
+jh_utility::Profiler::Profiler()
 {
 	InitializeSRWLock(&m_lock);
 
@@ -169,7 +173,7 @@ jh_utility::ProfileManager::ProfileManager()
 
 	QueryPerformanceFrequency(&m_llQueryPerformanceFrequency);
 }
-jh_utility::ProfileManager::~ProfileManager()
+jh_utility::Profiler::~Profiler()
 {
 	for (auto& pair : m_profilerMap)
 	{
@@ -180,23 +184,21 @@ jh_utility::ProfileManager::~ProfileManager()
 
 }
 
-void jh_utility::ProfileManager::ProfileDataOutText(const WCHAR* fileName)
+void jh_utility::Profiler::ProfileDataOutText(const WCHAR* fileName)
 {
 	// THREAD NAME AVERAGE MIN MAX CALL
 	SRWLockGuard lockGuard(&m_lock);
 
 	FILE* file = nullptr;
 
-	errno_t wfOpenError =_wfopen_s(&file, fileName, L"w, ccs=UNICODE");
+	errno_t wfOpenError = _wfopen_s(&file, fileName, L"w, ccs=UNICODE");
 
 	if (0 != wfOpenError || nullptr == file)
 	{
-		_LOG(L"TLSProfiler", LOG_LEVEL_WARNING, L"ProfileDataOutText wfOpenError");
-		
 		return;
 	}
-	
-	fwprintf_s(file, L"%15s | %70s | %17s | %17s | %17s | %15s |\n", L"THREADID", L"FUNC", L"AVERAGE", L"MIN",L"MAX", L"CALL");;
+
+	fwprintf_s(file, L"%15s | %70s | %17s | %17s | %17s | %15s |\n", L"THREADID", L"FUNC", L"AVERAGE", L"MIN", L"MAX", L"CALL");;
 	fwprintf_s(file, L"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
 
 	for (auto& pair : m_profilerMap)
@@ -207,12 +209,14 @@ void jh_utility::ProfileManager::ProfileDataOutText(const WCHAR* fileName)
 
 			if (false == sample.m_bUseFlag)
 				break;
-		
+
+			double minTime = sample.m_ullCallCount <= 2 ? (double)sample.m_ullMinTime[0] : (double)sample.m_ullMinTime[1];
+			double maxTime = sample.m_ullCallCount <= 2 ? (double)sample.m_ullMaxTime[0] : (double)sample.m_ullMaxTime[1];
 			// min, max는 2번째꺼 출력.
 			fwprintf_s(file, L"%15u | %70s | %15.6lf㎲ | %15.6lf㎲ | %15.6lf㎲ | %15u |\n", sample.m_dwThreadId, sample.m_wszSampleName,
 				(double)sample.m_ullTotalTime / sample.m_ullCallCount * MICRO_SCALE(m_llQueryPerformanceFrequency.QuadPart), // AVERAGE
-				(double)sample.m_ullMinTime[1] * MICRO_SCALE(m_llQueryPerformanceFrequency.QuadPart), // MIN
-				(double)sample.m_ullMaxTime[1] * MICRO_SCALE(m_llQueryPerformanceFrequency.QuadPart), // MAX
+				minTime * MICRO_SCALE(m_llQueryPerformanceFrequency.QuadPart), // MIN
+				maxTime * MICRO_SCALE(m_llQueryPerformanceFrequency.QuadPart), // MAX
 				sample.m_ullCallCount); // m_ullCallCount
 		}
 		fwprintf_s(file, L"\n");
@@ -229,7 +233,7 @@ void jh_utility::ProfileManager::ProfileDataOutText(const WCHAR* fileName)
 	return;
 }
 
-void jh_utility::ProfileManager::DataReset()
+void jh_utility::Profiler::DataReset()
 {
 	SRWLockGuard lockGuard(&m_lock);
 

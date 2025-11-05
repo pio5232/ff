@@ -67,7 +67,7 @@ void jh_content::LobbyLanServer::OnError(int errCode, WCHAR* cause)
 
 void jh_content::LobbyLanServer::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
 {
-	JobPtr jobPtr = MakeShared<jh_utility::Job>(g_memAllocator, sessionId, type, packet); // MakeJob(sessionId, type, packet);
+	JobPtr jobPtr = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet); // MakeJob(sessionId, type, packet);
 
 	m_pLobbyLanSystem->EnqueueJob(jobPtr);
 

@@ -7,16 +7,17 @@
 #define LOGIC_THREAD_COUNT 5
 
 #define RE_SEND_TIMEOUT ((int)8000)
-enum class DummyStatus : byte
+enum class DummyStatus : USHORT
 {
-	DISCONNECTED = 0,
-	SESSION_CONNECTED,
-	IN_LOBBY,
-	WAIT_ENTER_ROOM,
-	IN_ROOM,
-	WAIT_LEAVE_ROOM,
-	CHECK_RTT,
-	NO_CHANGE,
+	DISCONNECTED =			1 << 0,
+	SESSION_CONNECTED =		1 << 1,
+	IN_LOBBY =				1 << 2,
+	WAIT_ENTER_ROOM =		1 << 3,
+	IN_ROOM =				1 << 4 ,
+	IN_ROOM_WAIT_CHAT =		1 << 5,
+	WAIT_LEAVE_ROOM =		1 << 6,
+	CHECK_RTT =				1 << 7,
+	NO_CHANGE =				1 << 8,
 };
 struct DummyData
 {

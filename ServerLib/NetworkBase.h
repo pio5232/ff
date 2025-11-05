@@ -68,13 +68,6 @@ namespace jh_network
 		void PostSend(Session* sessionPtr);
 		void PostRecv(Session* sessionPtr);
 
-		// DISPATCH Q에 등록
-		// 여러개의 세션 정보 등록 후 전송 예약
-		void RequestSend(jh_utility::DispatchJob* dispatchJobPtr) { m_dispatchJobQ.Push(dispatchJobPtr); SetEvent(m_hSendEvent); }
-
-		// 1개의 Session에 전송 예약
-		void RequestSend(ULONGLONG sessionId, PacketPtr& packet);
-
 		void SendPacket(ULONGLONG sessionId, PacketPtr& packet);
 
 		void UpdateHeartbeat(ULONGLONG sessionId, ULONGLONG now);
@@ -117,22 +110,15 @@ namespace jh_network
 
 		static unsigned WINAPI WorkerThreadFunc(LPVOID lparam);
 		static unsigned WINAPI AcceptThreadFunc(LPVOID lparam);
-		static unsigned WINAPI DispatchThreadFunc(LPVOID lparam);
 
 		void WorkerThreadMain();
 		void AcceptThreadMain();
-		void DispatchThreadMain();
 
-		void DispatchPacket();
 		Session* CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr);
 		HANDLE m_hCompletionPort;
 
 		HANDLE* m_hWorkerThreads;
 		HANDLE m_hAcceptThread;
-		HANDLE m_hDispatchThread;
-		HANDLE m_hStopEvent;
-		HANDLE m_hSendEvent;
-		
 																// 설정 값
 		WCHAR m_wszIp[IP_STRING_LEN]; // 원본 20				// ip
 		USHORT m_usPort;											// 포트 번호
@@ -149,7 +135,6 @@ namespace jh_network
 		// Session을 Find하는 구조에서 병목이 적어야 한다는 게 내 생각
 		jh_network::Session* m_pSessionArray;
 		jh_utility::LockStack<DWORD> m_sessionIndexStack;
-		jh_utility::LockQueue<jh_utility::DispatchJob*> m_dispatchJobQ;
 		ActiveSessionManager m_activeSessionManager;
 
 		alignas(64) LONG m_lSessionCount;						// 현재 접속중인 세션 수

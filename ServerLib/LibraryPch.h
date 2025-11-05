@@ -17,7 +17,7 @@
 #include "Define.h"
 #include "NetworkUtils.h"
 
-#include "Memory.h"
+#include "MemorySystem.h"
 //#include "MemoryPool.h"
 #include "ObjectPool.h"
 //#include "TLSMemoryPool.h"

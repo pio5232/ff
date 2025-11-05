@@ -24,7 +24,7 @@ jh_content::RoomInfo jh_content::Room::GetRoomInfo() const
 
 
 jh_content::Room::Room(ULONGLONG ownerId, USHORT maxUserCnt, USHORT roomNum, WCHAR* roomName) : m_roomInfo{ .m_ullOwnerId = ownerId,.m_usRoomNum = roomNum,
-.m_usCurUserCnt = 0, .m_usMaxUserCnt = maxUserCnt,.m_wszRoomName{} }, m_usReadyCnt(0), m_unicastFunc{}, m_broadcastFunc {}
+.m_usCurUserCnt = 0, .m_usMaxUserCnt = maxUserCnt,.m_wszRoomName{} }, m_usReadyCnt(0), m_unicastFunc{}
 {
 	aliveRoomCount.fetch_add(1);
 
@@ -154,10 +154,7 @@ void jh_content::Room::BroadCast(PacketPtr& packet, ULONGLONG excludedUserId)
 {
 	PRO_START_AUTO_FUNC;
 	
-	std::vector<ULONGLONG> vec;
-
 	size_t mapSize = m_userMap.size();
-	vec.reserve(mapSize);
 
 	for (const auto& [_userId, _userWptr] : m_userMap)
 	{
@@ -171,11 +168,9 @@ void jh_content::Room::BroadCast(PacketPtr& packet, ULONGLONG excludedUserId)
 
 		ULONGLONG _sessionId = _userPtr->GetSessionId();
 
-		vec.push_back(_sessionId);
+		Unicast(packet, _sessionId);
 	}
-	
-	m_broadcastFunc(static_cast<DWORD>(vec.size()),vec.data(), packet);
-	
+		
 }
 
 void jh_content::Room::Unicast(PacketPtr& packet, ULONGLONG sessionId)
