@@ -49,7 +49,6 @@
     <ClCompile Include="LobbyLanSystem.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="IContentClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PacketBuilder.h" />
@@ -83,6 +82,5 @@
     <ClInclude Include="LobbyLanSystem.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="IContentClient.h" />
   </ItemGroup>
 </Project>

@@ -25,8 +25,6 @@ namespace jh_content
 		// 게임 시작 관련 초기화
 		void Init(USHORT total, USHORT gamePlayerCount); // 1. ai+player, 2. player
 
-		//WorldChatPtr GetWorldChat() { return _worldChat; }
-
 		void SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr& packet);
 		void SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr& packet);
 
@@ -47,7 +45,6 @@ namespace jh_content
 
 	public:
 		void CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr);
-		//void OnEnterVictoryZone(GamePlayerPtr gamePlayerPtr);
 		void CheckWinner();
 		void InvalidateWinner(ULONGLONG userId);
 	private:

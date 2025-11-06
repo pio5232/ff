@@ -41,10 +41,10 @@ jh_content::LobbyServer::LobbyServer() : IocpServer{ LOBBY_SERVER_SAVE_FILE_NAME
 	parser.CloseFile();
 
 	if (true == succeeded)
-		_LOG(L"ParseInfo", LOG_LEVEL_INFO, L"Parsing LobbyServer is Completed [FileName : %s]", LOBBY_SERVER_CONFIG_FILE);
+		_LOG(L"ParseInfo", LOG_LEVEL_INFO, L"[LobbyServer] Parsing LobbyServer complete. File: [%s]", LOBBY_SERVER_CONFIG_FILE);
 	else
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"Parsing LobbyServer is Failed...");
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyServer] Parsing LobbyServer failed.");
 		jh_utility::CrashDump::Crash();
 	}
 
@@ -52,21 +52,13 @@ jh_content::LobbyServer::LobbyServer() : IocpServer{ LOBBY_SERVER_SAVE_FILE_NAME
 	
 	if (false == InitSessionArray(maxSessionCnt))
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyServer()] - maxSession 초기화 실패");
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyServer] InitSessionArray failed.");		
 		jh_utility::CrashDump::Crash();
 	}
 
-	//m_pLanServer = std::make_unique<jh_network::LobbyLanServer>(LAN_SERVER_CONFIG_FILE  L"LobbyLanServer");
 	m_pLanServer = std::make_unique<jh_content::LobbyLanServer>();
 
 	m_pLobbySystem = std::make_unique<jh_content::LobbySystem>(this, maxRoomCnt, maxRoomUserCnt);
-
-	//if (nullptr == m_pLanServer)
-	//{
-	//	_LOG(L"LobbyLanServer", LOG_LEVEL_SYSTEM, L"LobbyLanServer is Null");
-
-	//	jh_utility::CrashDump::Crash();
-	//}
 
 	m_pLobbySystem->Init();
 	
@@ -96,10 +88,6 @@ void jh_content::LobbyServer::EndAction()
 	m_pLanServer->Stop();
 	
 }
-//void OnRecv(LONGLONG sessionId, PacketPtr packet, WORD type) override;
-//void OnConnected(LONGLONG sessionId) override;
-//void OnDisconnected(LONGLONG sessionId) override;
-
 void jh_content::LobbyServer::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
 {
 	JobPtr job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet); //MakeJob(sessionId, type, packet);

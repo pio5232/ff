@@ -15,9 +15,6 @@
 #define PRO_START(x) jh_utility::Profiler::GetInstance().Start(L##x)
 #define PRO_END(x) jh_utility::Profiler::GetInstance().Stop(L##x)
 
-//#define PRO_START(x) CProfileManager::GetInstance().Start(L##x)
-//#define PRO_END(x) CProfileManager::GetInstance().Stop(L##x)
-
 #define PRO_RESET jh_utility::Profiler::GetInstance().DataReset()
 #define PRO_SAVE(FILE_NAME) jh_utility::Profiler::GetInstance().ProfileDataOutText(L##FILE_NAME) 
 #define ARRAY_SIZE(ARR) (sizeof(ARR) / sizeof(ARR[0]))
@@ -25,7 +22,6 @@
 #define MILLI_SCALE(qpfrequency) ((double)1'000 / (double)qpfrequency)
 #define MICRO_SCALE(qpfrequency) ((double)1'000'000 / (double)qpfrequency)
 
-// 메인 스레드가 모든 스레드 종료 후에 종료되는 형태라면 문제 없을 것이다.
 namespace jh_utility
 {
 	struct ProfileSample
@@ -51,7 +47,7 @@ namespace jh_utility
 	{
 	public:
 		ThreadProfileData();
-		//~ThreadProfileData();
+		~ThreadProfileData() {}
 
 		// Sample 등록은 최대 50개
 		void Start(const WCHAR* tag);

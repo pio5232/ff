@@ -3,18 +3,7 @@
 #include <strsafe.h>
 #include "Logger.h"
 #include "Memory.h"
-//jh_utility::FileLogger* jh_utility::FileLogger::m_pInstance = nullptr;
-//std::once_flag jh_utility::FileLogger::m_onceFlag{};
 
-
-// 종료 시 메모리 릭이 나지만, 로그는 마지막까지 찍어야 하기에 놔둔다.
-//jh_utility::FileLogger& jh_utility::FileLogger::GetInstance()
-//{
-//	static FileLogger instance;
-//	//std::call_once(m_onceFlag, []() {m_pInstance = new FileLogger(); 		});
-//
-//	return instance;
-//}
 
 jh_utility::FileLogger::FileLogger() : m_ullLogCounter(0), m_wszCommonFilePath{}, m_bIsRunning{ 1 }, m_bCasOpen{ true }
 {
@@ -169,12 +158,6 @@ jh_utility::FileLogger::~FileLogger()
 
 		g_memSystem->Free(logInfo);
 	}
-
-	//if (nullptr != m_pInstance)
-	//{
-	//	delete m_pInstance;
-	//	m_pInstance = nullptr;
-	//}
 }
 
 void jh_utility::FileLogger::WriteLog(const WCHAR* logType, LogLevel logLevel, const WCHAR* logFormat, ...)
@@ -211,78 +194,8 @@ void jh_utility::FileLogger::WriteLog(const WCHAR* logType, LogLevel logLevel, c
 
 	m_logQ.Push(logInfo);
 	SetEvent(m_hLogEvent);
-	//wprintf(L"[WRITE LOG] \nFileName : [%s]\nLogInfo : %s\nLog : %s\n", filePathBuffer, logHeaderBuffer, logBodyBuffer);
 
 }
-
-//void jh_utility::FileLogger::WriteLogHex(const WCHAR* logType, LogLevel logLevel, const WCHAR* logWstr, BYTE* byteBuffer, int byteBufferLen)
-//{
-//	if (m_eLogLevel > logLevel)
-//		return;
-//
-//	FILE* file;
-//
-//	alignas(64) WCHAR filePathBuffer[DEFAULT_FILE_PATH_SIZE]{};
-//	alignas(64) WCHAR logInfoBuffer[DEFAULT_LOG_INFO_SIZE]{};
-//
-//	const DWORD logBufferSize = DEFAULT_LOG_SIZE * 4;
-//
-//	// [BYTE ] 값도 버퍼에 넣어야하기 때문에 버퍼를 크게 잡는다.
-//	alignas(64) WCHAR logBuffer[logBufferSize]{};
-//
-//	const size_t maxFilePathBufferSize = sizeof(filePathBuffer) / sizeof(filePathBuffer[0]);
-//	const size_t maxLogInfoBuffeSize = sizeof(logInfoBuffer) / sizeof(logInfoBuffer[0]);
-//
-//	static_assert(maxFilePathBufferSize >= sizeof(m_wszCommonFilePath) / sizeof(m_wszCommonFilePath[0]));
-//
-//	SetLogInfo(filePathBuffer, maxFilePathBufferSize, logType, logLevel, logInfoBuffer, maxLogInfoBuffeSize);
-//
-//	{
-//		HRESULT hResult = StringCchPrintf(logBuffer, logBufferSize, logWstr);
-//
-//		if (FAILED(hResult))
-//		{
-//			StringCchPrintf(logBuffer, logBufferSize, L" [ WriteLogHex - LogFormat Size > DEFAULT_LOG_SIZE ]\n");
-//		}
-//	}
-//
-//	for (int i = 0; i < byteBufferLen; i++)
-//	{
-//		// stringCchCat처럼 이어붙이기
-//		size_t offset = wcslen(logBuffer);
-//
-//		HRESULT hResult = StringCchPrintf(&logBuffer[offset], logBufferSize - offset, L" %02x", byteBuffer[i]);
-//	
-//		if (FAILED(hResult))
-//		{
-//			StringCchPrintf(logBuffer, logBufferSize, L" [ WriteLogHex - LogFormat Size > DEFAULT_LOG_SIZE ]\n");
-//			break;
-//		}
-//	}
-//
-//	{
-//		// 로그를 적을 때마다 open / close
-//		// 성공이든 실패든 로그는 저장되어야한다.
-//		SRWLockGuard lockGuard(&m_logQLock);
-//
-//		errno_t fileErrorCode = _wfopen_s(&file, fileNameBuffer, L"a+, ccs=UNICODE");
-//
-//		if (0 != fileErrorCode || nullptr == file)
-//		{
-//			DWORD get = GetLastError();
-//			wprintf(L"file open is failed!!\n");
-//			return;
-//		}
-//		fwprintf_s(file, L"%s ", logInfoBuffer);
-//		fwprintf_s(file, L"%s\n", logBuffer);
-//
-//		fclose(file);
-//	}
-//
-//	wprintf(L"[WRITE LOG HEX] FileName : [%s], LogInfo : %s , Log : %s\n", fileNameBuffer, logInfoBuffer, logBuffer);
-//
-//}
-
 
 void jh_utility::FileLogger::SetLogInfo(WCHAR* filePath, size_t filePathBufferSize, const WCHAR* logType, LogLevel logLevel, WCHAR* logInfoBuffer, size_t maxLogInfoBufferSize)
 {
@@ -318,8 +231,6 @@ void jh_utility::FileLogger::SetLogInfo(WCHAR* filePath, size_t filePathBufferSi
 
 	switch (logLevel)
 	{
-	case LogLevel::LEVEL_DETAIL:
-		wcscpy_s(levelWstr, L"DETAIL"); break;
 	case LogLevel::LEVEL_DEBUG:
 		wcscpy_s(levelWstr, L"DEBUG"); break;
 	case LogLevel::LEVEL_INFO:

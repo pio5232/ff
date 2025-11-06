@@ -31,10 +31,10 @@ jh_content::EchoServer::EchoServer() : IocpServer(ECHO_SERVER_SAVE_FILE_NAME)
 	parser.CloseFile();
 
 	if (true == succeeded)
-		_LOG(L"ParseInfo", LOG_LEVEL_INFO, L"Parsing EchoServer is Completed [FileName : %s]", ECHO_SERVER_CONFIG_FILE);
+		_LOG(L"ParseInfo", LOG_LEVEL_INFO, L"[EchoServer] Parsing EchoServer complete. File: [%s]", ECHO_SERVER_CONFIG_FILE);
 	else
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"Parsing EchoServer is Failed...");
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[EchoServer] Parsing EchoServer failed.");
 		jh_utility::CrashDump::Crash();
 	}
 
@@ -42,7 +42,7 @@ jh_content::EchoServer::EchoServer() : IocpServer(ECHO_SERVER_SAVE_FILE_NAME)
 	
 	if (false == InitSessionArray(maxSessionCnt))
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[EchoServer()] - maxSession 초기화 실패");
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[EchoServer] InitSessionArray failed.");
 		jh_utility::CrashDump::Crash();
 	}
 

@@ -2,20 +2,8 @@
 #include "Utils.h"
 #include <random>
 #include <math.h>
-//namespace jh_utility
-//{
-//	//template<typename T, typename... Args>
-//	//ManagerPool<T, Args...>::~ManagerPool()
-//	//{
-//	//	for (T* elementPtr : _elementArr)
-//	//	{
-//	//		delete elementPtr;
-//	//	}
-//	//	_elementArr.clear();
-//	//}
-//}
 
-//void ExecuteProcess(const std::wstring& path, WCHAR* currentDirectory)//, const std::wstring& args)
+
 void ExecuteProcess(const WCHAR* path, const WCHAR* currentDirectory)//, const std::wstring& args)
 {
 	STARTUPINFO si;
@@ -25,8 +13,6 @@ void ExecuteProcess(const WCHAR* path, const WCHAR* currentDirectory)//, const s
 	si.cb = sizeof(si);
 	ZeroMemory(&pi, sizeof(pi));
 
-	//std::wstring commandLine = path;// +L" " + args;
-	//bool ret = CreateProcess(nullptr, &commandLine[0], nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE, NULL, currentDirectory, &si, &pi);
 	bool ret = CreateProcess(path, nullptr, nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE, NULL, currentDirectory, &si, &pi);
 
 	if (!ret)

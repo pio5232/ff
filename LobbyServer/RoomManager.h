@@ -15,25 +15,11 @@ namespace jh_content
 
 		~RoomManager();
 
-		void Init();
-		//ErrorCode SendToUserRoomInfo(LobbySessionPtr lobbySessionPtr);
-
-		// CreateRoom -> User가 접속해있을 때 만든다.
 		RoomPtr CreateRoom(UserPtr userPtr, WCHAR* roomName);
 		void DestroyRoom(USHORT roomNum);
 
 
-		RoomPtr GetRoom(USHORT roomNum)
-		{
-			auto iter = m_roomMap.find(roomNum);
-			if (iter == m_roomMap.end())
-			{
-				_LOG(ROOM_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"Request Room %hu is not exist", roomNum);
-				return nullptr;
-			}
-
-			return iter->second;
-		}
+		RoomPtr GetRoom(USHORT roomNum);
 
 		std::vector<jh_content::RoomInfo> GetRoomInfos();;
 
@@ -41,7 +27,6 @@ namespace jh_content
 		USHORT m_usMaxRoomCnt;
 		USHORT m_usMaxRoomUserCnt; // room당 최대 user 수
 
-		// room을 만들어놓고 vector로 쓰자 그냥.??
 		std::unordered_map<USHORT, RoomPtr> m_roomMap; // [roomNum, roomPtr]
 	};
 }

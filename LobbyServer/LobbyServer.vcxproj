@@ -175,7 +175,6 @@ xcopy "$(SolutionDir)LobbyServer.cfg" "$(OutDir).." /Y /I /D</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="IContentClient.cpp" />
     <ClCompile Include="LobbyDefine.cpp" />
     <ClCompile Include="LobbyLanSystem.cpp" />
     <ClCompile Include="LobbySystem.cpp" />
@@ -195,7 +194,6 @@ xcopy "$(SolutionDir)LobbyServer.cfg" "$(OutDir).." /Y /I /D</Command>
     <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IContentClient.h" />
     <ClInclude Include="LobbyLanSystem.h" />
     <ClInclude Include="LobbySystem.h" />
     <ClInclude Include="Room.h" />

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <Windows.h>
+#include <algorithm>
 #include "GameWorld.h"
 #include "UserManager.h"
 #include "Entity.h"
@@ -7,12 +8,11 @@
 #include "SectorManager.h"
 #include "PacketBuilder.h"
 #include "GamePlayer.h"
-#include <algorithm>
-#include "Memory.h"
 #include "UserManager.h"
 #include "User.h"
 #include "SectorManager.h"
 #include "Memory.h"
+
 jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc) : m_bIsUpdateRunning(false), m_fDeltaSum(0), m_pUserManager(userManager), m_sendPacketFunc(sendPacketFunc)
 {
 	// entity ID를 통해서 Send를 가능하게 하는 작업을 전달한다.
@@ -99,11 +99,7 @@ void jh_content::GameWorld::Update(float deltaTime)
 
 				CheckVictoryZoneEntry(gamePlayer);
 			}
-
-			//if(entity->GetType() == Entity::EntityType::GamePlayer)
-			//	printf("entity Pos : [%0.3f %0.3f %0.3f]\n", entity->GetPosition().x, entity->GetPosition().y, entity->GetPosition().z);
 		}
-		//printf("\n\n");
 
 		m_fDeltaSum -= fixedDeltaTime;
 	}
@@ -132,7 +128,6 @@ void jh_content::GameWorld::ProcessTimerActions()
 		{
 			const TimerAction& action = m_timerActionQueue.top();
 
-			//printf("[ now : %llu ___ top TimerAction execution Tick : %llu \n",now, action.executeTick);
 			if (now < action.executeTick)
 				break;
 
@@ -152,7 +147,6 @@ void jh_content::GameWorld::ProcessTimerActions()
 
 void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 {
-	//AIPlayerPtr aiPlayer = //std::make_shared<jh_content::AIPlayer>(worldPtr);
 	AIPlayerPtr aiPlayer = MakeShared<AIPlayer>(g_memSystem, worldPtr);
 
 	AddEntity(aiPlayer);
@@ -162,8 +156,9 @@ void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 GamePlayerPtr jh_content::GameWorld::CreateGamePlayer(UserPtr userPtr)
 {
 	GamePlayerPtr gamePlayerPtr = MakeShared<jh_content::GamePlayer>(g_memSystem, userPtr, this);
+	
+	_LOG(L"GameWorld", LOG_LEVEL_INFO, L"[CreateGamePlayer] EntityID: [%llu], UserId : [%llu]", gamePlayerPtr->GetEntityId(), userPtr->GetUserId());
 
-	printf("CreatePlayer - GameSession User ID = [ %llu ]\n ", gamePlayerPtr->GetEntityId());
 	return gamePlayerPtr;
 }
 
@@ -203,7 +198,8 @@ void jh_content::GameWorld::RemoveEntity(ULONGLONG entityId)
 
 	if (entityDiciter == m_aliveEntityDic.end())
 	{
-		printf("Remove Entity - Invalid EntityID\n");
+		_LOG(L"GameWorld", LOG_LEVEL_WARNING, L"[RemoveEntity] Entity not found. EntityId : [%llu]", entityId);
+
 		return;
 	}
 
@@ -236,9 +232,6 @@ void jh_content::GameWorld::RemoveEntity(ULONGLONG entityId)
 	{
 		std::swap(m_aliveEntityArr[idx], m_aliveEntityArr[lastIdx]);
 
-		// m_aliveEntityToVectorIdxDic[ origin lastIdx entity ] = lastIdx;
-		//							↓
-		// m_aliveEntityToVectorIdxDic[ orign lastIdx entity ] = idx
 		m_aliveEntityToVectorIdxDic[m_aliveEntityArr[idx]] = idx;
 	}
 	// 3. m_aliveEntityArr.erase 
@@ -269,7 +262,6 @@ void jh_content::GameWorld::Init(USHORT total, USHORT gamePlayerCount)
 	PacketPtr sendBuffer = jh_content::PacketBuilder::BuildGameInitDonePacket();
 
 	m_pUserManager->Broadcast(sendBuffer);
-	//jh_content::UserManager::GetInstance().SendToAllPlayer(sendBuffer);
 }
 
 void jh_content::GameWorld::SetDSCount(USHORT predMaxCnt)
@@ -291,7 +283,6 @@ void jh_content::GameWorld::SendPacketAroundSectorNSpectators(int sectorX, int s
 	m_pSectorManager->SendPacketAroundSector(sectorX, sectorZ, packet);
 
 	SendToSpectatorEntities(packet);
-
 }
 
 void jh_content::GameWorld::CleanUpSpectatorEntities()
@@ -378,8 +369,7 @@ void jh_content::GameWorld::CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr)
 
 	if (nullptr == userPtr)
 	{
-		_LOG(L"GameWorld", LOG_LEVEL_SYSTEM, L"[CheckVictoryZoneEntry] - entityID : [%llu]에 해당하는 유저가 존재하지 않습니다", gamePlayerPtr->GetEntityId());
-
+		_LOG(L"GameWorld", LOG_LEVEL_WARNING, L"[CheckVictoryZoneEntry] User not found. EntityId : [%llu]", gamePlayerPtr->GetEntityId());
 		return;
 	}
 
@@ -389,7 +379,7 @@ void jh_content::GameWorld::CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr)
 		false == wasInVictoryZone && isInVictoryZone)
 	{
 		// OnEnter
-		printf("[Victory Zone Entry... User %llu]\n", userId);
+		_LOG(L"GameWorld", LOG_LEVEL_INFO, L"[CheckVictoryZoneEntry] Enter Victory Zone. UserId : [%llu]", userId);
 
 		m_ullExpectedWinnerId = userId;
 		m_ullExpectedWinTime = jh_utility::GetTimeStamp() + victoryZoneCheckDuration;
@@ -398,7 +388,6 @@ void jh_content::GameWorld::CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr)
 		PacketPtr sendBuffer = jh_content::PacketBuilder::BuildUpdateWinnerNotifyPacket(m_ullExpectedWinnerId, m_ullExpectedWinTime);
 
 		m_pUserManager->Broadcast(sendBuffer);
-		//UserManager::GetInstance().SendToAllPlayer(sendBuffer);
 	}
 
 	if (wasInVictoryZone != isInVictoryZone)
@@ -412,16 +401,15 @@ void jh_content::GameWorld::CheckWinner()
 
 	if (now >= m_ullExpectedWinTime)
 	{
-		printf("우승!! 게임 종료 [user id : %llu]!!\n", m_ullExpectedWinnerId);
+		_LOG(L"GameWorld", LOG_LEVEL_INFO, L"[CheckWinner] UserId : [%llu]", m_ullExpectedWinnerId);
 
 		// 게임 종료 패킷 전송
 		PacketPtr sendBuffer = jh_content::PacketBuilder::BuildGameEndNotifyPacket();
 
 		m_pUserManager->Broadcast(sendBuffer);
-		//UserManager::GetInstance().SendToAllPlayer(sendBuffer);
 
 		Stop();
-		//m_bIsGameRunning = false;
+
 		return;
 	}
 
@@ -435,26 +423,23 @@ void jh_content::GameWorld::CheckWinner()
 
 void jh_content::GameWorld::InvalidateWinner(ULONGLONG userId)
 {
-	printf("InvalidateWinner Enter .. UserId : %llu, _expectedWinner ID : %llu", userId, m_ullExpectedWinnerId);
 	// 무효
 	if (userId == m_ullExpectedWinnerId)
 	{
 		m_ullExpectedWinnerId = 0;
 		m_ullExpectedWinTime = ULLONG_MAX;
 
-		printf("[ Invalidate Winner : %llu\n", userId);
+		_LOG(L"GameWorld", LOG_LEVEL_INFO, L"[InvalidateWinner]");
 
 		// invalidate winner packet 전송
 		PacketPtr sendBuffer = jh_content::PacketBuilder::BuildInvalidateWinnerNotifyPacket(m_ullExpectedWinnerId);
 
 		m_pUserManager->Broadcast(sendBuffer);
-		//UserManager::GetInstance().SendToAllPlayer(sendBuffer);
 	}
 }
 
 void jh_content::GameWorld::ProcessAttack(GamePlayerPtr attacker)
 {
-	printf("\t\t\tProcessAttackPacket!!!!\n");
 
 	// 1. 공격 상태로 전환 후 모든 녀석들에게 패킷 전송
 	attacker->SetAttackState();
@@ -465,10 +450,8 @@ void jh_content::GameWorld::ProcessAttack(GamePlayerPtr attacker)
 	// 2. 데미지 판정. 공격당할 녀석을 얻어온다.
 	EntityPtr victimTarget = m_pSectorManager->GetMinEntityInRange(attacker, attacker->GetAttackRange());
 	if (victimTarget == nullptr)
-	{
-		printf("-------------------------- VicTimTarget is Null -------------------\n");
-		return;
-	}
+			return;
+	
 	// 3. 체크.
 	victimTarget->TakeDamage(attacker->GetAttackDamage());
 
@@ -479,7 +462,6 @@ void jh_content::GameWorld::ProcessAttack(GamePlayerPtr attacker)
 
 		// 죽으면 Update하는 Entity 자료구조에서 제외
 		// 죽은 PlayerEntity를 관리하는 자료구조로 옮긴다.
-
 		TimerAction timerAction;
 
 		// 3초뒤 관전자로 전환

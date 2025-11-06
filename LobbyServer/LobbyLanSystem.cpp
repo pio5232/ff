@@ -71,9 +71,9 @@ void jh_content::LobbyLanSystem::Stop()
 
 		if (ret != WAIT_OBJECT_0)
 		{
-			DWORD getLastError = GetLastError();
+			DWORD gle = GetLastError();
 
-			_LOG(LOBBY_LAN_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[LobbyLanSystem - Stop] 로직 스레드 종료 오류 GetLastError : [%u]", getLastError);
+			_LOG(LOBBY_LAN_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Stop] Logic thread wait failed. GetLastError: [%u]", gle);
 
 			jh_utility::CrashDump::Crash();
 		}
@@ -97,8 +97,8 @@ void jh_content::LobbyLanSystem::Init()
 	m_hJobEvent = CreateEvent(nullptr, false, false, nullptr);
 	if (nullptr == m_hJobEvent)
 	{
-		DWORD lastError = GetLastError();
-		_LOG(LOBBY_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[LobbyLanSystem] - JobEvent 핸들이 존재하지 않습니다. 에러 코드 : [%u]", lastError);
+		DWORD gle = GetLastError();
+		_LOG(LOBBY_LAN_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Init] JobEvent handle is nullptr. Error: [%u]", gle);
 
 		jh_utility::CrashDump::Crash();
 	}
@@ -108,7 +108,7 @@ void jh_content::LobbyLanSystem::Init()
 
 	if (nullptr == m_hLogicThread)
 	{
-		_LOG(LOBBY_LAN_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[LobbyLanSystem] - 로직 핸들이 존재하지 않습니다.");
+		_LOG(LOBBY_LAN_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Init] Logic thread handle is nullptr.");
 		jh_utility::CrashDump::Crash();
 	}
 }

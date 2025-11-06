@@ -31,10 +31,10 @@ jh_content::LobbyDummyClient::LobbyDummyClient() : IocpClient(L"LobbyDummy")
 	parser.CloseFile();
 
 	if (true == succeeded)
-		_LOG(L"ParseInfo", LOG_LEVEL_INFO, L"[LobbyDummyClient()] - 파일 파싱 성공 : %s", LOBBY_DUMMY_FILE_NAME);
+		_LOG(L"ParseInfo", LOG_LEVEL_INFO, L"[LobbyDummyClient] Parse success : [%s]", LOBBY_DUMMY_FILE_NAME);
 	else
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyDummyClient()] - 파일 파싱 실패 : %s", LOBBY_DUMMY_FILE_NAME);
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyDummyClient] Parse failed : [%s]", LOBBY_DUMMY_FILE_NAME);
 		jh_utility::CrashDump::Crash();
 	}
 
@@ -42,7 +42,7 @@ jh_content::LobbyDummyClient::LobbyDummyClient() : IocpClient(L"LobbyDummy")
 
 	if (false == InitSessionArray(maxSessionCnt))
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[GameLanClient()] - maxSession 초기화 실패");
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[LobbyDummyClient] InitSessionArray failed.");
 		jh_utility::CrashDump::Crash();
 	}
 
@@ -107,8 +107,6 @@ void jh_content::LobbyDummyClient::Monitor()
 	wprintf(L" [Content] Enter Failed.. DiffRoom_Count : [%d]\n", etcData.m_llDiffRoomNameErrorCount);
 	wprintf(L" [Content] Enter Failed.. FullRoom_Count : [%d]\n", etcData.m_llFullRoomErrorCount);
 	wprintf(L" [Content] Enter Failed.. AlreadyRunning_Count : [%d]\n", etcData.m_llAlreadyRunningRoomErrorCount);
-
-
 
 	wprintf(L"[RTT] : [%llu]ms \n",m_pDummySystem->GetRTT());
 }

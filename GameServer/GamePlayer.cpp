@@ -24,15 +24,10 @@ void jh_content::GamePlayer::Update(float delta)
 
 	Player::Update(delta);
 
-	//printf("Player Position : [%0.3f, %0.3f, %0.3f]\n", m_transformComponent.GetPosConst().m_iX, m_transformComponent.GetPosConst().y, m_transformComponent.GetPosConst().m_iZ);
-
-	//printf("Rotation Y : %0.3f     DirNormalized : [%0.3f, %0.3f, %0.3f]\n", m_transformComponent.GetRotConst().y, m_transformComponent.GetNormalizedDir().m_iX, m_transformComponent.GetNormalizedDir().y, m_transformComponent.GetNormalizedDir().m_iZ);
-
 }
 
 void jh_content::GamePlayer::MoveStart(const Vector3& clientMoveStartPos, float clientMoveStartRotY)
 {
-	//printf("Process Move Start [%0.3f, %0.3f, %0.3f] RotY : %f\n", clientPacket.pos.m_iX, clientPacket.pos.y, clientPacket.pos.m_iZ, clientPacket.rotY);
 	CheckSync(clientMoveStartPos);
 
 	m_transformComponent.SetDirection(clientMoveStartRotY);
@@ -44,9 +39,6 @@ void jh_content::GamePlayer::MoveStart(const Vector3& clientMoveStartPos, float 
 
 void jh_content::GamePlayer::MoveStop(const Vector3& clientMoveStopPos, float clientMoveStopRotY)
 {
-	//printf("Process Move Stop [%0.3f, %0.3f, %0.3f] RotY : %f\n", clientPacket.pos.m_iX, clientPacket.pos.y, clientPacket.pos.m_iZ,clientPacket.rotY);
-	//printf("Process Move Stop [%0.3f, %0.3f, %0.3f], Rot : %0.3f\n", clientPacket.pos.m_iX, clientPacket.pos.y, clientPacket.pos.m_iZ,clientPacket.rotY);
-
 	CheckSync(clientMoveStopPos);
 
 	m_transformComponent.SetDirection(clientMoveStopRotY);
@@ -67,24 +59,14 @@ void jh_content::GamePlayer::CheckSync(const Vector3& clientPos)
 {
 	const Vector3& serverPos = m_transformComponent.GetPosConst();
 
-	//if (abs(serverPos.m_iX - clientPos.m_iX) < defaultErrorRange && abs(serverPos.m_iZ - clientPos.m_iZ) < defaultErrorRange)
-	//if (Vector3::Distance(serverPos, clientPos) < defaultErrorRange)
-		
 	// 오차 범위가 작으면 무시한다. Move상태에서는 일정 주기마다 Update를 전송하고 있다.
 	if ((serverPos - clientPos).sqrMagnitude() < (defaultErrorRange * defaultErrorRange))
 		return;
 
 	SendPositionUpdate();
 
-
 	ULONGLONG entityId = GetEntityId();
-	//const Vector3& syncRot = m_transformComponent.GetRotConst();
+	
+	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_DEBUG, L"[CheckSync] EntityId: [%llu], ClientPos: [%0.3f, %0.3f, %0.3f], ServerPos: [%0.3f, %0.3f, %0.3f]", entityId, clientPos.x, clientPos.y, clientPos.z, serverPos.x, serverPos.y, serverPos.z);
 
-	//PacketPtr characterSyncPacket = jh_content::PacketBuilder::BuildCharacterSyncPacket(entityId, serverPos, syncRot);
-
-	//m_pWorldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), characterSyncPacket);
-
-	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[CheckSync] - ID : [%llu] ,PlayerPos : [%0.3f, %0.3f, %0.3f], Position [%0.3f, %0.3f, %0.3f]", entityId, clientPos.x, clientPos.y, clientPos.z, serverPos.x, serverPos.y, serverPos.z);
-
-	//printf("Sync!! ID - %llu ,PlayerPos [%0.3f, %0.3f, %0.3f], Position [%0.3f, %0.3f, %0.3f]\n", GetEntityId(), clientPos.x, clientPos.y, clientPos.z, serverPos.x, serverPos.y, serverPos.z);
 }

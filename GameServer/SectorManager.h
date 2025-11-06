@@ -27,7 +27,6 @@ namespace jh_content
 		void SendPacketAroundSector(const Sector& sector, PacketPtr& packet);
 		void SendPacketAroundSector(int sectorX, int sectorZ, PacketPtr& packet);
 
-		void PrintSectorInfo() const;
 		EntityPtr GetMinEntityInRange(EntityPtr targetEntity, float range);
 
 		void Clear();

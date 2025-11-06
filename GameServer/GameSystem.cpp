@@ -22,7 +22,7 @@ void jh_content::GameSystem::Init()
 
 	if (nullptr == m_hLogicThread)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GameSystem Init] - m_hLogicThread 생성 실패");
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Init] Logic thread creation failed.");
 		jh_utility::CrashDump::Crash();
 	}
 }
@@ -37,9 +37,9 @@ void jh_content::GameSystem::Stop()
 
 		if (ret != WAIT_OBJECT_0)
 		{
-			DWORD getLastError = GetLastError();
+			DWORD gle = GetLastError();
 
-			_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GameSystem - Stop] 로직 스레드 종료 오류 GetLastError : [%u]", getLastError);
+			_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Stop] Logic thread wait failed. GetLastError : [%u]", gle);
 
 			jh_utility::CrashDump::Crash();
 		}
@@ -198,7 +198,7 @@ void jh_content::GameSystem::ProcessSessionConnectionEvent()
 
 			if (nullptr == userPtr)
 			{
-				_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[ProcessSessionConnectionEvent] 유저가 존재하지 않습니다. SessionId: [%llu]", sessionId);
+				_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[ProcessSessionConnectionEvent] User not found on disconnect. SessionId: [0x%016llx]", sessionId);
 				break;
 			}
 			ULONGLONG userId = userPtr->GetUserId();
@@ -254,16 +254,12 @@ void jh_content::GameSystem::ProcessLanRequest()
 
 void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
-	//jh_network::EnterGameRequestPacket packet;
-	ULONGLONG userId;
+	ULONGLONG receivedUserId;
 	ULONGLONG token;
-	*packet >> userId >> token;
-
-	printf("Enter Game Packet Recv.. %llu, userId : %llu\n", sessionId, userId);
+	*packet >> receivedUserId >> token;
 
 	if (m_gameInfo.m_ullEnterToken != token)
 	{
-		printf("WRONG TOKEN!!\n");
 		PacketPtr errPkt = jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode::CONNECTED_FAILED_WRONG_TOKEN);
 
 		m_pOwner->SendPacket(sessionId, errPkt);
@@ -271,12 +267,11 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 		return;
 	}
 
-	// TODO : 0916 컨텐츠에서 접속의 관리를 하는 클래스가 sessionid, userid, player를 관리해야하는 방법에 대해서 생각
-	UserPtr newUser = m_pUserManager->CreateUser(sessionId, userId);
+	UserPtr newUser = m_pUserManager->CreateUser(sessionId, receivedUserId);
 	
 	if (nullptr == newUser)
 	{
-		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[HandleEnterGameRequestPacket] - 세션 또는 유저의 중복으로 인해 유저가 생성되지 않았습니다.", userId);
+		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[HandleEnterGameRequestPacket] User creation failed Received UserId : [%llu]", receivedUserId);
 		return;
 	}
 	PacketPtr enterGameResponsePkt = jh_content::PacketBuilder::BuildEnterGameResponsePacket();
@@ -313,20 +308,19 @@ void jh_content::GameSystem::HandleLoadCompletedPacket(ULONGLONG sessionId, Pack
 
 	if (nullptr == userPtr)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleLoadCompletedPacket] - 유저가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleLoadCompletedPacket] User not found. SessionId : [0x%016llx]", sessionId);
 		return;
 	}
 
+	_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleLoadCompletedPacket] User Load Completed, SessionId : [0x%016llx], UserId : [%llu]", sessionId,userPtr->GetUserId());
+
 	if (m_gameInfo.m_usRequiredUserCnt == ++m_dwLoadCompletedCnt)
 	{
-		printf("HandleLoadCompletedPacket : [requiredUserCnt : %hu ]\n", m_gameInfo.m_usMaxUserCnt);
-
 		PacketPtr gameStartNotifyPkt = jh_content::PacketBuilder::BuildGameStartNotifyPacket();
 
 		m_pUserManager->Broadcast(gameStartNotifyPkt);
 
 		m_pGameWorld->StartGame();
-
 	}
 
 	return;
@@ -334,7 +328,6 @@ void jh_content::GameSystem::HandleLoadCompletedPacket(ULONGLONG sessionId, Pack
 
 void jh_content::GameSystem::HandleMoveStartRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
-	//jh_network::MoveStartRequestPacket clientRequestPkt;
 	Vector3 clientMoveStartPos;
 	float clientMoveStartRotY;
 
@@ -344,7 +337,7 @@ void jh_content::GameSystem::HandleMoveStartRequestPacket(ULONGLONG sessionId, P
 
 	if (nullptr == userPtr)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleMoveStartRequestPacket] - 유저가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleMoveStartRequestPacket] User not found. SessionId : [0x%016llx]", sessionId);
 
 		return;
 	}
@@ -353,7 +346,7 @@ void jh_content::GameSystem::HandleMoveStartRequestPacket(ULONGLONG sessionId, P
 
 	if (nullptr == gamePlayer)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleMoveStartRequestPacket] - 플레이어가 존재하지 않습니다. SessionId : [%llu] UserID : [%llu]", sessionId, userPtr->GetUserId());
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleMoveStartRequestPacket] Player not found. SessionId : [0x%016llx], UserId : [%llu]", sessionId, userPtr->GetUserId());
 
 		return;
 	}
@@ -367,7 +360,6 @@ void jh_content::GameSystem::HandleMoveStartRequestPacket(ULONGLONG sessionId, P
 }
 void jh_content::GameSystem::HandleMoveStopRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
 {
-	//jh_network::MoveStopRequestPacket packet;
 	Vector3 clientMoveStopPos;
 	float clientMoveStopRotY;
 
@@ -377,7 +369,7 @@ void jh_content::GameSystem::HandleMoveStopRequestPacket(ULONGLONG sessionId, Pa
 
 	if (nullptr == userPtr)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleMoveStopRequestPacket] - 유저가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleMoveStopRequestPacket] User not found. SessionId : [0x%016llx]", sessionId);
 
 		return;
 	}
@@ -386,7 +378,7 @@ void jh_content::GameSystem::HandleMoveStopRequestPacket(ULONGLONG sessionId, Pa
 
 	if (nullptr == gamePlayer)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleMoveStopRequestPacket] - 플레이어가 존재하지 않습니다. SessionId : [%llu] UserID : [%llu]", sessionId, userPtr->GetUserId());
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleMoveStopRequestPacket] Player not found. SessionId : [%0x016llx], UserID : [%llu]", sessionId, userPtr->GetUserId());
 
 		return;
 	}
@@ -416,7 +408,7 @@ void jh_content::GameSystem::HandleChatRequestPacket(ULONGLONG sessionId, Packet
 
 	if (nullptr == userPtr)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatRequestPacket] - 유저가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleChatRequestPacket] User not found. SessionId : [0x%016llx]", sessionId);
 	}
 	else
 	{
@@ -431,14 +423,12 @@ void jh_content::GameSystem::HandleChatRequestPacket(ULONGLONG sessionId, Packet
 	return;
 }
 void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
-{
-	//jh_network::AttackRequestPacket packet;
-	
+{	
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
 
 	if (nullptr == userPtr)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleAttackRequestPacket] - 유저가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleAttackRequestPacket] User not found. SessionId : [0x%016llx]", sessionId);
 
 		return;
 	}
@@ -447,7 +437,7 @@ void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, Pack
 
 	if (nullptr == gamePlayer)
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleAttackRequestPacket] - 플레이어가 존재하지 않습니다. SessionId : [%llu] UserID : [%llu]", sessionId, userPtr->GetUserId());
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleAttackRequestPacket] Player not found. SessionId : [0x%016llx], UserID : [%llu]", sessionId, userPtr->GetUserId());
 
 		return;
 	}
@@ -462,10 +452,8 @@ void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, Pack
 
 
 // 처음 시작할 때 Lan 연결 후 게임과 관련된 정보를 요청하는 패킷에 대한 답장이 왔을 때 답장을 처리하는 함수. Lan 에서 넘겨준다.
-
 void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketPtr& packets, jh_network::IocpClient* lanClient)
 {
-	//jh_network::GameServerSettingResponsePacket responsePacket;
 
 	USHORT roomNum;
 	USHORT requiredUsers;
@@ -484,59 +472,19 @@ void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lan
 
 	if (false == m_pOwner->InitSessionArray(maxUsers))
 	{
-		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleGameServerSettingResponsePacket] - maxSession 초기화 실패");
+		_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleGameServerSettingResponsePacket] InitSessionArray failed.");
 		jh_utility::CrashDump::Crash();
 	}
 
-	// TODO : 서버가 0.0.0.0으로 설정되었을 때 ip,port값을 제대로 얻어올 수 있도록 세팅 필요.
 	const std::wstring ip = m_pOwner->GetIp();
 	USHORT port = m_pOwner->GetPort();
 
 	PacketPtr gameServerLanInfoPkt = jh_content::PacketBuilder::BuildGameServerLanInfoPacket(ip.c_str(), port, roomNum, m_gameInfo.m_ullEnterToken);
 
 	lanClient->SendPacket(lanSessionId, gameServerLanInfoPkt);
-	
-	printf("ClientJoined Success\n");
+
+	_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[HandleGameServerSettingResponsePacket] Client Joined.");
+
 
 	return;
 }
-
-
-//GamePlayerPtr jh_content::GameServer::CreateUser(GameSessionPtr gameSessionPtr)
-//{
-//	GamePlayerPtr playerPtr = jh_content::UserManager::GetInstance().CreateUser(gameSessionPtr, _gameWorld.get());
-//
-//	WorldChatPtr worldChatPtr = _gameWorld->GetWorldChat();
-//
-//	GameSessionPtr thisSessionPtr = static_pointer_cast<GameSession>(gameSessionPtr);
-//
-//	worldChatPtr->DoAsync(&jh_content::WorldChat::RegisterMember, thisSessionPtr);
-//
-//	EnqueueAction([this, playerPtr]() {_gameWorld->AddEntity(playerPtr); }, true);
-//
-//	return playerPtr;
-//}
-//
-//ErrorCode jh_content::GameServer::RemoveUser(GamePlayerPtr gamePlayerPtr)
-//{
-//	ULONGLONG userId = gamePlayerPtr->GetUserId();
-//
-//	ErrorCode ret = jh_content::UserManager::GetInstance().RemoveUser(userId);
-//
-//	WorldChatPtr worldChatPtr = _gameWorld->GetWorldChat();
-//
-//	worldChatPtr->DoAsync(&jh_content::WorldChat::RemoveMember, userId);
-//
-//	EnqueueAction([this, gamePlayerPtr]() {
-//
-//		if (false == gamePlayerPtr->IsDead())
-//		{
-//			_gameWorld->RemoveEntity(gamePlayerPtr->GetEntityId());
-//
-//		}
-//		//_gameWorld->InvalidateWinner(gamePlayerPtr->GetUserId());
-//
-//		}, true);
-//
-//	return ret;
-//}

@@ -6,11 +6,9 @@ jh_content::EchoSystem::EchoSystem(jh_network::IocpServer* owner) : m_pOwner(own
 {
 	if (nullptr == m_pOwner)
 	{
-		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"EchoSystem() - Owner (Server) is NULL");
+		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[EchoSystem] m_pOnwer is nullptr.");
 		jh_utility::CrashDump::Crash();
 	}
-
-	//m_pUserManager = std::unique_ptr<jh_content::UserManager>();
 }
 
 jh_content::EchoSystem::~EchoSystem()
@@ -19,8 +17,6 @@ jh_content::EchoSystem::~EchoSystem()
 
 void jh_content::EchoSystem::Init()
 {
-	//m_pUserManager->Init();
-
 	m_packetFuncDic.clear();
 
 	m_packetFuncDic[0] = &EchoSystem::ProcessEchoPacket;
@@ -30,7 +26,7 @@ void jh_content::EchoSystem::Init()
 
 	if (nullptr == m_hLogicThread)
 	{
-		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"Echo System - LogicThreadMain Handle is NULL");
+		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[EchoSystem] LogicThread handle is nullptr.");
 		jh_utility::CrashDump::Crash();
 	}
 
@@ -67,13 +63,13 @@ void jh_content::EchoSystem::Stop()
 
 	if (ret != WAIT_OBJECT_0)
 	{
-		DWORD error = GetLastError();
-		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"Echo System Stop - WaitForSingleObject : %u, GetLastError : %u", ret, error);
+		DWORD gle = GetLastError();
+		_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[Stop] WaitForSingleObject failed. Ret: %u, GetLastError: %u", ret, gle);
 		jh_utility::CrashDump::Crash();
 		return;
 	}
 
-	_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"Echo Thread Shutdown");
+	_LOG(ECHO_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[STOP] EchoThread Shutdown.");
 }
 
 void jh_content::EchoSystem::ProcessNetJob()

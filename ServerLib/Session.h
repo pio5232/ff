@@ -60,16 +60,9 @@ struct SendOverlapped : public CustomOverlapped
 
 	void ClearPendingList()
 	{
-		// 이 For 루프 부분을 RefCount로 사용했을 때 바꿔줘야한다.
-
-		//for (int i = 0; i < m_pendingList.size(); i++)
-		//{
-		//	g_packetPool->Free(m_pendingList[i]);
-		//}
 		 m_pendingList.clear();
 	}
 
-	//std::vector<jh_utility::SerializationBuffer*> m_pendingList;
 	std::vector<PacketPtr> m_pendingList;
 };
 
@@ -99,7 +92,6 @@ namespace jh_network
 
 		void Reset();
 		void Activate(SOCKET sock, const SOCKADDR_IN* sockAddr, ULONGLONG newId);
-		//void Init(SOCKET m_socket, const SOCKADDR_IN* pSockAddr);
 
 	private:
 		LONGLONG GetSessionId() const { return m_ullSessionId & SESSION_ID_MASKING_BIT; }

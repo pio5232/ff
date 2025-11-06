@@ -7,7 +7,7 @@
 #include "Memory.h"
 #include "User.h"
 using namespace jh_network;
-//GamePlayerPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userId)
+
 UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userId)
 {
 	auto sessionIt = m_sessionIdToUserUMap.find(sessionId);
@@ -15,13 +15,13 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userI
 
 	if (sessionIt != m_sessionIdToUserUMap.end())
 	{
-		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[CreateUser] - 중복된 세션입니다. SessionId : [%llu]", sessionId);
+		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[CreateUser] Duplicate session. SessionId : [0x%016llx]", sessionId);
 		return nullptr;
 	}
 
 	if (userIt != m_userIdToUserUMap.end())
 	{
-		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[CreateUser] - 중복된 유저ID입니다. UserId : [%llu]", userId);
+		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[CreateUser] Duplicate user. UserId : [%llu]", userId);
 		return nullptr;
 	}
 
@@ -31,12 +31,7 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userI
 	m_userIdToUserUMap.insert({ userId, userPtr });
 	
 	return userPtr;
-	//GamePlayerPtr gamePlayerPtr = std::make_shared<GamePlayer>(gameSessionPtr, worldPtr);
 
-	//m_userIdToPlayerDic.insert({ gameSessionPtr->GetUserId(), gamePlayerPtr });
-
-	//printf("CreatePlayer - GameSession User ID = [ %llu ]\n ", gameSessionPtr->GetUserId());
-	//return gamePlayerPtr;
 }
 
 
@@ -47,7 +42,7 @@ void jh_content::UserManager::RemoveUser(ULONGLONG sessionId)
 
 	if (nullptr == userPtr)
 	{
-		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[RemoveUser] - 유저가 존재하지 않습니다. SessionId : [%llu]", sessionId);
+		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[RemoveUser] User not found. SessionId: [0x%016llx]", sessionId);
 		return;
 	}
 
@@ -70,26 +65,12 @@ void jh_content::UserManager::Broadcast(PacketPtr& packet)
 	}
 }
 
-//ErrorCode jh_content::UserManager::DeleteAI(ULONGLONG userId)
-//{
-//	SRWLockGuard lockGuard(&_aiLock);
-//
-//	if (_idToAiDic.find(userId) == _idToAiDic.end())
-//		return ErrorCode::NOT_FOUND;
-//
-//	_idToAiDic.erase(userId);
-//
-//	aliveGamePlayerCount.fetch_sub(1);
-//
-//	return ErrorCode::NONE;
-//}
-
 
 void jh_content::UserManager::RegisterEntityIdToUser(ULONGLONG entityId, UserPtr userPtr)
 {
 	if (m_entityIdToUserUMap.end() != m_entityIdToUserUMap.find(entityId))
 	{
-		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[RegistPlayer] - 중복된 플레이어 등록입니다. EntityId : [%llu]", entityId);
+		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[RegisterEntityIdToUser] Duplicated entity registration. EntityId : [%llu]", entityId);
 
 		return;
 	}
@@ -110,7 +91,7 @@ UserPtr jh_content::UserManager::GetUserByUserId(ULONGLONG userId)
 	if (iter != m_userIdToUserUMap.end())
 		return iter->second;
 
-	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserByUserId] - 유저 검색 성공. UserId : [%llu]", userId);
+	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserByUserId] User not found. UserId : [%llu]", userId);
 
 	return nullptr;
 }
@@ -122,7 +103,7 @@ UserPtr jh_content::UserManager::GetUserBySessionId(ULONGLONG sessionId)
 	if (iter != m_sessionIdToUserUMap.end())
 		return iter->second;
 
-	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserBySessionId] - 세션 검색 성공. SessionId : [%llu]", sessionId);
+	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserBySessionId] User not found. SessionId : [0x%016llx]", sessionId);
 
 	return nullptr;
 }
@@ -134,8 +115,7 @@ UserPtr jh_content::UserManager::GetUserByEntityId(ULONGLONG entityId)
 	if (iter != m_entityIdToUserUMap.end())
 		return iter->second;
 
-	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserByEntityId] - 개체 검색 성공. EntityId : [%llu]", entityId);
-
+	_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[GetUserByEntityId] User not found. EntityId : [%llu]", entityId);
 	return nullptr;
 }
 
@@ -145,28 +125,3 @@ void jh_content::UserManager::ReserveUMapSize(USHORT requiredUsers, USHORT maxUs
 	m_sessionIdToUserUMap.reserve(requiredUsers);
 	m_userIdToUserUMap.reserve(requiredUsers);
 }
-
-//void jh_content::UserManager::MakeUserCharactersPacket(jh_network::SharedSendBuffer& sendBuffer)
-//{
-//	std::vector<GamePlayerPtr> gamePlayersVec;
-//	{
-//		SRWLockGuard lockGuard(&_playerLock);
-//
-//		for (auto& [userId, gamePlayerPtr] : m_userIdToPlayerDic)
-//		{
-//			gamePlayersVec.push_back(gamePlayerPtr);
-//		}
-//	}
-//
-//	jh_network::MakeOtherCharacterPacket makeOtherPacket;
-//	for (GamePlayerPtr& gamePlayer : gamePlayersVec)
-//	{
-//		makeOtherPacket.entityId = gamePlayer->GetEntityId();
-//		makeOtherPacket.pos = gamePlayer->GetPosition();
-//
-//		*sendBuffer << makeOtherPacket.size << makeOtherPacket.type << makeOtherPacket.entityId << makeOtherPacket.pos;
-//	}
-//
-//	return;
-//}
-

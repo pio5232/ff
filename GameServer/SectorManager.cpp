@@ -33,16 +33,6 @@ bool jh_content::SectorManager::DeleteEntity(EntityPtr entity, PacketPtr& sendBu
 
 	SendPacketAroundSector(sector, sendBuffer);
 
-	/*if (false == IsValidSector(sectorX, sectorZ) || m_sectorSet[sectorZ][sectorX].erase(entity) == 0)
-	{
-		printf("DeleteEntity False\n");
-		return false;
-	}
-	if (entity->GetType() == jh_content::Entity::EntityType::GamePlayer)
-		aliveGamePlayerCount[sectorZ][sectorX]--;
-
-	SendPacketAroundSector(sectorX, sectorZ, sendBuffer);*/
-
 	return true;
 }
 
@@ -79,34 +69,6 @@ void jh_content::SectorManager::SendAllEntityInfo()
 		}
 	}
 }
-
-//void jh_content::SectorManager::SendDeletEntityInfo(EntityPtr delEntity)
-//{
-//	Sector delEntitySector = delEntity->GetCurrentSector();
-//
-//	// 현재는 Player밖에 존재하지 않음.
-//
-//	jh_network::SharedSendBuffer sendBuffer = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(delEntity->GetEntityId());
-//	for (int dz = -1; dz <= 1; dz++)
-//	{
-//		for (int dx = -1; dx <= 1; dx++)
-//		{
-//			if (0 == aliveGamePlayerCount[delEntitySector.m_iZ + dz][delEntitySector.m_iX + dx])
-//				continue;
-//
-//			for (const auto& entity : m_sectorSet[delEntitySector.m_iZ + dz][delEntitySector.m_iX + dx])
-//			{
-//				if (entity->GetType() == jh_content::Entity::EntityType::GamePlayer)
-//				{
-//					printf("PlayerPosition : [%0.3f, %0.3f, %0.3f], Sector [%u, %u]\n", entity->GetPosition().m_iX, entity->GetPosition().y, entity->GetPosition().m_iZ, entity->GetCurrentSector().m_iZ, entity->GetCurrentSector().m_iX);
-//					ULONGLONG userId = std::static_pointer_cast<GamePlayer>(entity)->GetUserId();
-//					jh_content::UserManager::GetInstance().SendToPlayer(sendBuffer, userId);
-//				}
-//			}
-//		}
-//	}
-//}
-
 void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 {
 	// 나는 player, ai가 존재하기 때문에 판별 잘 해야한다.
@@ -125,8 +87,6 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 			SendPacket_Sector(removeAroundSector.sectors[i], delOtherCharacterPkt);
 		}
 	}
-
-
 
 	// Player가 아니더라도 작동해야한다.
 	// 3. 추가되어야할 섹터에 나를 생성 패킷을 보낸다. (나를 만들어라!!!)
@@ -168,7 +128,6 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 		}
 	}
 
-
 	// Player일 때만 작동
 	// 4. 추가되어야할 섹터의 정보들을 나에게 쏜다. (내가 만들겠다!!!!)
 	for (int i = 0; i < addAroundSector.sectorCount; i++)
@@ -190,87 +149,14 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 			}
 		}
 	}
-
-
-
-
-
-	//{
-	//	// Player가 아니어도 작동해야함.
-	//	// 1. 삭제되어야할 섹터에 존재하는 플레이어에게 삭제 패킷을 보낸다. (나를 삭제해라!!)
-	//	jh_network::SharedSendBuffer sendBuffer = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entity->GetEntityId());
-	//	for (int i = 0; i < removeAroundSector.sectorCount; i++)
-	//	{
-	//		SendPacket_Sector(removeAroundSector.sectors[i], sendBuffer);
-	//	}
-	//}
-
-	//{
-	//	// Player일 때만 작동.
-	//	// 2. 내가 바라보는.. (Player) 삭제되어야하는 섹터에 존재하는 entity들을 삭제.
-	//	// entity가 플레이어가 아니라면 보낼 필요 없다. (내가 삭제하겠어!!!)
-
-	//	if (isGamePlayer)
-	//	{
-	//		for (int i = 0; i < removeAroundSector.sectorCount; i++)
-	//		{
-	//			for (const auto& removeEntity : m_sectorSet[removeAroundSector.sectors[i].m_iZ][removeAroundSector.sectors[i].m_iX])
-	//			{
-	//				jh_network::SharedSendBuffer sendBuffer = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(removeEntity->GetEntityId());
-
-	//				jh_content::UserManager::GetInstance().SendToPlayer(sendBuffer, userId);
-	//			}
-	//		}
-	//	}
-	//}
-
-	//{
-	//	// Player가 아니더라도 작동해야한다.
-	//	// 3. 추가되어야할 섹터에 나를 생성 패킷을 보낸다. (나를 만들어라!!!)
-	//	jh_network::SharedSendBuffer makeBuffer = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(entity->GetEntityId(), entity->GetPosition());
-	//	jh_network::SharedSendBuffer moveStartBuffer = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(entity->GetEntityId(), entity->GetPosition(), entity->GetRotation().y);
-	//	
-	//	for (int i = 0; i < addAroundSector.sectorCount; i++)
-	//	{
-	//		SendPacket_Sector(addAroundSector.sectors[i], makeBuffer);
-
-	//		// 만약 내가 이동중이면 이동중인 것까지 보내야한다.
-	//		if (entity->IsMoving())
-	//		{
-	//			SendPacket_Sector(addAroundSector.sectors[i], moveStartBuffer);
-	//		}
-	//	}
-	//}
-
-	//{
-	//	// Player일 때만 작동
-	//	// 4. 추가되어야할 섹터의 정보들을 나에게 쏜다. (내가 만들겠다!!!!)
-	//	for (int i = 0; i < addAroundSector.sectorCount; i++)
-	//	{
-	//		for (const auto& addEntity : m_sectorSet[addAroundSector.sectors[i].m_iZ][addAroundSector.sectors[i].m_iX])
-	//		{
-	//			jh_network::SharedSendBuffer makeBuffer = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(addEntity->GetEntityId(), addEntity->GetPosition());
-
-	//			jh_content::UserManager::GetInstance().SendToPlayer(makeBuffer, userId);
-	//			
-	//			if (addEntity->IsMoving())
-	//			{
-	//				jh_network::SharedSendBuffer moveStartBuffer = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(addEntity->GetEntityId(), addEntity->GetPosition(), addEntity->GetRotation().y);
-	//				jh_content::UserManager::GetInstance().SendToPlayer(moveStartBuffer, userId);
-
-	//			}
-	//		}
-	//	}
-	//}
 }
 
 void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPtr& packet)
 {
 	if (false == IsValidSector(sector.m_iX, sector.m_iZ) || 0 == m_usAliveGamePlayerCount[sector.m_iZ][sector.m_iX])
-	{
-		//printf("SendPacket_Sector Return [%d, %d] \n",sector.m_iZ,sector.m_iX);
-		return;
-	}
+			return;
+	
+	// 유효한 섹터이면서 보낼 대상이 존재해야한다.
 
 	for (const auto& entity : m_sectorSet[sector.m_iZ][sector.m_iX])
 	{
@@ -279,10 +165,6 @@ void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPt
 			ULONGLONG entityId = entity->GetEntityId();
 			
 			m_sendPacketFunc(entityId, packet);
-
-			//ULONGLONG userId = std::static_pointer_cast<GamePlayer>(entity)->GetUserId();
-
-			//jh_content::UserManager::GetInstance().SendToPlayer(sendBuffer, userId);
 		}
 	}
 }
@@ -295,12 +177,6 @@ void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, Pac
 	AroundSector aroundSector;
 
 	GetSectorAround(sector.m_iX, sector.m_iZ, &aroundSector);
-
-	//printf("[AroundSector - Sector]GetAroundSectorCount - %d\n", aroundSector.sectorCount);
-	//for (int i = 0; i < aroundSector.sectorCount; i++)
-	//{
-	//	printf("\t\t AroudnSector [%d] = [%d, %d]\n", i, aroundSector.sectors[i].m_iZ, aroundSector.sectors[i].m_iX);
-	//}
 
 	for (int i = 0; i < aroundSector.sectorCount; i++)
 	{
@@ -317,31 +193,10 @@ void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ,
 
 	GetSectorAround(sectorX, sectorZ, &aroundSector);
 
-	//printf("[AroundSector - (X,Z)]GetAroundSectorCount - %d\n", aroundSector.sectorCount);
-	//for (int i = 0; i < aroundSector.sectorCount; i++)
-	//{
-	//	printf("\t\t AroudnSector [%d] = [%d, %d]\n", i, aroundSector.sectors[i].m_iZ, aroundSector.sectors[i].m_iX);
-	//}
-
 	for (int i = 0; i < aroundSector.sectorCount; i++)
 	{
 		SendPacket_Sector(aroundSector.sectors[i], packet);
 	}
-}
-
-void jh_content::SectorManager::PrintSectorInfo() const
-{
-	//printf("각 섹터의 플레이어 수, 멀티스레드 환경에서 정확하지 않게 출력될 수 있음.\n");
-
-	for (int z = startZSectorPos; z < endZSectorPos; z++)
-	{
-		for (int x = startXSectorPos; x < endXSectorPos; x++)
-		{
-			printf("[%3hu] ", m_usAliveGamePlayerCount[z][x]);
-		}
-		printf("\n");
-	}
-	printf("\n\n");
 }
 
 EntityPtr jh_content::SectorManager::GetMinEntityInRange(EntityPtr targetEntity, float range)
@@ -430,8 +285,6 @@ void jh_content::SectorManager::GetSectorAround(int sectorXPos, int sectorZPos, 
 		}
 	}
 	pAroundSector->sectorCount = sectorIndex;
-
-	//printf("GetSectorAround sector count -> %d\n", sectorIndex);
 }
 
 void jh_content::SectorManager::GetUpdatedSectorAround(EntityPtr entity, AroundSector* pRemoveAroundSector, AroundSector* pAddAroundSector)
@@ -497,12 +350,12 @@ void jh_content::SectorManager::GetUpdatedSectorAround(EntityPtr entity, AroundS
 
 	if (m_sectorSet[prevSectorZ][prevSectorX].erase(entity) == 0)
 	{
-		printf("Sector 삭제 에러 로그\n");
+		_LOG(L"GameWorld", LOG_LEVEL_WARNING, L"[SectorManager::GetUpdatedSectorAround] prev-Sector Erase entity failed. EntityId : [%llu]", entity->GetEntityId());
 	}
 
 	if (m_sectorSet[curSectorZ][curSectorX].insert(entity).second == false)
 	{
-		printf("Sector 추가 에러 로그\n");
+		_LOG(L"GameWorld", LOG_LEVEL_WARNING, L"[SectorManager::GetUpdatedSectorAround] cur-Sector Insert entity failed. EntityId : [%llu]", entity->GetEntityId());
 	}
 
 	if (entity->GetType() == Entity::EntityType::GamePlayer)

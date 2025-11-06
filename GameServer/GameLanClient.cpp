@@ -34,10 +34,10 @@ jh_content::GameLanClient::GameLanClient() : jh_network::IocpClient(GAME_LAN_CLI
 	parser.CloseFile();
 
 	if (true == succeeded)
-		_LOG(L"ParseInfo", LOG_LEVEL_INFO, L"[GameLanClient()] - 파일 파싱 성공 : %s", GAME_LAN_CLIENT_CONFIG_FILE);
+		_LOG(L"ParseInfo", LOG_LEVEL_INFO, L"[GameLanClient] Parse success : [%s]", GAME_LAN_CLIENT_CONFIG_FILE);
 	else
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[GameLanClient()] - 파일 파싱 실패 : %s", GAME_LAN_CLIENT_CONFIG_FILE);
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[GameLanClient] Parse failed : [%s]", GAME_LAN_CLIENT_CONFIG_FILE);
 		jh_utility::CrashDump::Crash();
 	}
 
@@ -45,7 +45,7 @@ jh_content::GameLanClient::GameLanClient() : jh_network::IocpClient(GAME_LAN_CLI
 
 	if (false == InitSessionArray(maxSessionCnt))
 	{
-		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[GameLanClient()] - maxSession 초기화 실패");
+		_LOG(L"ParseInfo", LOG_LEVEL_WARNING, L"[GameLanClient] InitSessionArray failed.");
 		jh_utility::CrashDump::Crash();
 	}
 }
@@ -63,7 +63,7 @@ void jh_content::GameLanClient::OnRecv(ULONGLONG sessionId, PacketPtr packet, US
 
 void jh_content::GameLanClient::OnConnected(ULONGLONG sessionId)
 {
-	_LOG(m_pcwszClientName, LOG_LEVEL_WARNING, L"[Worker - m_connectOverlapped] - 세션이 연결되었습니다. Session ID [0x%0x]", sessionId);
+	_LOG(m_pcwszClientName, LOG_LEVEL_DEBUG, L"[OnConnected] Session connected. SessionID: [0x%016llx]", sessionId);
 
 	PacketPtr settingReqPkt = jh_content::PacketBuilder::BuildGameServerSettingRequestPacket();
 	SendPacket(sessionId, settingReqPkt);

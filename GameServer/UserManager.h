@@ -22,10 +22,7 @@ namespace jh_content
 
 		UserPtr CreateUser(ULONGLONG sessionId, ULONGLONG userId);
 		void RemoveUser(ULONGLONG userId);
-		//ErrorCode DeleteAI(ULONGLONG userId);
 
-		//ErrorCode SendToPlayer(PacketPtr packet, ULONGLONG userId);
-		//ErrorCode SendToAllPlayer(PacketPtr packet);
 		void Unicast(ULONGLONG sessionId, PacketPtr& packet);
 		void Broadcast(PacketPtr& packet);
 
@@ -49,8 +46,6 @@ namespace jh_content
 		UserPtr GetUserByEntityId(ULONGLONG entityId);
 	private:
 		SendPacketFunc m_sendPacketFunc;
-		//std::unordered_map<ULONGLONG, GamePlayerPtr> m_sessionIdToPlayerDic;
-		//std::unordered_map<ULONGLONG, GamePlayerPtr> m_userIdToPlayerDic;
 
 		std::unordered_map<ULONGLONG, UserPtr> m_sessionIdToUserUMap;
 		std::unordered_map<ULONGLONG, UserPtr> m_userIdToUserUMap;
