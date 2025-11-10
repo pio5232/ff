@@ -97,6 +97,13 @@ namespace jh_content
 		
 		alignas(64) volatile char m_bRunnigFlag;
 		alignas(64) ULONGLONG m_ullRtt;
+
+
+
+
+
+	public:
+		alignas(64) std::atomic<bool> bbbbb = false;
 	};
 }
 

@@ -36,13 +36,10 @@ namespace jh_utility
 		bool IsEmpty();
 		bool IsFull();
 
-		//inline void BufferLock() { AcquireSRWLockExclusive(&m_lock); }
-		//inline void BufferUnlock() {ReleaseSRWLockExclusive(&m_lock);}
 	private:
 		int m_iCapacity;
 		int m_iFront;
 		int m_iRear;
 		char* m_chpBuffer;
-		//alignas(64) SRWLOCK m_lock;
 	};
 }

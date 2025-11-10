@@ -60,7 +60,7 @@ unsigned __stdcall jh_utility::FileLogger::LogThreadMain(LPVOID lparam)
 void jh_utility::FileLogger::LogThreadFunc()
 {
 	std::queue<LogInfo*> logQ;
-	
+		
 	while (1 == m_bIsRunning)
 	{
 		WaitForSingleObject(m_hLogEvent, INFINITE);
@@ -77,7 +77,7 @@ void jh_utility::FileLogger::LogThreadFunc()
 			{
 				FILE* file;
 
-				errno_t fileErrorCode = _wfopen_s(&file, logInfo->m_pPath, L"a+, ccs=UNICODE");
+				errno_t fileErrorCode = _wfopen_s(&file, logInfo->m_wchFilePath, L"a+, ccs=UNICODE");
 
 				if (0 != fileErrorCode || nullptr == file)
 				{
@@ -85,16 +85,11 @@ void jh_utility::FileLogger::LogThreadFunc()
 				}
 				else
 				{
-					fwprintf_s(file, L"[logCounter : %20llu] %s %s\n", ++m_ullLogCounter, logInfo->m_pHeader, logInfo->m_pMsg);
+					fwprintf_s(file, L"[logCounter : %20llu] %s %s\n", ++m_ullLogCounter, logInfo->m_wchLogHeader, logInfo->m_wchLogMsg);
 
 					fclose(file);
 				}
 			}
-
-			g_memSystem->Free(logInfo->m_pPath);
-			g_memSystem->Free(logInfo->m_pHeader);
-			g_memSystem->Free(logInfo->m_pMsg);
-
 			g_memSystem->Free(logInfo);
 		}
 	}
@@ -149,10 +144,6 @@ jh_utility::FileLogger::~FileLogger()
 	while (remainingLogInfoQ.size() > 0)
 	{
 		LogInfo* logInfo = remainingLogInfoQ.front();
-		
-		g_memSystem->Free(logInfo->m_pPath);
-		g_memSystem->Free(logInfo->m_pHeader);
-		g_memSystem->Free(logInfo->m_pMsg);
 
 		remainingLogInfoQ.pop();
 
@@ -165,32 +156,29 @@ void jh_utility::FileLogger::WriteLog(const WCHAR* logType, LogLevel logLevel, c
 	if (m_eLogLevel > logLevel)
 		return;
 
-	WCHAR* filePathBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_FILE_PATH_SIZE * sizeof(WCHAR)));
-	WCHAR* logHeaderBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_LOG_INFO_SIZE * sizeof(WCHAR)));
-	WCHAR* logBodyBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_LOG_SIZE * sizeof(WCHAR)));
+	//WCHAR* filePathBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_FILE_PATH_SIZE * sizeof(WCHAR)));
+	//WCHAR* logHeaderBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_LOG_INFO_SIZE * sizeof(WCHAR)));
+	//WCHAR* logBodyBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_LOG_SIZE * sizeof(WCHAR)));
 
-	const size_t maxFileNameBufferSize = DEFAULT_FILE_PATH_SIZE;// sizeof(filePathBuffer) / sizeof(filePathBuffer[0]);
-	const size_t maxLogInfoBuffeSize = DEFAULT_LOG_INFO_SIZE; // sizeof(logInfoBuffer) / sizeof(logInfoBuffer[0]);
+	//const size_t maxFileNameBufferSize = DEFAULT_FILE_PATH_SIZE;// sizeof(filePathBuffer) / sizeof(filePathBuffer[0]);
+	//const size_t maxLogInfoBuffeSize = DEFAULT_LOG_INFO_SIZE; // sizeof(logInfoBuffer) / sizeof(logInfoBuffer[0]);
 
-	static_assert(maxFileNameBufferSize >= sizeof(m_wszCommonFilePath) / sizeof(m_wszCommonFilePath[0]));
+	LogInfo* logInfo = static_cast<LogInfo*>(g_memSystem->Alloc(sizeof(LogInfo)));
+	ZeroMemory(logInfo, sizeof(LogInfo));
 
-	SetLogInfo(filePathBuffer, maxFileNameBufferSize, logType, logLevel, logHeaderBuffer, maxLogInfoBuffeSize);
+	static_assert(DEFAULT_FILE_PATH_SIZE >= sizeof(m_wszCommonFilePath) / sizeof(m_wszCommonFilePath[0]));
+
+	SetLogInfo(logInfo->m_wchFilePath, DEFAULT_FILE_PATH_SIZE, logType, logLevel, logInfo->m_wchLogHeader, DEFAULT_LOG_INFO_SIZE);
 
 	va_list args;
 	va_start(args, logFormat);
-	HRESULT hResult = StringCchVPrintf(logBodyBuffer, DEFAULT_LOG_SIZE, logFormat, args);
+	HRESULT hResult = StringCchVPrintf(logInfo->m_wchLogMsg, DEFAULT_LOG_SIZE, logFormat, args);
 	va_end(args);
 	
 	if (FAILED(hResult))
 	{
-		StringCchPrintf(logBodyBuffer, DEFAULT_LOG_SIZE, L" [ WriteLog - LogFormat Size > DEFAULT_LOG_SIZE ]\n");
+		StringCchPrintf(logInfo->m_wchLogMsg, DEFAULT_LOG_SIZE, L" [ WriteLog - LogFormat Size > DEFAULT_LOG_SIZE ]\n");
 	}
-
-	LogInfo* logInfo = static_cast<LogInfo*>(g_memSystem->Alloc(sizeof(LogInfo)));
-
-	logInfo->m_pPath = filePathBuffer;
-	logInfo->m_pHeader = logHeaderBuffer;
-	logInfo->m_pMsg = logBodyBuffer;
 
 	m_logQ.Push(logInfo);
 	SetEvent(m_hLogEvent);

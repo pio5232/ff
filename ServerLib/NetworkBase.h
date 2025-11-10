@@ -220,7 +220,14 @@ namespace jh_network
 	private:
 		Session* TryAcquireSession(ULONGLONG sessionId); // sessionPtr을 사용할 때마다 해제중인지 확인하고, 참조 카운트를 증가시킨다.
 		
+		enum : DWORD
+		{
+			TYPE_RECV =0,
+			TYPE_SEND,
+			TYPE_CONN
+		};
 		void DecreaseIoCount(Session* sessionPtr);
+		void DecreaseIoCount(Session* sessionPtr, DWORD type, DWORD transferredBytes);
 		void DeleteSession(ULONGLONG sessionId);
 
 		

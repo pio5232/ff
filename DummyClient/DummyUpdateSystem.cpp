@@ -242,7 +242,12 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 		case jh_utility::SessionConnectionEventType::DISCONNECT:
 		{
 			if (threadLogicData.m_dummyUmap.find(sessionId) == threadLogicData.m_dummyUmap.end())
+			{
+				_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[ProcessSessionConnectionEvent] Session disconnect failed. SessionId : [0x%016llx]", sessionId);
+
 				break;
+			}
+			_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_INFO, L"[ProcessSessionConnectionEvent] Session discconected. SessionId : [0x%016llx]", sessionId);
 
 			DummyPtr dummy = threadLogicData.m_dummyUmap[sessionId];
 
@@ -641,7 +646,7 @@ void jh_content::DummyUpdateSystem::CheckSendTimeOut(int threadNum)
 ULONGLONG jh_content::DummyUpdateSystem::GetRTT() const
 {
 	ULONGLONG rtt = m_ullRtt;
-	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_WARNING, L"[GetRTT] RTT: [%llu ms]", rtt);
+	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_INFO, L"[GetRTT] RTT: [%llu ms]", rtt);
 	return rtt;
 }
 

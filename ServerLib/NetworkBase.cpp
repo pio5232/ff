@@ -398,7 +398,7 @@ void jh_network::IocpServer::WorkerThreadMain()
 		if (false == gqcsRet)
 		{
 			//DecreaseIoCount(sessionPtr);
-			int gle = WSAGetLastError();
+			//int gle = WSAGetLastError();
 
 			InterlockedIncrement64(&m_llDisconnectedCount);
 			
@@ -1085,9 +1085,10 @@ void jh_network::IocpClient::WorkerThreadMain()
 		// lpOverlapped != nullptr, gqcsRet == false
 		// 작업 도중 연결이 끊겼을 때의 상황이다.
 		if (false == gqcsRet)
-		{			
-			auto er = WSAGetLastError();
-			
+		{	
+			DWORD gle = GetLastError();
+			_LOG(L"Client GQCS Failed", LOG_LEVEL_INFO, L"GetLastError - [%u] SessionID : [0x%0x16llx]", gle,sessionPtr);
+
 			InterlockedIncrement(&m_llDisconnectedCount);
 
 			Disconnect(sessionPtr->m_ullSessionId, L"gqcs false");
@@ -1096,6 +1097,9 @@ void jh_network::IocpClient::WorkerThreadMain()
 
 			continue;
 		}
+
+		DWORD type = &sessionPtr->m_recvOverlapped == lpOverlapped ? TYPE_RECV : (&sessionPtr->m_sendOverlapped == lpOverlapped ? TYPE_SEND : TYPE_CONN);
+		
 
 		if (&sessionPtr->m_connectOverlapped == lpOverlapped)
 		{
@@ -1120,7 +1124,10 @@ void jh_network::IocpClient::WorkerThreadMain()
 			}
 		}
 
-		DecreaseIoCount(sessionPtr);
+
+		DecreaseIoCount(sessionPtr,type, transferredBytes);
+
+		//DecreaseIoCount(sessionPtr);
 	}
 }
 
@@ -1163,6 +1170,17 @@ void jh_network::IocpClient::DecreaseIoCount(Session* sessionPtr)
 	if (0 == ioCount)
 		DeleteSession(sessionPtr->m_ullSessionId);
 
+}
+
+void jh_network::IocpClient::DecreaseIoCount(Session* sessionPtr, DWORD type, DWORD transferredBytes)
+{
+	// Log
+	LONG ioCount = InterlockedDecrement(&sessionPtr->m_lIoCount);
+
+	_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[DecreaseIoCount, TYPE] SessionID : [0x%016llx], Type : [%u], IoCount : [%d], Bytes : [%u]", sessionPtr->m_ullSessionId, type, ioCount,transferredBytes);
+
+	if (0 == ioCount)
+		DeleteSession(sessionPtr->m_ullSessionId);
 }
 
 

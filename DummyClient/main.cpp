@@ -5,6 +5,7 @@
 #include <iostream>
 #include <conio.h>
 #include "LobbyDummyClient.h"
+#include "DummyUpdateSystem.h"
 
 std::atomic<bool> reconnectFlag = true;
 std::atomic<bool> clientSendFlag = true;
@@ -12,8 +13,8 @@ int main()
 {
     jh_content::LobbyDummyClient dummyClient;
 
-    SET_LOG_LEVEL(LOG_LEVEL_INFO);
-
+    SET_LOG_LEVEL(LOG_LEVEL_NO_LOG);
+        
     dummyClient.Start();
     int maxSessionCnt = dummyClient.GetMaxSessionCount();
     //dummyClient.Connect(maxSessionCnt);
@@ -40,6 +41,11 @@ int main()
                 bool flag = reconnectFlag.load();
                 reconnectFlag.store(!flag);
             }
+            else if ('C' == c || 'c' == c)
+            {
+                bool flag = dummyClient.m_pDummySystem->bbbbb.load();
+                dummyClient.m_pDummySystem->bbbbb.store(!flag);
+            }
         }
 
 
@@ -64,6 +70,7 @@ int main()
             wprintf(L" Press 'Q' to shut down\n");
             wprintf(L" Press 'R' to Reconnect, ReconnectMode    : [%s]\n", reconnectFlag.load() ? L"YES" : L"NO");
             wprintf(L" Press 'S' to SendMode,  SendMode         : [%s]\n", clientSendFlag.load() ? L"YES" : L"NO");
+            wprintf(L" Press 'C' to LOG : [%s]\n", dummyClient.m_pDummySystem->bbbbb ? L"YES" : L"NO");
             wprintf(L"-------------------------------------------------\n");
 
             dummyClient.Monitor();

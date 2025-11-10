@@ -18,9 +18,9 @@
 // 대략적으로 48보다 작아지면 파일 생성이 되지 않을 수 있음.
 
 // 설정할 버퍼 크기 
-#define DEFAULT_FILE_PATH_SIZE 128
-#define DEFAULT_LOG_INFO_SIZE 128
-#define DEFAULT_LOG_SIZE 1024
+#define DEFAULT_FILE_PATH_SIZE ((size_t)128)
+#define DEFAULT_LOG_INFO_SIZE ((size_t)128)
+#define DEFAULT_LOG_SIZE ((size_t)512)
 
 // DEFAULT_FILE_PATH_SIZE 64 기준 약 15정도가 남음.
 #define MAX_LOGTYPE_SIZE_INCLUDE_TXT (15+64)
@@ -67,9 +67,10 @@ do {																			\
 
 		struct LogInfo
 		{
-			WCHAR* m_pPath;
-			WCHAR* m_pHeader;
-			WCHAR* m_pMsg;
+
+			WCHAR m_wchFilePath[DEFAULT_FILE_PATH_SIZE];
+			WCHAR m_wchLogHeader[DEFAULT_LOG_INFO_SIZE];
+			WCHAR m_wchLogMsg[DEFAULT_LOG_SIZE];
 		};
 
 		static unsigned WINAPI LogThreadMain(LPVOID lparam);
