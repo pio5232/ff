@@ -829,9 +829,14 @@ jh_network::Session* jh_network::IocpServer::CreateSession(SOCKET sock, const SO
 
 void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredBytes)
 {
+	if (transferredBytes > sessionPtr->m_recvBuffer.GetFreeSize())
+		int a = 3;
+
 	if (false == sessionPtr->m_recvBuffer.MoveRear(transferredBytes))
 	{
-		Disconnect(sessionPtr->m_ullSessionId, L"recvBuffer MoveRear Failed");
+		_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L" Recvbuffer Moverear failed. SessionId : [0x%016llx]", sessionPtr->m_ullSessionId);
+
+		Disconnect(sessionPtr->m_ullSessionId);
 
 		return;
 	}
@@ -874,6 +879,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		sessionPtr->m_recvBuffer.PeekRetBool(reinterpret_cast<char*>(&header), sizeof(PacketHeader));
 
+
 		if (bufferSize < (sizeof(PacketHeader) + header.size))
 			break;
 
@@ -883,7 +889,9 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
-			Disconnect(sessionPtr->m_ullSessionId, L"Dequeue Failed");
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L" Recvbuffer Dequeue failed. SessionId : [0x%016llx]", sessionPtr->m_ullSessionId);
+
+			Disconnect(sessionPtr->m_ullSessionId);
 
 			return;
 		}
@@ -908,14 +916,12 @@ void jh_network::IocpClient::ProcessSend(Session* sessionPtr, DWORD transferredB
 	return;
 }
 
-void jh_network::IocpClient::Disconnect(ULONGLONG sessionId, const WCHAR* reason)
+void jh_network::IocpClient::Disconnect(ULONGLONG sessionId)
 {
 	Session* sessionPtr = TryAcquireSession(sessionId);
 
 	if (nullptr == sessionPtr)
 		return;
-
-	_LOG(m_pcwszClientName, LOG_LEVEL_INFO, L"Disconnect Reason : [%s]", reason);
 
 	// 연결 끊긴 상태가 아닌, 먼저 연결을 끊는 상황에서
 	// 모두 완료 통지가 들어왔을 때 Disconnect()가 호출된다면
@@ -1084,7 +1090,7 @@ void jh_network::IocpClient::WorkerThreadMain()
 
 		// lpOverlapped != nullptr, gqcsRet == false
 		// 작업 도중 연결이 끊겼을 때의 상황이다.
-		if (false == gqcsRet)
+	/*	if (false == gqcsRet)
 		{	
 			DWORD gle = GetLastError();
 			_LOG(L"Client GQCS Failed", LOG_LEVEL_INFO, L"GetLastError - [%u] SessionID : [0x%0x16llx]", gle,sessionPtr);
@@ -1098,7 +1104,7 @@ void jh_network::IocpClient::WorkerThreadMain()
 			continue;
 		}
 
-		DWORD type = &sessionPtr->m_recvOverlapped == lpOverlapped ? TYPE_RECV : (&sessionPtr->m_sendOverlapped == lpOverlapped ? TYPE_SEND : TYPE_CONN);
+		DWORD type = &sessionPtr->m_recvOverlapped == lpOverlapped ? TYPE_RECV : (&sessionPtr->m_sendOverlapped == lpOverlapped ? TYPE_SEND : TYPE_CONN);*/
 		
 
 		if (&sessionPtr->m_connectOverlapped == lpOverlapped)
@@ -1125,7 +1131,7 @@ void jh_network::IocpClient::WorkerThreadMain()
 		}
 
 
-		DecreaseIoCount(sessionPtr,type, transferredBytes);
+		DecreaseIoCount(sessionPtr);
 
 		//DecreaseIoCount(sessionPtr);
 	}
@@ -1172,16 +1178,6 @@ void jh_network::IocpClient::DecreaseIoCount(Session* sessionPtr)
 
 }
 
-void jh_network::IocpClient::DecreaseIoCount(Session* sessionPtr, DWORD type, DWORD transferredBytes)
-{
-	// Log
-	LONG ioCount = InterlockedDecrement(&sessionPtr->m_lIoCount);
-
-	_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L"[DecreaseIoCount, TYPE] SessionID : [0x%016llx], Type : [%u], IoCount : [%d], Bytes : [%u]", sessionPtr->m_ullSessionId, type, ioCount,transferredBytes);
-
-	if (0 == ioCount)
-		DeleteSession(sessionPtr->m_ullSessionId);
-}
 
 
 jh_network::Session* jh_network::IocpClient::CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr)

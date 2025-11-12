@@ -388,9 +388,11 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 	USHORT roomCnt;
 
 	*packet >> roomCnt;
+	if (roomCnt > 71)
+		DebugBreak();
 
 	RoomInfo* roomInfo = static_cast<RoomInfo*>(g_memSystem->Alloc(sizeof(RoomInfo) * roomCnt));
-
+	
 	for (int i = 0; i < roomCnt; i++)
 	{
 		*packet >> roomInfo[i];
@@ -489,7 +491,6 @@ void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessi
 	if (false == responsePkt.isMade)
 	{
 		m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
-
 
 		return;
 	}

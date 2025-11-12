@@ -175,7 +175,7 @@ namespace jh_network
 		void ProcessRecv(Session* sessionPtr, DWORD transferredBytes);
 		void ProcessSend(Session* sessionPtr, DWORD transferredBytes);
 
-		void Disconnect(ULONGLONG sessionId, const WCHAR* reason);
+		void Disconnect(ULONGLONG sessionId);
 
 		void PostSend(Session* sessionPtr);
 		void PostRecv(Session* sessionPtr);
@@ -227,7 +227,6 @@ namespace jh_network
 			TYPE_CONN
 		};
 		void DecreaseIoCount(Session* sessionPtr);
-		void DecreaseIoCount(Session* sessionPtr, DWORD type, DWORD transferredBytes);
 		void DeleteSession(ULONGLONG sessionId);
 
 		
@@ -243,7 +242,7 @@ namespace jh_network
 		alignas(64) LONGLONG m_llTotalConnectedSessionCount;		// 시작부터 연결된 세션의 총 합
 
 		alignas(64) LONG m_llDisconnectedCount; // 상대쪽에서 연결을 끊은 횟수
-		alignas(64) LONGLONG m_llTotalDisconnectedCount; // 상대 + 서버가 연결을 끊은 횟수
+		alignas(64) LONGLONG m_llTotalDisconnectedCount; // 상대 + 본인이 연결을 끊은 횟수
 
 		alignas(64) LONG m_lTotalRecvCount;						// 1초 동기 + 비동기 RECV 수
 		alignas(64) LONG m_lTotalSendCount;						// 1초 동기 + 비동기 SEND 수

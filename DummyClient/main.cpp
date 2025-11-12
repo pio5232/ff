@@ -13,7 +13,7 @@ int main()
 {
     jh_content::LobbyDummyClient dummyClient;
 
-    SET_LOG_LEVEL(LOG_LEVEL_NO_LOG);
+    SET_LOG_LEVEL(LOG_LEVEL_WARNING);
         
     dummyClient.Start();
     int maxSessionCnt = dummyClient.GetMaxSessionCount();
