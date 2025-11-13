@@ -2,7 +2,6 @@
 #include "Memory.h"
 namespace jh_memory
 {
-
 	class MemoryPool;
 	class PageAllocator;
 	class MemoryAllocator;
@@ -26,9 +25,9 @@ namespace jh_memory
 		void* Alloc(size_t reqSize);
 		void Free(void* ptr);
 
-		MemoryAllocator* GetMemoryAllocator();
-
+		void PrintMemoryUsage();
 	private:
+		MemoryAllocator* GetMemoryAllocator();
 
 		/// <summary>
 		/// LEVEL 1. 대부분의 경우 독립적으로 메모리를 할당 / 해제한다.
@@ -47,8 +46,8 @@ namespace jh_memory
 		PageAllocator* m_pageAllocator;
 
 #ifdef JH_MEM_ALLOC_CHECK_FLAG
-			LONGLONG m_llTestAllocCounter = 0;
-			LONGLONG m_llTestDeallocCounter = 0;
+		LONGLONG m_llTestAllocCounter = 0;
+		LONGLONG m_llTestDeallocCounter = 0;
 #endif
 	};
 }

@@ -92,4 +92,3 @@ namespace jh_memory
 	public:
 	};
 }
-

@@ -3,6 +3,11 @@
 
 namespace jh_memory
 {
+	struct AllocedPageInfo
+	{
+		void* m_pAddr;
+		size_t m_granularitySize;
+	};
 	class PageAllocator
 	{
 	public:
@@ -16,11 +21,15 @@ namespace jh_memory
 		PageAllocator& operator=(PageAllocator&& other) = delete;
 
 		void* AllocPage(size_t blockSize);
-		void ReleasePage(void* p);
+		bool ReleasePage(void* p);
+
+		size_t GetTotalAllocSize() const { return m_totalAllocSize; }
 	private:
 		SRWLOCK m_lock;
 
-		std::vector<void*> m_pAddressList;
+		std::vector<AllocedPageInfo> m_allocedInfoList;
+		size_t m_totalAllocSize;
 
 	};
 }
+

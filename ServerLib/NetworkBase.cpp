@@ -9,7 +9,7 @@
 #include "Memory.h"
 #include "Job.h"
 
-//#define ECHO
+#define ECHO
 
 #pragma comment (lib, "ws2_32.lib")
 	/*-----------------------
@@ -262,9 +262,9 @@ void jh_network::IocpServer::DeleteSession(ULONGLONG sessionId)
 
 	OnDisconnected(sessionId);
 
-	m_activeSessionManager.RemoveActiveSession(sessionId);
 
 	closesocket(sessionPtr->m_socket);
+	m_activeSessionManager.RemoveActiveSession(sessionId);
 
 	sessionPtr->Reset();
 
@@ -391,22 +391,6 @@ void jh_network::IocpServer::WorkerThreadMain()
 				_LOG(m_pcwszServerName, LOG_LEVEL_INFO, L"[WorkerThreadMain] ProcessIO - Close Completion port [WSAGetLastError : %d]", gle);
 			}
 			break;
-		}
-
-		// lpOverlapped != nullptr, gqcsRet == false
-		// 작업 도중 연결이 끊겼을 때의 상황이다.
-		if (false == gqcsRet)
-		{
-			//DecreaseIoCount(sessionPtr);
-			//int gle = WSAGetLastError();
-
-			InterlockedIncrement64(&m_llDisconnectedCount);
-			
-			Disconnect(sessionPtr->m_ullSessionId, L"gqcsRet False");
-
-			DecreaseIoCount(sessionPtr);
-
-			continue;
 		}
 		
 		if (transferredBytes != 0)
@@ -862,7 +846,9 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
-			Disconnect(sessionPtr->m_ullSessionId, L"Echo Dequeue Failed");
+			_LOG(m_pcwszClientName, LOG_LEVEL_SYSTEM, L" Recvbuffer Dequeue failed. SessionId : [0x%016llx]", sessionPtr->m_ullSessionId);
+
+			Disconnect(sessionPtr->m_ullSessionId);
 
 			return;
 		}

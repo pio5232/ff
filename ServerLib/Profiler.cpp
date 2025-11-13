@@ -6,11 +6,7 @@
 #include <string>
 #include <strsafe.h>
 #include "Profiler.h"
-// Working Set과 Current Set을 분리하자
-// Working Set : Start -> End할 때 등록
 
-// Current Set : A <-> B 
-// Working Set은 Current Set으로 등록
 
 using namespace jh_utility;
 

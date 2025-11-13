@@ -38,7 +38,7 @@ void jh_memory::MemoryPool::TryPushBlock(Node* nodeHead, size_t nodeCount)
 	while (InterlockedCompareExchange64(&m_llComplexFullNode, newComplexNode, topComplexNode) != topComplexNode);
 
 
-	ALLOC_COUNT_CHECK(InterlockedAdd64(&m_llL2DeallocedNodeCount, static_cast<LONGLONG>(nodeCount));)
+	ALLOC_COUNT_CHECK(InterlockedAdd64(&m_llL2DeallocNodeCount, static_cast<LONGLONG>(nodeCount));)
 
 }
 
@@ -72,8 +72,8 @@ jh_memory::Node* jh_memory::MemoryPool::TryPopBlock()
 			break;
 	}
 
-	ALLOC_COUNT_CHECK(InterlockedAdd64(&m_llL2AllocedNodeCount, static_cast<LONGLONG>(topNodePointer->m_blockSize));)
-	return topNodePointer;
+	ALLOC_COUNT_CHECK(InterlockedAdd64(&m_llL2AllocNodeCount, static_cast<LONGLONG>(topNodePointer->m_blockSize));)
+		return topNodePointer;
 }
 
 
@@ -115,10 +115,10 @@ void jh_memory::MemoryPool::TryPushNode(Node* node)
 		m_pPartialNodeHead = node;
 		m_partialNodeCount++;
 
-		ALLOC_COUNT_CHECK(InterlockedIncrement64(&m_llL2DeallocedNodeCount);)
+		ALLOC_COUNT_CHECK(InterlockedIncrement64(&m_llL2DeallocNodeCount);)
 
-		if (kNodeCountPerBlock > m_partialNodeCount)
-			return;
+			if (kNodeCountPerBlock > m_partialNodeCount)
+				return;
 
 		// 한 덩어리로 묶을 수 있는 크기가 된다면 다시 묶어서 FullNode List에 넣어준다.
 		Node* curNode = m_pPartialNodeHead;
@@ -143,7 +143,7 @@ void jh_memory::MemoryPool::TryPushNode(Node* node)
 	(
 		LONGLONG r = kNodeCountPerBlock;
 
-		InterlockedAdd64(&m_llL2DeallocedNodeCount, -r);
+	InterlockedAdd64(&m_llL2DeallocNodeCount, -r);
 	)
 
 
@@ -227,9 +227,9 @@ jh_memory::Node* jh_memory::MemoryPool::GetNewBlock()
 			ALLOC_COUNT_CHECK
 			(
 				InterlockedAdd64(&m_llL2TotalNode, kNodeCountToCreate);
-				InterlockedAdd64(&m_llL2AllocedNodeCount, static_cast<LONGLONG>(lastBlock->m_blockSize));
+			InterlockedAdd64(&m_llL2AllocNodeCount, static_cast<LONGLONG>(lastBlock->m_blockSize));
 			)
-			return lastBlock;
+				return lastBlock;
 		}
 		else
 		{
