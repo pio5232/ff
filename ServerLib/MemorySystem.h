@@ -52,26 +52,4 @@ namespace jh_memory
 	};
 }
 
-template<typename T, typename... Args>
-std::shared_ptr<T> MakeShared(jh_memory::MemorySystem* memorySystem, Args&&... args)
-{
-	if (memorySystem == nullptr)
-		return nullptr;
 
-	// malloc에 실패하면 crash
-	void* rawPtr = memorySystem->Alloc(sizeof(T));
-
-	T* t = new (rawPtr) T(std::forward<Args>(args)...);
-
-	auto deleter = [memorySystem](T* obj)
-		{
-			obj->~T();
-
-			memorySystem->Free(obj);
-		};
-
-	// raw 포인터와 삭제자를 등록 -> 생성
-	return std::shared_ptr<T>(t, deleter);
-}
-
-PacketPtr MakeSharedBuffer(jh_memory::MemorySystem* memorySystem, size_t bufferSize);

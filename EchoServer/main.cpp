@@ -5,6 +5,7 @@
 #include <Psapi.h>
 #include <crtdbg.h>
 #include "EchoServer.h"
+#include "MemorySystem.h"
 
 // C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.38.33130\include
 int main()
@@ -51,7 +52,11 @@ int main()
 			wprintf(L" [Process] CurrentWorkingSet : [%0.4f MB]\n", (double)pmc.WorkingSetSize / (1024 * 1024));  // 프로세스가 직접적으로 접근가능한, 메모리에 존재하는 프레임들
 			wprintf(L" [Process] CurrentPagedPoolUsaged : [%0.4f MB]\n", (double)pmc.QuotaPagedPoolUsage / (1024 * 1024)); // 현재 Paged-pool 사용량
 			wprintf(L" [Process] CurrentNonPagedPoolUsaged : [%0.4f MB]\n", (double)pmc.QuotaNonPagedPoolUsage / (1024 * 1024)); // 현재 Non Paged-pool 사용량
-			wprintf(L" [Process] PageFileUsage : [%0.4f MB]\n", (double)pmc.PagefileUsage / (1024 * 1024)); // 현재 가상 메모리 커밋된 크기
+			wprintf(L" [Process] PageFileUsage : [%0.4f MB]\n\n", (double)pmc.PagefileUsage / (1024 * 1024)); // 현재 가상 메모리 커밋된 크기
+			
+			wprintf(L" [Process] Packet Usage : [%llu]\n\n", PacketBuffer::GetUsingPacketCount()); // 풀 사용량
+			
+			g_memSystem->PrintMemoryUsage();
 		}
 		wprintf(L"=================================================\n");
 		wprintf(L"               SERVER MONITORING\n");

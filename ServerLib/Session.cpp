@@ -29,7 +29,14 @@ void jh_network::Session::Reset()
 
 	m_ullLastTimeStamp = 0; // jh_utility::GetTimeStamp();
 
-	m_sendQ.Clear();
+	{
+		std::vector<PacketBuffer*> tempQ;
+		m_sendQ.Swap(tempQ);
+
+		for (PacketBuffer* buffer : tempQ)
+			buffer->DecreaseRefCount();
+	}
+
 	m_recvBuffer.ClearBuffer();
 
 	m_recvOverlapped.Reset();

@@ -59,37 +59,34 @@ unsigned __stdcall jh_utility::FileLogger::LogThreadMain(LPVOID lparam)
 
 void jh_utility::FileLogger::LogThreadFunc()
 {
-	std::queue<LogInfo*> logQ;
+	std::vector<LogInfo*> tempLog;
 		
 	while (1 == m_bIsRunning)
 	{
 		WaitForSingleObject(m_hLogEvent, INFINITE);
 
-		m_logQ.Swap(logQ);
+		m_logQ.Swap(tempLog);
 
-		while (logQ.size() > 0)
+		if (false == m_bCasOpen)
+			continue;
+
+		for (LogInfo* logInfo : tempLog)
 		{
-			LogInfo* logInfo = logQ.front();
+			FILE* file;
 
-			logQ.pop();
+			errno_t fileErrorCode = _wfopen_s(&file, logInfo->m_wchFilePath, L"a+, ccs=UNICODE");
 
-			if (true == m_bCasOpen)
+			if (0 != fileErrorCode || nullptr == file)
 			{
-				FILE* file;
-
-				errno_t fileErrorCode = _wfopen_s(&file, logInfo->m_wchFilePath, L"a+, ccs=UNICODE");
-
-				if (0 != fileErrorCode || nullptr == file)
-				{
-					m_bCasOpen = false;
-				}
-				else
-				{
-					fwprintf_s(file, L"[logCounter : %20llu] %s %s\n", ++m_ullLogCounter, logInfo->m_wchLogHeader, logInfo->m_wchLogMsg);
-
-					fclose(file);
-				}
+				m_bCasOpen = false;
 			}
+			else
+			{
+				fwprintf_s(file, L"[logCounter : %20llu] %s %s\n", ++m_ullLogCounter, logInfo->m_wchLogHeader, logInfo->m_wchLogMsg);
+
+				fclose(file);
+			}
+
 			g_memSystem->Free(logInfo);
 		}
 	}
@@ -138,17 +135,14 @@ jh_utility::FileLogger::~FileLogger()
 		CloseHandle(m_hLogEvent);
 	}
 
-	std::queue<LogInfo*> remainingLogInfoQ;
-	m_logQ.Swap(remainingLogInfoQ);
+	std::vector<LogInfo*> remainingLogInfo;
+	m_logQ.Swap(remainingLogInfo);
 
-	while (remainingLogInfoQ.size() > 0)
+	for (LogInfo* logInfo : remainingLogInfo)
 	{
-		LogInfo* logInfo = remainingLogInfoQ.front();
-
-		remainingLogInfoQ.pop();
-
 		g_memSystem->Free(logInfo);
 	}
+
 }
 
 void jh_utility::FileLogger::WriteLog(const WCHAR* logType, LogLevel logLevel, const WCHAR* logFormat, ...)

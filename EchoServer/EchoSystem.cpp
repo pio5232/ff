@@ -74,18 +74,17 @@ void jh_content::EchoSystem::Stop()
 
 void jh_content::EchoSystem::ProcessNetJob()
 {
-	static thread_local alignas(64) std::queue<JobPtr> echoJobQ;
+	static thread_local alignas(64) std::vector<JobRef> jobList;
 
-	m_netJobQueue.Swap(echoJobQ);
+	m_netJobQueue.Swap(jobList);
 
-	while(echoJobQ.size() > 0)
+	for (JobRef job : jobList)
 	{
-		JobPtr& job = echoJobQ.front();
-
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
-		
-		echoJobQ.pop();
 	}
+
+	jobList.clear();
+
 
 	// netJobQueue에서 Job 확인 후 
 	// 작업따라 패킷 처리
@@ -94,16 +93,13 @@ void jh_content::EchoSystem::ProcessNetJob()
 
 void jh_content::EchoSystem::ProcessSystemJob()
 {
-	static thread_local alignas(64) std::queue<SessionConnectionEventPtr> systemJobQ;
-	std::queue<SessionConnectionEventPtr> emptyQ;
+	static thread_local alignas(64) std::vector<SessionConnectionEventRef> systemJobList;
 
-	m_sessionConnEventQueue.Swap(systemJobQ);
+	m_sessionConnEventQueue.Swap(systemJobList);
 
-	while(systemJobQ.size() > 0)
+	for (SessionConnectionEventRef systemJob : systemJobList)
 	{
-		SessionConnectionEventPtr& job = systemJobQ.front();
-
-		switch (job->m_msgType)
+		switch (systemJob->m_msgType)
 		{
 		case jh_utility::SessionConnectionEventType::CONNECT:
 		{
@@ -117,13 +113,13 @@ void jh_content::EchoSystem::ProcessSystemJob()
 		}
 		break;
 		}
-		
-		systemJobQ.pop();
 	}
+
+	systemJobList.clear();
 }
 
 //ErrorCode jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, jh_network::SerializationBufferPtr& serializationBufferPtr)
-ErrorCode jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, PacketPtr& packet)
+ErrorCode jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, PacketRef& packet)
 {
 	short len;
 	ULONGLONG data;
@@ -131,7 +127,10 @@ ErrorCode jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, PacketPt
 	*packet >> data;
 	//_LOG(m_pOwner->GetServerName(), LOG_LEVEL_DETAIL, L"ProcessEchoPacket - data : %u", data);
 
-	PacketPtr pPacket = jh_content::PacketBuilder::BuildEchoPacket(8, data);
+	//PacketRef pPacket = jh_content::PacketBuilder::BuildEchoPacket(8, data);
+	PacketBuffer* pPacket = MakePacketBuffer(10);
+
+	*pPacket << (USHORT)8 << data;
 
 	m_pOwner->SendPacket(sessionId, pPacket);
 

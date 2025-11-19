@@ -87,7 +87,7 @@ do {																			\
 
 		LogLevel m_eLogLevel;
 
-		jh_utility::LockQueue<LogInfo*> m_logQ;
+		jh_utility::LockArray<LogInfo*> m_logQ;
 
 		ULONGLONG m_ullLogCounter;
 

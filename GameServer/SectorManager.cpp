@@ -19,7 +19,7 @@ bool jh_content::SectorManager::AddEntity(int sectorZ, int sectorX, EntityPtr en
 	return true;
 }
 
-bool jh_content::SectorManager::DeleteEntity(EntityPtr entity, PacketPtr& sendBuffer)
+bool jh_content::SectorManager::DeleteEntity(EntityPtr entity, PacketRef& sendBuffer)
 {
 	Sector sector = entity->GetCurrentSector();
 
@@ -57,7 +57,7 @@ void jh_content::SectorManager::SendAllEntityInfo()
 				aroundEntityInfos.push_back(entity);
 			}
 
-			PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(jh_network::MakeOtherCharacterPacket) * aroundEntityInfos.size());
+			PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(jh_network::MakeOtherCharacterPacket) * aroundEntityInfos.size());
 
 			for (const EntityPtr& entity : aroundEntityInfos)
 			{
@@ -79,7 +79,7 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	// Player가 아니어도 작동해야함.
 	// 1. 삭제되어야할 섹터에 존재하는 플레이어에게 삭제 패킷을 보낸다. (나를 삭제해라!!)
 	{
-		PacketPtr delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entity->GetEntityId());
+		PacketRef delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entity->GetEntityId());
 
 		for (int i = 0; i < removeAroundSector.sectorCount; i++)
 		{
@@ -91,8 +91,8 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	// Player가 아니더라도 작동해야한다.
 	// 3. 추가되어야할 섹터에 나를 생성 패킷을 보낸다. (나를 만들어라!!!)
 	{
-		PacketPtr makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(entity->GetEntityId(), entity->GetPosition());
-		PacketPtr moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(entity->GetEntityId(), entity->GetPosition(), entity->GetRotation().y);
+		PacketRef makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(entity->GetEntityId(), entity->GetPosition());
+		PacketRef moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(entity->GetEntityId(), entity->GetPosition(), entity->GetRotation().y);
 
 		for (int i = 0; i < addAroundSector.sectorCount; i++)
 		{
@@ -122,7 +122,7 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	{
 		for (const auto& removeEntity : m_sectorSet[removeAroundSector.sectors[i].m_iZ][removeAroundSector.sectors[i].m_iX])
 		{
-			PacketPtr delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(removeEntity->GetEntityId());
+			PacketRef delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(removeEntity->GetEntityId());
 
 			m_sendPacketFunc(entityId, delOtherCharacterPkt);
 		}
@@ -137,13 +137,13 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 			if (addEntity->IsDead())
 				continue;
 
-			PacketPtr makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(addEntity->GetEntityId(), addEntity->GetPosition());
+			PacketRef makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(addEntity->GetEntityId(), addEntity->GetPosition());
 
 			m_sendPacketFunc(entityId, makeOtherCharacterPkt);
 
 			if (addEntity->IsMoving())
 			{
-				PacketPtr moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(addEntity->GetEntityId(), addEntity->GetPosition(), addEntity->GetRotation().y);
+				PacketRef moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(addEntity->GetEntityId(), addEntity->GetPosition(), addEntity->GetRotation().y);
 
 				m_sendPacketFunc(entityId, moveStartNotifyPkt);
 			}
@@ -151,7 +151,7 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	}
 }
 
-void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPtr& packet)
+void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketRef& packet)
 {
 	if (false == IsValidSector(sector.m_iX, sector.m_iZ) || 0 == m_usAliveGamePlayerCount[sector.m_iZ][sector.m_iX])
 			return;
@@ -169,7 +169,7 @@ void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPt
 	}
 }
 
-void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, PacketPtr& packet)
+void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, PacketRef& packet)
 {
 	if (false == IsValidSector(sector.m_iX, sector.m_iZ))
 		return;
@@ -184,7 +184,7 @@ void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, Pac
 	}
 }
 
-void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ, PacketPtr& packet)
+void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ, PacketRef& packet)
 {
 	if (false == IsValidSector(sectorX, sectorZ))
 		return;

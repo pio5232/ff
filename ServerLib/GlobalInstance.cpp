@@ -2,11 +2,8 @@
 #include "GlobalInstance.h"
 #include "MemorySystem.h"
 
-jh_utility::FileLogger* g_logger = nullptr;
-jh_memory::MemorySystem* g_memSystem = nullptr;
-
-//jh_utility::ClearPool<jh_utility::ClearRefPtr<jh_utility::SerializationBuffer>::RefData>* g_packetPool = nullptr;
-
+jh_utility::FileLogger* g_logger		= nullptr;
+jh_memory::MemorySystem* g_memSystem	= nullptr;
 
 jh_utility::CrashDump dump;
 
@@ -19,11 +16,8 @@ public:
 
 		g_memSystem = new jh_memory::MemorySystem();
 		g_logger = new jh_utility::FileLogger();
-		//g_packetPool = new jh_utility::ClearPool<jh_utility::SerializationBuffer>(true);
 
 		jh_network::NetAddress::Init();
-		//PacketPtr::SetPool(g_packetPool);
-
 	}
 
 	~GlobalGenerator()

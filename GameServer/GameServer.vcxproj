@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AIPlayer.h" />
+    <ClInclude Include="BaseComponent.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="GamePlayer.h" />
     <ClInclude Include="GameServer.h" />
@@ -42,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AIPlayer.cpp" />
+    <ClCompile Include="BaseComponent.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="GamePlayer.cpp" />
     <ClCompile Include="GameServer.cpp" />

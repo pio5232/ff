@@ -52,12 +52,12 @@ void jh_content::UserManager::RemoveUser(ULONGLONG sessionId)
 	m_userIdToUserUMap.erase(userId);
 }
 
-void jh_content::UserManager::Unicast(ULONGLONG sessionId, PacketPtr& packet)
+void jh_content::UserManager::Unicast(ULONGLONG sessionId, PacketRef& packet)
 {
 	m_sendPacketFunc(sessionId, packet);
 }
 
-void jh_content::UserManager::Broadcast(PacketPtr& packet)
+void jh_content::UserManager::Broadcast(PacketRef& packet)
 {
 	for (const auto& [sessionId, userPtr] : m_sessionIdToUserUMap)
 	{

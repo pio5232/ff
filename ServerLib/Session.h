@@ -60,10 +60,14 @@ struct SendOverlapped : public CustomOverlapped
 
 	void ClearPendingList()
 	{
+		for (PacketBuffer* buff : m_pendingList)
+			buff->DecreaseRefCount();
+
 		 m_pendingList.clear();
 	}
 
-	std::vector<PacketPtr> m_pendingList;
+	//std::vector<PacketRef> m_pendingList;
+	std::vector<PacketBuffer*> m_pendingList;
 };
 
 struct ConnectOverlapped : public CustomOverlapped
@@ -103,7 +107,8 @@ namespace jh_network
 
 		ULONGLONG m_ullLastTimeStamp;
 	
-		jh_utility::LockQueue<PacketPtr> m_sendQ;
+		//jh_utility::LockArray<PacketRef> m_sendQ;
+		jh_utility::LockArray<PacketBuffer*> m_sendQ;
 		jh_utility::RingBuffer m_recvBuffer;
 
 		RecvOverlapped m_recvOverlapped;

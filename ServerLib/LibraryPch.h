@@ -12,17 +12,13 @@
 
 #pragma comment (lib, "ws2_32.lib")
 
+#include "Define.h"
 #include "Utils.h"
 #include "GlobalInstance.h"
-#include "Define.h"
 #include "NetworkUtils.h"
 
 #include "MemorySystem.h"
-//#include "MemoryPool.h"
 #include "ObjectPool.h"
-//#include "TLSMemoryPool.h"
-//#include "ClearPool.h"
-//#include "ClearRefPtr.h"
 #include "PacketDefine.h"
 #include "Session.h"
 

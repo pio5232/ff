@@ -23,8 +23,8 @@ namespace jh_content
 		UserPtr CreateUser(ULONGLONG sessionId, ULONGLONG userId);
 		void RemoveUser(ULONGLONG userId);
 
-		void Unicast(ULONGLONG sessionId, PacketPtr& packet);
-		void Broadcast(PacketPtr& packet);
+		void Unicast(ULONGLONG sessionId, PacketRef& packet);
+		void Broadcast(PacketRef& packet);
 
 		USHORT GetPlayerCount() const { return static_cast<USHORT>(m_userIdToUserUMap.size()); }
 

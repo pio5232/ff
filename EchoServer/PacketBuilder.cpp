@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "PacketBuilder.h"
-#include "Memory.h"
-PacketPtr jh_content::PacketBuilder::BuildEchoPacket(WORD len, ULONGLONG data)
+#include "ObjectPool.h"
+PacketBuffer* jh_content::PacketBuilder::BuildEchoPacket(WORD len, ULONGLONG data)
 {
-	PacketPtr packet = MakeSharedBuffer(g_memSystem, 10);
+	PacketBuffer* packet = MakePacketBuffer(10);
 
 	*packet << len << data;
 

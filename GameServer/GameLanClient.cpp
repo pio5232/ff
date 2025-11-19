@@ -54,7 +54,7 @@ jh_content::GameLanClient::~GameLanClient()
 {
 }
 
-void jh_content::GameLanClient::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
+void jh_content::GameLanClient::OnRecv(ULONGLONG sessionId, PacketRef packet, USHORT type)
 {
 	GameLanRequestPtr lanRequest = MakeShared<GameLanRequest>(g_memSystem, sessionId, type, packet, this); // MakeJob(sessionId, type, packet);
 
@@ -65,7 +65,7 @@ void jh_content::GameLanClient::OnConnected(ULONGLONG sessionId)
 {
 	_LOG(m_pcwszClientName, LOG_LEVEL_DEBUG, L"[OnConnected] Session connected. SessionID: [0x%016llx]", sessionId);
 
-	PacketPtr settingReqPkt = jh_content::PacketBuilder::BuildGameServerSettingRequestPacket();
+	PacketRef settingReqPkt = jh_content::PacketBuilder::BuildGameServerSettingRequestPacket();
 	SendPacket(sessionId, settingReqPkt);
 }
 

@@ -12,7 +12,7 @@ namespace jh_content
 
 		void SetGameSystem(class GameSystem* gameSystem) { m_pGameSystem = gameSystem; }
 		
-		virtual void OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type) override;
+		virtual void OnRecv(ULONGLONG sessionId, PacketRef packet, USHORT type) override;
 
 		virtual void OnConnected(ULONGLONG sessionId) override;
 		virtual void OnDisconnected(ULONGLONG sessionId) override;

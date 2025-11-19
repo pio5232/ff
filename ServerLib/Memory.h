@@ -4,7 +4,7 @@
 //#define JH_MEM_PROFILE_FLAG
 
 // alloc / free 계산용 플래그 
-//#define JH_MEM_ALLOC_CHECK_FLAG
+#define JH_MEM_ALLOC_CHECK_FLAG
 
 
 // 메모리 추가/제거 카운팅을 위한 정보. 디버깅할때만 플래그를 이용해 탐지하도록 한다.

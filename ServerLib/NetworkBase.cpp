@@ -446,10 +446,7 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		jh_utility::SerializationBuffer* packet = static_cast<jh_utility::SerializationBuffer*>(g_memSystem->Alloc(sizeof(jh_utility::SerializationBuffer)));
-		new (packet) jh_utility::SerializationBuffer(g_memSystem);
-
-		//PacketPtr packet = MakeSharedBuffer(g_memSystem, header);
+		PacketBuffer* packet = MakePacketBuffer(header);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
@@ -475,7 +472,7 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memSystem, header.size);
+		PacketRef packet = MakeSharedBuffer(g_memSystem, header.size);
 		
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
@@ -542,24 +539,16 @@ void jh_network::IocpServer::PostSend(Session* sessionPtr)
 		return;
 	}
 
-	static thread_local alignas(64) std::queue<PacketPtr> tempQ;
+	//static thread_local alignas(64) std::queue<PacketRef> tempQ;
 
-	sessionPtr->m_sendQ.Swap(tempQ);
+	sessionPtr->m_sendQ.Swap(sessionPtr->m_sendOverlapped.m_pendingList);
 
-	int popCount = tempQ.size();
-	
-	while (tempQ.size() > 0)
-	{
-		sessionPtr->m_sendOverlapped.m_pendingList.push_back(std::move(tempQ.front()));
-		
-		tempQ.pop();
-	}
+	int popCount = sessionPtr->m_sendOverlapped.m_pendingList.size();
 
 	std::vector<WSABUF> wsaBufs;
-
 	wsaBufs.reserve(popCount);
 
-	for (PacketPtr& packet : sessionPtr->m_sendOverlapped.m_pendingList)
+	for (PacketBuffer* packet : sessionPtr->m_sendOverlapped.m_pendingList)
 	{
 		wsaBufs.push_back({static_cast<ULONG>(packet->GetDataSize()), packet->GetFrontPtr()});
 	}
@@ -706,7 +695,23 @@ USHORT jh_network::IocpServer::GetPort() const
 	return jh_network::NetAddress::GetPort(m_listenSock);
 }
 
-void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, PacketPtr& packet)
+//void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, PacketRef& packet)
+//{
+//	Session* sessionPtr = TryAcquireSession(sessionId, PROF_WFUNC);
+//
+//	if (nullptr == sessionPtr)
+//	{
+//		return;
+//	}
+//
+//	sessionPtr->m_sendQ.Push(packet);
+//
+//	PostSend(sessionPtr);
+//
+//	DecreaseIoCount(sessionPtr);
+//}
+
+void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, jh_utility::SerializationBuffer* packet)
 {
 	Session* sessionPtr = TryAcquireSession(sessionId, PROF_WFUNC);
 
@@ -715,6 +720,7 @@ void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, PacketPtr& packet)
 		return;
 	}
 
+	packet->IncreaseRefCount();
 	sessionPtr->m_sendQ.Push(packet);
 
 	PostSend(sessionPtr);
@@ -842,7 +848,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memSystem, header);
+		PacketBuffer* packet = MakePacketBuffer(header);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
@@ -871,7 +877,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memSystem, header.size);
+		PacketRef packet = MakeSharedBuffer(g_memSystem, header.size);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
@@ -936,24 +942,15 @@ void jh_network::IocpClient::PostSend(Session* sessionPtr)
 		return;
 	}
 
-	static thread_local alignas(64) std::queue<PacketPtr> tempQ;
+	sessionPtr->m_sendQ.Swap(sessionPtr->m_sendOverlapped.m_pendingList);
 
-	sessionPtr->m_sendQ.Swap(tempQ);
-
-	size_t popCount = tempQ.size();
-
-	while (tempQ.size() > 0)
-	{
-		sessionPtr->m_sendOverlapped.m_pendingList.push_back(std::move(tempQ.front()));
-
-		tempQ.pop();
-	}
+	int popCount = sessionPtr->m_sendOverlapped.m_pendingList.size();
 
 	std::vector<WSABUF> wsaBufs;
 
 	wsaBufs.reserve(popCount);
 
-	for (PacketPtr& packet : sessionPtr->m_sendOverlapped.m_pendingList)
+	for (PacketBuffer* packet : sessionPtr->m_sendOverlapped.m_pendingList)
 	{
 		wsaBufs.push_back({ static_cast<ULONG>(packet->GetDataSize()), packet->GetFrontPtr() });
 	}
@@ -1024,13 +1021,14 @@ void jh_network::IocpClient::PostRecv(Session* sessionPtr)
 	InterlockedIncrement(&m_lTotalRecvCount);
 }
 
-void jh_network::IocpClient::SendPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_network::IocpClient::SendPacket(ULONGLONG sessionId, PacketBuffer* packet)
 {
 	Session* sessionPtr = TryAcquireSession(sessionId);
 
 	if (nullptr == sessionPtr)
 		return;
 
+	packet->IncreaseRefCount();
 	sessionPtr->m_sendQ.Push(packet);
 
 	PostSend(sessionPtr);

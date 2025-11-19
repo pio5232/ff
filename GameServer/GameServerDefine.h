@@ -19,7 +19,7 @@ namespace jh_network
 
 #define GAME_USER_MANAGER_SAVE_FILE_NAME L"UserManager"
 
-using SendPacketFunc = std::function<void(ULONGLONG, PacketPtr&)>; // sessionId
+using SendPacketFunc = std::function<void(ULONGLONG, PacketRef&)>; // sessionId
 
 using GameSessionPtr = std::shared_ptr<jh_network::GameSession>;
 
@@ -115,7 +115,7 @@ enum class GameLanRequestMsgType
 
 struct GameLanRequest
 {
-	explicit GameLanRequest(ULONGLONG lanSessionId, USHORT msgType, PacketPtr packet, jh_network::IocpClient* lanClient) : m_ullSessionId(lanSessionId), m_usMsgType(msgType), m_pPacket(packet), m_pClient(lanClient) {}
+	explicit GameLanRequest(ULONGLONG lanSessionId, USHORT msgType, PacketRef packet, jh_network::IocpClient* lanClient) : m_ullSessionId(lanSessionId), m_usMsgType(msgType), m_pPacket(packet), m_pClient(lanClient) {}
 	~GameLanRequest()
 	{
 		m_ullSessionId = INVALID_SESSION_ID;
@@ -132,7 +132,7 @@ struct GameLanRequest
 
 	ULONGLONG m_ullSessionId;
 	USHORT m_usMsgType;
-	PacketPtr m_pPacket;
+	PacketRef m_pPacket;
 	jh_network::IocpClient* m_pClient;
 };
 

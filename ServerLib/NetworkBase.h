@@ -52,9 +52,8 @@ namespace jh_network
 		virtual bool OnConnectionRequest(const SOCKADDR_IN& clientInfo);
 		virtual void OnError(int errCode, WCHAR* cause);
 
-
 		// 스마트포인터버전
-		virtual void OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type) = 0;
+		virtual void OnRecv(ULONGLONG sessionId, PacketRef dataBuffer, USHORT type) = 0;
 
 		// 직렬화포인터버전
 		virtual void OnRecv(ULONGLONG sessionId, jh_utility::SerializationBuffer* packet, USHORT type) = 0;
@@ -71,7 +70,8 @@ namespace jh_network
 		void PostSend(Session* sessionPtr);
 		void PostRecv(Session* sessionPtr);
 
-		void SendPacket(ULONGLONG sessionId, PacketPtr& packet);
+		//void SendPacket(ULONGLONG sessionId, PacketRef& packet);
+		void SendPacket(ULONGLONG sessionId, jh_utility::SerializationBuffer* packet);
 
 		void UpdateHeartbeat(ULONGLONG sessionId, ULONGLONG now);
 		void CheckHeartbeatTimeout(ULONGLONG now);
@@ -170,7 +170,7 @@ namespace jh_network
 		void Stop();
 	
 		void Connect(int cnt);
-		virtual void OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type) = 0;
+		virtual void OnRecv(ULONGLONG sessionId, PacketBuffer* dataBuffer, USHORT type) = 0;
 
 		virtual void OnConnected(ULONGLONG sessionId) = 0;
 		virtual void OnDisconnected(ULONGLONG sessionId) = 0;
@@ -183,8 +183,8 @@ namespace jh_network
 		void PostSend(Session* sessionPtr);
 		void PostRecv(Session* sessionPtr);
 
-		//void SendPacket(LONGLONG sessionId, jh_utility::SerializationBuffer* sendBuf);
-		void SendPacket(ULONGLONG sessionId, PacketPtr& packet);
+		//void SendPacket(ULONGLONG sessionId, PacketRef& packet);
+		void SendPacket(ULONGLONG sessionId, PacketBuffer* packet);
 
 		static unsigned WINAPI WorkerThreadFunc(LPVOID lparam);
 

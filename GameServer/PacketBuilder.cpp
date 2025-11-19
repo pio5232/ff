@@ -2,116 +2,116 @@
 #include "PacketBuilder.h"
 #include "Memory.h"
 
-PacketPtr jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode errorCode)
+PacketRef jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode errorCode)
 {
 	jh_network::ErrorPacket errorPacket;
 
 	errorPacket.packetErrorCode = errorCode;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(errorPacket));
+	PacketRef buffer = MakeSharedBuffer(g_memSystem, sizeof(errorPacket));
 
 	*buffer << errorPacket.size << errorPacket.type << errorPacket.packetErrorCode;
 
 	return buffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildAttackNotifyPacket(ULONGLONG entityId)
+PacketRef jh_content::PacketBuilder::BuildAttackNotifyPacket(ULONGLONG entityId)
 {
 	jh_network::AttackNotifyPacket attackNotifyPacket;
 	//attackNotifyPacket.entityId = entityId;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(attackNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(attackNotifyPacket));
 
 	*sendBuffer << attackNotifyPacket.size << attackNotifyPacket.type << entityId;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildAttackedNotifyPacket(ULONGLONG entityId, USHORT currentHp)
+PacketRef jh_content::PacketBuilder::BuildAttackedNotifyPacket(ULONGLONG entityId, USHORT currentHp)
 {
 	jh_network::AttackedNotifyPacket attackedNotifyPacket;
 	//attackedNotifyPacket.entityId = entityId;
 	//attackedNotifyPacket.currentHp = currentHp;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(attackedNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(attackedNotifyPacket));
 
 	*sendBuffer << attackedNotifyPacket.size << attackedNotifyPacket.type << entityId << currentHp;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildMakeMyCharacterPacket(ULONGLONG entityId, const Vector3& position)
+PacketRef jh_content::PacketBuilder::BuildMakeMyCharacterPacket(ULONGLONG entityId, const Vector3& position)
 {
 	jh_network::MakeMyCharacterPacket makeMyCharacterPacket;
 
 	//makeMyCharacterPacket.entityId = entityId;
 	//makeMyCharacterPacket.pos = position;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(makeMyCharacterPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(makeMyCharacterPacket));
 
 	*sendBuffer << makeMyCharacterPacket.size << makeMyCharacterPacket.type << entityId << position;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(ULONGLONG entityId, const Vector3& position)
+PacketRef jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(ULONGLONG entityId, const Vector3& position)
 {
 	jh_network::MakeOtherCharacterPacket makeOtherCharacterPacket;
 
 	//makeOtherCharacterPacket.entityId = entityId;
 	//makeOtherCharacterPacket.pos = position;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(makeOtherCharacterPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(makeOtherCharacterPacket));
 
 	*sendBuffer << makeOtherCharacterPacket.size << makeOtherCharacterPacket.type << entityId << position;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildGameInitDonePacket()
+PacketRef jh_content::PacketBuilder::BuildGameInitDonePacket()
 {
 	jh_network::GameInitDonePacket donePacket;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(donePacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(donePacket));
 
 	*sendBuffer << donePacket.size << donePacket.type;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(ULONGLONG entityId)
+PacketRef jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(ULONGLONG entityId)
 {
 	jh_network::DeleteOtherCharacterPacket deleteOtherCharacterPacket;
 	//deleteOtherCharacterPacket.entityId = entityId;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(deleteOtherCharacterPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(deleteOtherCharacterPacket));
 
 	*sendBuffer << deleteOtherCharacterPacket.size << deleteOtherCharacterPacket.type << entityId;
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildMoveStartNotifyPacket(ULONGLONG entityId, const Vector3& pos, float rotY)
+PacketRef jh_content::PacketBuilder::BuildMoveStartNotifyPacket(ULONGLONG entityId, const Vector3& pos, float rotY)
 {
 	jh_network::MoveStartNotifyPacket moveStartNotifyPacket;
 	//moveStartNotifyPacket.entityId = entityId;
 	//moveStartNotifyPacket.pos = pos;
 	//moveStartNotifyPacket.rotY = rotY;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(moveStartNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(moveStartNotifyPacket));
 
 	*sendBuffer << moveStartNotifyPacket.size << moveStartNotifyPacket.type << entityId << pos << rotY;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildMoveStopNotifyPacket(ULONGLONG entityId, const Vector3& pos, float rotY)
+PacketRef jh_content::PacketBuilder::BuildMoveStopNotifyPacket(ULONGLONG entityId, const Vector3& pos, float rotY)
 {
 	jh_network::MoveStopNotifyPacket moveStopNotifyPacket;
 	moveStopNotifyPacket.entityId = entityId;
 	moveStopNotifyPacket.pos = pos;
 	moveStopNotifyPacket.rotY = rotY;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(moveStopNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(moveStopNotifyPacket));
 
 	*sendBuffer << moveStopNotifyPacket.size << moveStopNotifyPacket.type << moveStopNotifyPacket.entityId
 		<< moveStopNotifyPacket.pos << moveStopNotifyPacket.rotY;
@@ -119,7 +119,7 @@ PacketPtr jh_content::PacketBuilder::BuildMoveStopNotifyPacket(ULONGLONG entityI
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildUpdateTransformPacket(ULONGLONG timeStamp, ULONGLONG entityId, const Vector3& pos, const Vector3& rot)
+PacketRef jh_content::PacketBuilder::BuildUpdateTransformPacket(ULONGLONG timeStamp, ULONGLONG entityId, const Vector3& pos, const Vector3& rot)
 {
 	jh_network::UpdateTransformPacket updatePacket;
 
@@ -128,41 +128,41 @@ PacketPtr jh_content::PacketBuilder::BuildUpdateTransformPacket(ULONGLONG timeSt
 	//updatePacket.pos = pos;
 	//updatePacket.rot = rot;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(updatePacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(updatePacket));
 
 	*sendBuffer << updatePacket.size << updatePacket.type << timeStamp << entityId << pos << rot;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildDieNotifyPacket(ULONGLONG entityId)
+PacketRef jh_content::PacketBuilder::BuildDieNotifyPacket(ULONGLONG entityId)
 {
 	jh_network::DieNotifyPacket dieNotifyPacket;
 	//dieNotifyPacket.entityId = entityId;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(dieNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(dieNotifyPacket));
 
 	*sendBuffer << dieNotifyPacket.size << dieNotifyPacket.type << entityId;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildSpectatorInitPacket()
+PacketRef jh_content::PacketBuilder::BuildSpectatorInitPacket()
 {
 	jh_network::SpectatorInitPacket spectatorInitPacket;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(spectatorInitPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(spectatorInitPacket));
 
 	*sendBuffer << spectatorInitPacket.size << spectatorInitPacket.type;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildEnterGameResponsePacket()
+PacketRef jh_content::PacketBuilder::BuildEnterGameResponsePacket()
 {
 	jh_network::EnterGameResponsePacket enterGameResponsePacket;
 
-	PacketPtr buffer = MakeSharedBuffer(g_memSystem, sizeof(enterGameResponsePacket));
+	PacketRef buffer = MakeSharedBuffer(g_memSystem, sizeof(enterGameResponsePacket));
 
 	*buffer << enterGameResponsePacket.size << enterGameResponsePacket.type;
 
@@ -170,91 +170,91 @@ PacketPtr jh_content::PacketBuilder::BuildEnterGameResponsePacket()
 }
 
 
-PacketPtr jh_content::PacketBuilder::BuildGameEndNotifyPacket()
+PacketRef jh_content::PacketBuilder::BuildGameEndNotifyPacket()
 {
 	jh_network::GameEndNotifyPacket gameEndNotifyPacket;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(gameEndNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(gameEndNotifyPacket));
 
 	*sendBuffer << gameEndNotifyPacket.size << gameEndNotifyPacket.type;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildUpdateWinnerNotifyPacket(ULONGLONG userId, ULONGLONG expectedTimeStamp)
+PacketRef jh_content::PacketBuilder::BuildUpdateWinnerNotifyPacket(ULONGLONG userId, ULONGLONG expectedTimeStamp)
 {
 	jh_network::UpdateWinnerNotifyPacket updateWinnerNotifyPacket;
 
 	//updateWinnerNotifyPacket.userId = userId;
 	//updateWinnerNotifyPacket.expectedTimeStamp = expectedTimeStamp;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(updateWinnerNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(updateWinnerNotifyPacket));
 
 	*sendBuffer << updateWinnerNotifyPacket.size << updateWinnerNotifyPacket.type << userId << expectedTimeStamp;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildInvalidateWinnerNotifyPacket(ULONGLONG canceledUserID)
+PacketRef jh_content::PacketBuilder::BuildInvalidateWinnerNotifyPacket(ULONGLONG canceledUserID)
 {
 	jh_network::InvalidateWinnerNotifyPacket invalidateWinnerNotifyPacket;
 	invalidateWinnerNotifyPacket.canceledUserId = canceledUserID;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(invalidateWinnerNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(invalidateWinnerNotifyPacket));
 
 	*sendBuffer << invalidateWinnerNotifyPacket.size << invalidateWinnerNotifyPacket.type << invalidateWinnerNotifyPacket.canceledUserId;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildWinnerInfoNotifyPacket()
+PacketRef jh_content::PacketBuilder::BuildWinnerInfoNotifyPacket()
 {
 	jh_network::WinnerInfoNotifyPacket winnerInfoNotifyPacket;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(winnerInfoNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(winnerInfoNotifyPacket));
 
 	*sendBuffer << winnerInfoNotifyPacket.size << winnerInfoNotifyPacket.type;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildCharacterSyncPacket(ULONGLONG entityId, const Vector3& syncPos, const Vector3& syncRot)
+PacketRef jh_content::PacketBuilder::BuildCharacterSyncPacket(ULONGLONG entityId, const Vector3& syncPos, const Vector3& syncRot)
 {
 	jh_network::CharacterPositionSyncPacket syncPacket;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(syncPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(syncPacket));
 
 	*sendBuffer << syncPacket.size << syncPacket.type << entityId << syncPos << syncRot;
 	
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildGameStartNotifyPacket()
+PacketRef jh_content::PacketBuilder::BuildGameStartNotifyPacket()
 {
 	jh_network::GameStartNotifyPacket gameStartNotifyPacket;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(gameStartNotifyPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(gameStartNotifyPacket));
 
 	*sendBuffer << gameStartNotifyPacket.size << gameStartNotifyPacket.type;
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildGameServerSettingRequestPacket()
+PacketRef jh_content::PacketBuilder::BuildGameServerSettingRequestPacket()
 {
 	jh_network::GameServerSettingRequestPacket settingRequestPacket;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(settingRequestPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(settingRequestPacket));
 
 	*sendBuffer << settingRequestPacket.size << settingRequestPacket.type;
 
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildGameServerLanInfoPacket(const WCHAR* ipStr, USHORT port, USHORT roomNum, ULONGLONG token)
+PacketRef jh_content::PacketBuilder::BuildGameServerLanInfoPacket(const WCHAR* ipStr, USHORT port, USHORT roomNum, ULONGLONG token)
 {
 	jh_network::GameServerLanInfoPacket gameServerLanInfoPacket;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(gameServerLanInfoPacket));
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(gameServerLanInfoPacket));
 
 	wcscpy_s(gameServerLanInfoPacket.ipStr, IP_STRING_LEN, ipStr);
 
@@ -267,14 +267,14 @@ PacketPtr jh_content::PacketBuilder::BuildGameServerLanInfoPacket(const WCHAR* i
 	return sendBuffer;
 }
 
-PacketPtr jh_content::PacketBuilder::BuildChatNotifyPacket(ULONGLONG userId, USHORT messageLen, const char* message)
+PacketRef jh_content::PacketBuilder::BuildChatNotifyPacket(ULONGLONG userId, USHORT messageLen, const char* message)
 {
 	jh_network::ChatOtherUserNotifyPacket chatNotifyPacket;
 
 	chatNotifyPacket.size = sizeof(userId) + sizeof(messageLen) + messageLen;
 	chatNotifyPacket.type = jh_network::CHAT_NOTIFY_PACKET;
 
-	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(jh_network::PacketHeader) + chatNotifyPacket.size);
+	PacketRef sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(jh_network::PacketHeader) + chatNotifyPacket.size);
 	*sendBuffer << chatNotifyPacket.size << chatNotifyPacket.type << userId << messageLen;
 
 	sendBuffer->PutData(message, messageLen);

@@ -21,7 +21,7 @@ namespace jh_content
 		virtual bool OnConnectionRequest(const SOCKADDR_IN& clientInfo);
 		virtual void OnError(int errCode, WCHAR* cause);
 
-		void OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type) override;
+		void OnRecv(ULONGLONG sessionId, PacketRef packet, USHORT type) override;
 		void OnConnected(ULONGLONG sessionId) override;
 		void OnDisconnected(ULONGLONG sessionId) override;
 

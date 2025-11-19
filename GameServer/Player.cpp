@@ -58,7 +58,7 @@ void jh_content::Player::BroadcastMoveState()
 {
 	if (m_pStateController->GetMoveType() == jh_content::PlayerMoveStateBase::MoveState::Move)
 	{
-		PacketPtr buffer = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(GetEntityId(), m_transformComponent.GetPosConst(), m_transformComponent.GetRotConst().y);
+		PacketRef buffer = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(GetEntityId(), m_transformComponent.GetPosConst(), m_transformComponent.GetRotConst().y);
 
 		m_pWorldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
 
@@ -66,7 +66,7 @@ void jh_content::Player::BroadcastMoveState()
 	}
 	else if (m_pStateController->GetMoveType() == jh_content::PlayerMoveStateBase::MoveState::Idle)
 	{
-		PacketPtr buffer = jh_content::PacketBuilder::BuildMoveStopNotifyPacket(GetEntityId(), m_transformComponent.GetPosConst(), m_transformComponent.GetRotConst().y);
+		PacketRef buffer = jh_content::PacketBuilder::BuildMoveStopNotifyPacket(GetEntityId(), m_transformComponent.GetPosConst(), m_transformComponent.GetRotConst().y);
 
 		m_pWorldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
 
@@ -83,7 +83,7 @@ void jh_content::Player::SendPositionUpdate()
 	if ((currentPos - m_lastUpdatePos).sqrMagnitude() < 0.01f)
 		return;
 
-	PacketPtr buffer = jh_content::PacketBuilder::BuildUpdateTransformPacket(jh_utility::GetTimeStamp(), GetEntityId(), currentPos, m_transformComponent.GetRotConst());
+	PacketRef buffer = jh_content::PacketBuilder::BuildUpdateTransformPacket(jh_utility::GetTimeStamp(), GetEntityId(), currentPos, m_transformComponent.GetRotConst());
 
 	m_pWorldPtr->SendPacketAroundSectorNSpectators(GetCurrentSector(), buffer);
 

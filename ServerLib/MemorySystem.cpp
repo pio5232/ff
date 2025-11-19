@@ -143,8 +143,3 @@ void jh_memory::MemorySystem::PrintMemoryUsage()
     )
 }
 
-
-PacketPtr MakeSharedBuffer(jh_memory::MemorySystem* memorySystem, size_t bufferSize)
-{
-    return MakeShared<jh_utility::SerializationBuffer>(memorySystem, memorySystem, bufferSize);
-}

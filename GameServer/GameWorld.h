@@ -25,11 +25,11 @@ namespace jh_content
 		// 게임 시작 관련 초기화
 		void Init(USHORT total, USHORT gamePlayerCount); // 1. ai+player, 2. player
 
-		void SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr& packet);
-		void SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr& packet);
+		void SendPacketAroundSectorNSpectators(const Sector& sector, PacketRef& packet);
+		void SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketRef& packet);
 
 		void CleanUpSpectatorEntities();
-		void SendToSpectatorEntities(PacketPtr& packet);
+		void SendToSpectatorEntities(PacketRef& packet);
 
 		void SetSpectator(EntityPtr entity);
 		const class SectorManager* GetSectorManagerConst() const { return m_pSectorManager.get(); }
@@ -39,9 +39,9 @@ namespace jh_content
 		void CreateAI(class jh_content::GameWorld* worldPtr);
 		GamePlayerPtr CreateGamePlayer(UserPtr userPtr);
 
-		void SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr);
+		void SendToEntity(ULONGLONG entityId, PacketRef& packetPtr);
 
-		void BroadCast(PacketPtr& packetPtr);
+		void BroadCast(PacketRef& packetPtr);
 
 	public:
 		void CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr);

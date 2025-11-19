@@ -14,18 +14,18 @@ namespace jh_content
 		bool AddEntity(int sectorZ, int sectorX, EntityPtr entity);
 
 		//bool DeleteEntity(int sectorZ, int sectorX, EntityPtr entity, jh_network::SharedSendBuffer sendBuffer);
-		bool DeleteEntity(EntityPtr entity, PacketPtr& sendBuffer);
+		bool DeleteEntity(EntityPtr entity, PacketRef& sendBuffer);
 
 		void SendAllEntityInfo();
 
 		void UpdateSector(EntityPtr entity);
 
 		// 섹터 하나에 패킷 전송
-		void SendPacket_Sector(const Sector& sector, PacketPtr& packet);
+		void SendPacket_Sector(const Sector& sector, PacketRef& packet);
 
 		// 주변 섹터에 패킷 전송
-		void SendPacketAroundSector(const Sector& sector, PacketPtr& packet);
-		void SendPacketAroundSector(int sectorX, int sectorZ, PacketPtr& packet);
+		void SendPacketAroundSector(const Sector& sector, PacketRef& packet);
+		void SendPacketAroundSector(int sectorX, int sectorZ, PacketRef& packet);
 
 		EntityPtr GetMinEntityInRange(EntityPtr targetEntity, float range);
 

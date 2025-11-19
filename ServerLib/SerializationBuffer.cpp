@@ -1,62 +1,53 @@
 #include "LibraryPch.h"
 #include "SerializationBuffer.h"
-#include "Memory.h"
+#include "ObjectPool.h"
 
 using namespace jh_utility;
 
-ULONGLONG SerializationBuffer::g_ullPacketCount = 0;
+alignas(64) ULONGLONG SerializationBuffer::g_ullPacketCount = 0;
 
-SerializationBuffer::SerializationBuffer(jh_memory::MemorySystem* memorySystem, size_t iBufferSize) : m_iBufferCapacity(iBufferSize), m_iFront(0), m_iRear(0),m_pMemorySystem(memorySystem)
+SerializationBuffer::SerializationBuffer(size_t iBufferSize) : m_iBufferCapacity(iBufferSize), m_iFront(0), m_iRear(0)
 {
-	if (m_pMemorySystem == nullptr)
-		m_chpBuffer = new char[m_iBufferCapacity];
-	else
-	{
-		m_chpBuffer = static_cast<char*>(m_pMemorySystem->Alloc(iBufferSize));
+	m_chpBuffer = jh_memory::ObjectPool<char>::Alloc(m_iBufferCapacity);
 		
-		InterlockedIncrement64((LONGLONG*)&g_ullPacketCount);
-	}
+	InterlockedIncrement64((LONGLONG*)&g_ullPacketCount);
+	
+	InterlockedExchange64(&m_llRefCount, 1);
 }
 
 
 SerializationBuffer::~SerializationBuffer()
 {
-	if (m_pMemorySystem == nullptr)
-		delete[] m_chpBuffer;
-	else
-	{
-		m_pMemorySystem->Free(m_chpBuffer);
+	jh_memory::ObjectPool<char>::Free(m_chpBuffer);
 
-		InterlockedDecrement64((LONGLONG*)&g_ullPacketCount);
-	}
 	m_chpBuffer = nullptr;
+
+	InterlockedDecrement64((LONGLONG*)&g_ullPacketCount);
 }
 
 
-// 이동 생성자;
-jh_utility::SerializationBuffer::SerializationBuffer(SerializationBuffer&& other) noexcept
-{
-	other.m_iBufferCapacity = m_iBufferCapacity;
-	other.m_iFront = m_iFront;
-	other.m_iRear = m_iRear;
-	other.m_chpBuffer = m_chpBuffer;
-	other.m_pMemorySystem = m_pMemorySystem;
-
-	memset(this, 0, sizeof(SerializationBuffer));
-}
-
-SerializationBuffer& jh_utility::SerializationBuffer::operator=(SerializationBuffer&& other) noexcept
-{
-	other.m_iBufferCapacity = m_iBufferCapacity;
-	other.m_iFront = m_iFront;
-	other.m_iRear = m_iRear;
-	other.m_chpBuffer = m_chpBuffer;
-	other.m_pMemorySystem = m_pMemorySystem;
-
-	memset(this, 0, sizeof(SerializationBuffer));
-
-	return *this;
-}
+//// 이동 생성자;
+//jh_utility::SerializationBuffer::SerializationBuffer(SerializationBuffer&& other) noexcept
+//{
+//	other.m_iBufferCapacity = m_iBufferCapacity;
+//	other.m_iFront = m_iFront;
+//	other.m_iRear = m_iRear;
+//	other.m_chpBuffer = m_chpBuffer;
+//
+//	memset(this, 0, sizeof(SerializationBuffer));
+//}
+//
+//SerializationBuffer& jh_utility::SerializationBuffer::operator=(SerializationBuffer&& other) noexcept
+//{
+//	other.m_iBufferCapacity = m_iBufferCapacity;
+//	other.m_iFront = m_iFront;
+//	other.m_iRear = m_iRear;
+//	other.m_chpBuffer = m_chpBuffer;
+//
+//	memset(this, 0, sizeof(SerializationBuffer));
+//
+//	return *this;
+//}
 
 // 패킷 청소
 void SerializationBuffer::Clear()
@@ -64,34 +55,6 @@ void SerializationBuffer::Clear()
 	m_iFront = 0;
 	m_iRear = 0;
 }
-
-bool SerializationBuffer::Resize()
-{
-	if (m_iBufferCapacity >= CSERIALIZATION_MAX_SIZE)
-		return false;
-
-	int _tempBufferCapacity = m_iBufferCapacity * 2;
-
-	char* _tempBuffer = new char[_tempBufferCapacity];
-
-	errno_t errcpy = memcpy_s(_tempBuffer, _tempBufferCapacity, m_chpBuffer, m_iBufferCapacity);
-
-	if (errcpy) // 실패
-	{
-		delete[] _tempBuffer;
-
-		return false;
-	}
-
-	delete[] m_chpBuffer;
-
-	m_chpBuffer = _tempBuffer;
-
-	m_iBufferCapacity = _tempBufferCapacity;
-
-	return true;
-}
-
 // 버퍼 포인터 얻기
 char* SerializationBuffer::GetBufferPtr() const
 {
@@ -156,6 +119,13 @@ int SerializationBuffer::PutData(const char* chpSrc, int iSrcSize) // 데이터 넣�
 	m_iRear += iSrcSize;
 
 	return iSrcSize;
+}
+
+
+void jh_utility::SerializationBuffer::DecreaseRefCount()
+{
+	if (0 == InterlockedDecrement64(&m_llRefCount))
+		jh_memory::ObjectPool<PacketBuffer>::Free(this);
 }
 
 // << 연산자 오버로딩, Throw (int) , 넣을 사이즈가 작을 때 0번 / 뺄 사이즈가 요청한 사이즈보다 작을 때 1번

@@ -7,7 +7,7 @@ namespace jh_content
 		//using PacketFunc = ErrorCode(LobbySystem::*)(ULONGLONG, jh_network::SerializationBufferPtr&);
 		// 어차피 수행하는 쪽에서 SessionPtr을 담아두고 보관한 상태에서 Process 호출 -> 사용하는 동안엔 제거되지 않는 것이 확실하다.
 		//using PacketFunc = ErrorCode(EchoSystem::*)(LONGLONG, jh_utility::SerializationBuffer*);
-		using PacketFunc = ErrorCode(EchoSystem::*)(LONGLONG, PacketPtr&);
+		using PacketFunc = ErrorCode(EchoSystem::*)(LONGLONG, PacketRef&);
 
 	public:
 		EchoSystem(jh_network::IocpServer* owner);
@@ -15,12 +15,12 @@ namespace jh_content
 
 		void Init();
 
-		inline void EnqueueJob(JobPtr& job)
+		inline void EnqueueJob(JobRef& job)
 		{
 			m_netJobQueue.Push(job);
 		}
 
-		//inline JobPtr DequeueJob()
+		//inline JobRef DequeueJob()
 		//{
 		//	return m_netJobQueue.Pop();
 		//}
@@ -29,12 +29,12 @@ namespace jh_content
 		// Game에서의 Connect / Disconnect
 		// 작업도 분리
 
-		inline void EnqueueSystemJob(SessionConnectionEventPtr& systemJob)
+		inline void EnqueueSystemJob(SessionConnectionEventRef& systemJob)
 		{
 			m_sessionConnEventQueue.Push(systemJob);
 		}
 
-		//inline SessionConnectionEventPtr DequeueSystemJob()
+		//inline SessionConnectionEventRef DequeueSystemJob()
 		//{
 		//	return m_sessionConnEventQueue.Pop();
 		//}
@@ -46,7 +46,7 @@ namespace jh_content
 		void Stop();
 
 	private:
-		ErrorCode ProcessPacket(LONGLONG sessionId, DWORD packetType, PacketPtr& packet)
+		ErrorCode ProcessPacket(LONGLONG sessionId, DWORD packetType, PacketRef& packet)
 		{
 			if (m_packetFuncDic.find(packetType) == m_packetFuncDic.end())
 				return ErrorCode::CANNOT_FIND_PACKET_FUNC;
@@ -58,13 +58,13 @@ namespace jh_content
 		void ProcessSystemJob();
 
 		// 함수 정의
-		ErrorCode ProcessEchoPacket(LONGLONG sessionId,PacketPtr& packet);
+		ErrorCode ProcessEchoPacket(LONGLONG sessionId,PacketRef& packet);
 
 		std::unordered_map<DWORD, PacketFunc> m_packetFuncDic;
 		//std::unique_ptr<jh_content::UserManager> m_pUserManager;
 
-		jh_utility::LockQueue<JobPtr> m_netJobQueue;
-		jh_utility::LockQueue<SessionConnectionEventPtr> m_sessionConnEventQueue;
+		jh_utility::LockArray<JobRef> m_netJobQueue;
+		jh_utility::LockArray<SessionConnectionEventRef> m_sessionConnEventQueue;
 
 		HANDLE m_hLogicThread;
 		jh_network::IocpServer* m_pOwner;

@@ -148,7 +148,7 @@ void jh_content::DummyUpdateSystem::Stop()
 	_LOG(LOBBY_DUMMY_SAVEFILE_NAME, LOG_LEVEL_INFO, L"[Stop] Logic threads stopped.");
 }
 
-void jh_content::DummyUpdateSystem::EnqueueJob(JobPtr& job, int idx)
+void jh_content::DummyUpdateSystem::EnqueueJob(JobRef& job, int idx)
 {
 	if (idx < 0 || idx >= LOGIC_THREAD_COUNT)
 		return;
@@ -160,7 +160,7 @@ void jh_content::DummyUpdateSystem::EnqueueJob(JobPtr& job, int idx)
 	SetEvent(logicData.m_hJobEvent);
 }
 
-void jh_content::DummyUpdateSystem::EnqueueSessionConnEvent(SessionConnectionEventPtr& connectionEvent, int idx)
+void jh_content::DummyUpdateSystem::EnqueueSessionConnEvent(SessionConnectionEventRef& connectionEvent, int idx)
 {
 	if (idx < 0 || idx >= LOGIC_THREAD_COUNT)
 		return;
@@ -176,15 +176,15 @@ void jh_content::DummyUpdateSystem::ProcessNetJob(int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 
-	static thread_local alignas(64) std::queue<JobPtr> dummyJobQ;
+	static thread_local alignas(64) std::queue<JobRef> dummyJobQ;
 
-	std::queue<JobPtr> emptyQ;
+	std::queue<JobRef> emptyQ;
 
 	m_logicData[threadNum].m_netJobQueue.Swap(dummyJobQ);
 
 	while(dummyJobQ.size() > 0)
 	{
-		JobPtr& job = dummyJobQ.front();
+		JobRef& job = dummyJobQ.front();
 	
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket, threadNum);
 	
@@ -200,14 +200,14 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 
 	LogicData& threadLogicData = m_logicData[threadNum];
 
-	static thread_local alignas(64) std::queue<SessionConnectionEventPtr> sessionConnEventQ;
-	std::queue<SessionConnectionEventPtr> emptyQ;
+	static thread_local alignas(64) std::queue<SessionConnectionEventRef> sessionConnEventQ;
+	std::queue<SessionConnectionEventRef> emptyQ;
 
 	threadLogicData.m_sessionConnEventQueue.Swap(sessionConnEventQ);
 	
 	while(sessionConnEventQ.size() > 0)
 	{
-		SessionConnectionEventPtr& sessionConnEvent = sessionConnEventQ.front();
+		SessionConnectionEventRef& sessionConnEvent = sessionConnEventQ.front();
 		ULONGLONG sessionId = sessionConnEvent->m_ullSessionId;
 
 		switch (sessionConnEvent->m_msgType)
@@ -230,9 +230,9 @@ void jh_content::DummyUpdateSystem::ProcessSessionConnectionEvent(int threadNum)
 			threadLogicData.m_dummyVectorIndexUMap[dummy] = idx;
 
 			// 등록
-			PacketPtr hbPkt = jh_content::DummyPacketBuilder::BuildHeartbeatPacket(dummy->m_ullLastUpdatedHeartbeatTime);
+			PacketRef hbPkt = jh_content::DummyPacketBuilder::BuildHeartbeatPacket(dummy->m_ullLastUpdatedHeartbeatTime);
 
-			PacketPtr logInReqPkt = jh_content::DummyPacketBuilder::BuildLoginRequestPacket();
+			PacketRef logInReqPkt = jh_content::DummyPacketBuilder::BuildLoginRequestPacket();
 
 			m_pOwner->SendPacket(dummy->m_ullSessionId, hbPkt);
 
@@ -294,7 +294,7 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 		{
 			dummy->m_ullLastUpdatedHeartbeatTime = curTimeStamp;
 
-			PacketPtr hbPkt = jh_content::DummyPacketBuilder::BuildHeartbeatPacket(curTimeStamp);
+			PacketRef hbPkt = jh_content::DummyPacketBuilder::BuildHeartbeatPacket(curTimeStamp);
 			
 			m_pOwner->SendPacket(dummy->m_ullSessionId, hbPkt);
 		}
@@ -309,7 +309,7 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 		{
 		case DummyStatus::IN_LOBBY:
 		{
-			PacketPtr roomListRqPkt = DummyPacketBuilder::BuildRoomListRequestPacket();
+			PacketRef roomListRqPkt = DummyPacketBuilder::BuildRoomListRequestPacket();
 
 			SendToDummy(dummy, roomListRqPkt);
 
@@ -321,13 +321,13 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 
 			if (ran < 15)
 			{
-				PacketPtr leaveRoomRqPkt = DummyPacketBuilder::BuildLeaveRoomRequestPacket(dummy->m_usExpectedRoomNum, dummy->m_wszExpectedRoomName);
+				PacketRef leaveRoomRqPkt = DummyPacketBuilder::BuildLeaveRoomRequestPacket(dummy->m_usExpectedRoomNum, dummy->m_wszExpectedRoomName);
 
 				SendToDummy(dummy, leaveRoomRqPkt, DummyStatus::WAIT_LEAVE_ROOM);
 			}
 			else
 			{
-				PacketPtr chatPkt = DummyPacketBuilder::BuildChatRequestPacket(dummy->m_usExpectedRoomNum);
+				PacketRef chatPkt = DummyPacketBuilder::BuildChatRequestPacket(dummy->m_usExpectedRoomNum);
 
 				SendToDummy(dummy, chatPkt, DummyStatus::IN_ROOM_WAIT_CHAT);
 			}
@@ -336,7 +336,7 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 		}
 		case DummyStatus::CHECK_RTT:
 		{
-			PacketPtr echoPkt = DummyPacketBuilder::BuildEchoPacket();
+			PacketRef echoPkt = DummyPacketBuilder::BuildEchoPacket();
 
 			SendToDummy(dummy, echoPkt);
 
@@ -348,7 +348,7 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 
 }
 
-void jh_content::DummyUpdateSystem::SendToDummy(DummyPtr& dummy, PacketPtr& packet, DummyStatus nextStauts)
+void jh_content::DummyUpdateSystem::SendToDummy(DummyPtr& dummy, PacketRef& packet, DummyStatus nextStauts)
 {
 	dummy->m_ullLastSendTime = jh_utility::GetTimeStamp();
 	
@@ -360,7 +360,7 @@ void jh_content::DummyUpdateSystem::SendToDummy(DummyPtr& dummy, PacketPtr& pack
 		dummy->m_dummyStatus = nextStauts;
 }
 
-void jh_content::DummyUpdateSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketRef& packet, int threadNum)
 {
 	if (m_packetFuncDic.find(packetType) == m_packetFuncDic.end())
 		return;
@@ -371,7 +371,7 @@ void jh_content::DummyUpdateSystem::ProcessPacket(ULONGLONG sessionId, DWORD pac
 	return (this->*m_packetFuncDic[packetType])(sessionId, packet, threadNum);
 }
 
-void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 	
@@ -400,7 +400,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 	// 방이 존재하지 않을 시 방 생성
 	if (roomCnt == 0)
 	{
-		PacketPtr makeRoomPkt = jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket();
+		PacketRef makeRoomPkt = jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket();
 
 		SendToDummy(dummy, makeRoomPkt);
 	}
@@ -411,14 +411,14 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 
 		if (ran < 2)
 		{
-			PacketPtr makeRoomPkt = jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket();
+			PacketRef makeRoomPkt = jh_content::DummyPacketBuilder::BuildMakeRoomRequestPacket();
 
 			SendToDummy(dummy, makeRoomPkt);
 
 		}
 		else
 		{
-			PacketPtr enterRoomPkt = jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(roomInfo[randRoomNum].m_usRoomNum, roomInfo[randRoomNum].m_wszRoomName);
+			PacketRef enterRoomPkt = jh_content::DummyPacketBuilder::BuildEnterRoomRequestPacket(roomInfo[randRoomNum].m_usRoomNum, roomInfo[randRoomNum].m_wszRoomName);
 
 			dummy->m_usExpectedRoomNum = roomInfo[randRoomNum].m_usRoomNum;
 			wcscpy_s(dummy->m_wszExpectedRoomName, roomInfo[randRoomNum].m_wszRoomName);
@@ -433,7 +433,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 
 	// Make, Enter 중 선택}
 
-void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 
@@ -471,7 +471,7 @@ void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionI
 
 }
 
-void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 	
@@ -503,7 +503,7 @@ void jh_content::DummyUpdateSystem::HandleMakeRoomResponsePacket(ULONGLONG sessi
 
 }
 
-void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 
@@ -529,7 +529,7 @@ void jh_content::DummyUpdateSystem::HandleEnterRoomResponsePacket(ULONGLONG sess
 
 }
 
-void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 
@@ -543,7 +543,7 @@ void jh_content::DummyUpdateSystem::HandleChatNotifyPacket(ULONGLONG sessionId, 
 	// ROOM
 }
 
-void jh_content::DummyUpdateSystem::HandleChatResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleChatResponsePacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 
@@ -557,7 +557,7 @@ void jh_content::DummyUpdateSystem::HandleChatResponsePacket(ULONGLONG sessionId
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
 }
 
-void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 
@@ -576,7 +576,7 @@ void jh_content::DummyUpdateSystem::HandleLeaveRoomResponsePacket(ULONGLONG sess
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_ullNextActionTime = jh_utility::GetTimeStamp() + GetRandTimeForDummy();
 
 }
-void jh_content::DummyUpdateSystem::HandleErrorPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleErrorPacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	PRO_START_AUTO_FUNC;
 
@@ -599,7 +599,7 @@ void jh_content::DummyUpdateSystem::HandleErrorPacket(ULONGLONG sessionId, Packe
 
 }
 
-void jh_content::DummyUpdateSystem::HandleEchoPacket(ULONGLONG sessionId, PacketPtr& packet, int threadNum)
+void jh_content::DummyUpdateSystem::HandleEchoPacket(ULONGLONG sessionId, PacketRef& packet, int threadNum)
 {
 	// RTT 측정은 하나의 세션이 담당한다..
 	PRO_START_AUTO_FUNC;

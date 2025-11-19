@@ -70,23 +70,23 @@ void jh_content::GameServer::OnError(int errCode, WCHAR* cause)
 {
 }
 
-void jh_content::GameServer::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
+void jh_content::GameServer::OnRecv(ULONGLONG sessionId, PacketRef packet, USHORT type)
 {
-	JobPtr job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet);
+	JobRef job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet);
 
 	m_pGameSystem->EnqueueJob(job);
 }
 
 void jh_content::GameServer::OnConnected(ULONGLONG sessionId)
 {
-	SessionConnectionEventPtr sessionConnectionEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	SessionConnectionEventRef sessionConnectionEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
 	m_pGameSystem->EnqueueSessionConnEvent(sessionConnectionEvent);
 }
 
 void jh_content::GameServer::OnDisconnected(ULONGLONG sessionId)
 {
-	SessionConnectionEventPtr sessionConnectionEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
+	SessionConnectionEventRef sessionConnectionEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
 
 	m_pGameSystem->EnqueueSessionConnEvent(sessionConnectionEvent);
 }

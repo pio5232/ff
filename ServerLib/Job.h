@@ -11,24 +11,25 @@ namespace jh_utility
 	/// </summary>
 	struct Job
 	{
-		Job(ULONGLONG id, USHORT type, PacketPtr packet) :
+		Job(ULONGLONG id, USHORT type, PacketRef packet) :
 			m_llSessionId(id), m_wJobType(type), m_pPacket(packet) {}
-		ULONGLONG m_llSessionId;
-		USHORT m_wJobType; 
-		PacketPtr m_pPacket;
+		
+		ULONGLONG	m_llSessionId;
+		USHORT		m_wJobType; 
+		PacketRef	m_pPacket;
 
 		~Job()
 		{
 			m_llSessionId = INVALID_SESSION_ID;
-			m_wJobType = (USHORT)(jh_network::INVALID_PACKET);
+			m_wJobType	= (USHORT)(jh_network::INVALID_PACKET);
 			m_pPacket.reset();
 		}
 		
-		Job(const Job& other) = default;
-		Job(Job&& other) = default;
+		Job(const Job& other)				= default;
+		Job(Job&& other)					= default;
 
-		Job& operator=(const Job& other) = default;
-		Job& operator=(Job&& other) = default;
+		Job& operator=(const Job& other)	= default;
+		Job& operator=(Job&& other)			= default;
 	};
 
 
@@ -51,14 +52,14 @@ namespace jh_utility
 			m_msgType = SessionConnectionEventType::NONE;
 		}
 
-		SessionConnectionEvent(const SessionConnectionEvent& other) = default;
-		SessionConnectionEvent(SessionConnectionEvent&& other) = default;
+		SessionConnectionEvent(const SessionConnectionEvent& other)				= default;
+		SessionConnectionEvent(SessionConnectionEvent&& other)					= default;
 
-		SessionConnectionEvent& operator=(const SessionConnectionEvent& other) = default;
-		SessionConnectionEvent& operator=(SessionConnectionEvent&& other) = default;
+		SessionConnectionEvent& operator=(const SessionConnectionEvent& other)	= default;
+		SessionConnectionEvent& operator=(SessionConnectionEvent&& other)		= default;
 
-		ULONGLONG m_ullSessionId; 
-		SessionConnectionEventType m_msgType;
+		ULONGLONG					m_ullSessionId; 
+		SessionConnectionEventType	m_msgType;
 	};
 }
 

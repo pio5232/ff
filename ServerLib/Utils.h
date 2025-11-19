@@ -14,20 +14,20 @@
 class SRWLockGuard
 {
 public:
-	SRWLockGuard(SRWLOCK* lock) : _playerLock(lock) { AcquireSRWLockExclusive(_playerLock); }
-	~SRWLockGuard() { ReleaseSRWLockExclusive(_playerLock); }
+	SRWLockGuard(SRWLOCK* lock) : m_pLock(lock) { AcquireSRWLockExclusive(m_pLock); }
+	~SRWLockGuard() { ReleaseSRWLockExclusive(m_pLock); }
 
-	SRWLOCK* _playerLock;
+	SRWLOCK* m_pLock;
 };
 
 class SRWSharedLockGuard
 {
 public:
-	SRWSharedLockGuard(SRWLOCK* lock) : _playerLock(lock) { AcquireSRWLockShared(_playerLock); }
-	~SRWSharedLockGuard() { ReleaseSRWLockShared(_playerLock); }
+	SRWSharedLockGuard(SRWLOCK* lock) : m_pLock(lock) { AcquireSRWLockShared(m_pLock); }
+	~SRWSharedLockGuard() { ReleaseSRWLockShared(m_pLock); }
 
 private:
-	SRWLOCK* _playerLock;
+	SRWLOCK* m_pLock;
 
 };
 
@@ -35,18 +35,20 @@ namespace jh_utility
 {
 	struct ProcessTimeInfo
 	{
-		FILETIME creationTime;
-		FILETIME exitTime;
+		FILETIME	m_creationTime;
+		FILETIME	m_exitTime;
+		
 		// GetProcessTime 실행 시 100 나노 초 기준으로 입력됨.
-		FILETIME kernnelTime;
-		FILETIME userTime;
+		FILETIME	m_kernnelTime;
+		FILETIME	m_userTime;
 
 		// convert용
-		SYSTEMTIME systemTime;
+		SYSTEMTIME	m_systemTime;
 
-		ULONGLONG prevKernelTime;
-		ULONGLONG prevUserTime;
+		ULONGLONG	m_prevKernelTime;
+		ULONGLONG	m_prevUserTime;
 	};
+
 	// 기본 자료형 사용
 	template <typename T>
 	class LockStack
@@ -54,120 +56,73 @@ namespace jh_utility
 	public:
 		LockStack()
 		{
-			InitializeSRWLock(&_lock);
+			InitializeSRWLock(&m_lock);
 		}
 		void Reserve(int reserveCount)
 		{
-			SRWLockGuard lockGuard(&_lock);
-			_vec.reserve(reserveCount);
+			SRWLockGuard lockGuard(&m_lock);
+			m_vec.reserve(reserveCount);
 		}
 		void Push(T data)
 		{
-			SRWLockGuard lockGuard(&_lock);
-			_vec.push_back(data);
+			SRWLockGuard lockGuard(&m_lock);
+			m_vec.push_back(data);
 		}
 
 		bool TryPop(T& data)
 		{
-			SRWLockGuard lockGuard(&_lock);
-			if (_vec.size() > 0)
+			SRWLockGuard lockGuard(&m_lock);
+			if (m_vec.size() > 0)
 			{
-				data = _vec.back();
+				data = m_vec.back();
 
-				_vec.pop_back();
+				m_vec.pop_back();
 				return true;
 			}
 			else
 				return false;
 		}
 	private:
-		SRWLOCK _lock;
-		std::vector<T> _vec;
+		SRWLOCK			m_lock;
+		std::vector<T>	m_vec;
 	};
 
 	template <typename T>
-	class LockQueue {
+	class LockArray {
 	public:
-		LockQueue()
+		LockArray()
 		{
 			InitializeSRWLock(&m_lock);
 		}
 		//void Push(T data)
-		void Push(T& data)
+		void Push(T data)
 		{
 			SRWLockGuard lockGuard(&m_lock);
 
-			m_queue.push(data);
+			m_vec.push_back(data);
 		}
-
-		T Pop()
-		{
-			SRWLockGuard lockGuard(&m_lock);
-			if (m_queue.size() > 0)
-			{
-				T ret = m_queue.front();
-				m_queue.pop();
-				
-				return ret;
-			}
-			
-			return T();
-		}
-
-		bool TryPop(T& t)
-		{
-			SRWLockGuard lockGuard(&m_lock);
-			if (m_queue.size() > 0)
-			{
-				t = m_queue.front();
-				m_queue.pop_front();
-
-				return true;
-			}
-			else
-				return false;
-		}
-
-		int PopAll(OUT std::vector<T>& vec)
-		{
-			SRWLockGuard lockGuard(&m_lock);
-
-			int popCount = 0;
-			while (m_queue.size() > 0)
-			{
-				T ele = m_queue.front();
-				m_queue.pop();
-
-				vec.push_back(ele);
-
-				popCount++;
-			}
-
-			return popCount;
-		}
-
-		void Swap(std::queue<T>& q)
+		void Swap(std::vector<T>& v)
 		{
 			SRWLockGuard lockGuard(&m_lock);
 			
-			std::swap(m_queue, q);
+			std::swap(m_vec, v);
 		}
 		int GetUseSize()
 		{
 			SRWLockGuard lockGuard(&m_lock);
 			
-			return m_queue.size();
+			return m_vec.size();
 		}
 		void Clear()
 		{
 			SRWLockGuard lockGuard(&m_lock);
 			
 			// move 
-			m_queue = std::queue<T>();	
+			m_vec = std::vector<T>();
 		}
 	private:
-		SRWLOCK m_lock;
-		std::queue<T> m_queue;
+		SRWLOCK			m_lock;
+		std::vector<T>	m_vec;
 	};
 }
 

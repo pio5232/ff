@@ -54,11 +54,11 @@ jh_content::LobbyDummyClient::~LobbyDummyClient()
 {
 }
 
-void jh_content::LobbyDummyClient::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
+void jh_content::LobbyDummyClient::OnRecv(ULONGLONG sessionId, PacketRef packet, USHORT type)
 {
 	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
-	JobPtr job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet); //MakeJob(sessionId, type, packet);
+	JobRef job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet); //MakeJob(sessionId, type, packet);
 
 	m_pDummySystem->EnqueueJob(job, threadNum);
 }
@@ -67,7 +67,7 @@ void jh_content::LobbyDummyClient::OnConnected(ULONGLONG sessionId)
 {
 	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
-	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	SessionConnectionEventRef sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
 	m_pDummySystem->EnqueueSessionConnEvent(sessionConnEvent, threadNum);
 }
@@ -76,7 +76,7 @@ void jh_content::LobbyDummyClient::OnDisconnected(ULONGLONG sessionId)
 {
 	int threadNum = static_cast<int>(sessionId) % LOGIC_THREAD_COUNT;
 
-	SessionConnectionEventPtr sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	SessionConnectionEventRef sessionConnEvent = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);// MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
 	m_pDummySystem->EnqueueSessionConnEvent(sessionConnEvent, threadNum);
 }
