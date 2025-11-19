@@ -6,12 +6,12 @@ namespace jh_memory
 }
 namespace jh_utility
 {
-#define CSERIALIZATION_DEFAULT_SIZE 1024
+#define CSERIALIZATION_DEFAULT_SIZE 1000
 #define CSERIALIZATION_MAX_SIZE 2048
 	class SerializationBuffer
 	{
 	public:
-		SerializationBuffer(jh_memory::MemorySystem* memorySystem, size_t iBufferSize);
+		SerializationBuffer(jh_memory::MemorySystem* memorySystem, size_t iBufferSize = CSERIALIZATION_DEFAULT_SIZE);
 
 		~SerializationBuffer();
 
@@ -120,5 +120,3 @@ namespace jh_utility
 		jh_memory::MemorySystem* m_pMemorySystem;
 	};
 }
-
-//#endif // !CSerialization

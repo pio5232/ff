@@ -55,6 +55,9 @@ namespace jh_network
 
 		// 스마트포인터버전
 		virtual void OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type) = 0;
+
+		// 직렬화포인터버전
+		virtual void OnRecv(ULONGLONG sessionId, jh_utility::SerializationBuffer* packet, USHORT type) = 0;
 		
 		virtual void OnConnected(ULONGLONG sessionId) = 0;
 		virtual void OnDisconnected(ULONGLONG sessionId) = 0;

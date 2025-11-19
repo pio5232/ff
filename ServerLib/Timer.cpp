@@ -1,15 +1,15 @@
 #include "LibraryPch.h"
 #include "Timer.h"
 
-jh_utility::Timer::Timer() : _start{}, _end{}
+jh_utility::Timer::Timer() : m_start{}, m_end{}
 {
-	QueryPerformanceFrequency(&_frequency);
+	QueryPerformanceFrequency(&m_frequency);
 
 }
 
 void jh_utility::Timer::Start()
 {
-	QueryPerformanceCounter(&_start);
+	QueryPerformanceCounter(&m_start);
 }
 
 ULONGLONG jh_utility::GetTimeStamp()

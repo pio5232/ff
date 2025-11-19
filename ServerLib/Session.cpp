@@ -83,7 +83,7 @@ void jh_network::ActiveSessionManager::RemoveActiveSession(ULONGLONG sessionIdWi
 	m_activeSessionMap.erase(sessionIdWithIdx);
 }
 
-void jh_network::ActiveSessionManager::ProcessAllSessions(const std::function<void(ULONGLONG)>& func)
+void jh_network::ActiveSessionManager::ProcessAllSession(const std::function<void(ULONGLONG)>& func)
 {
 	std::vector<ULONGLONG> delSessions;
 	delSessions.reserve(5);

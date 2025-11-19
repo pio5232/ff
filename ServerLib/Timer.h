@@ -12,11 +12,11 @@ namespace jh_utility
 		template<typename T = double>
 		T Stop()
 		{
-			QueryPerformanceCounter(&_end);
+			QueryPerformanceCounter(&m_end);
 
-			T ret = static_cast<T>(_end.QuadPart - _start.QuadPart) / _frequency.QuadPart;
+			T ret = static_cast<T>(m_end.QuadPart - m_start.QuadPart) / m_frequency.QuadPart;
 
-			_start.QuadPart = 0;
+			m_start.QuadPart = 0;
 
 			return ret;
 		}
@@ -26,24 +26,23 @@ namespace jh_utility
 		template<typename T = double>
 		T Lap()
 		{
-			QueryPerformanceCounter(&_end);
+			QueryPerformanceCounter(&m_end);
 
-			T ret = static_cast<T>(_end.QuadPart - _start.QuadPart) / _frequency.QuadPart;
+			T ret = static_cast<T>(m_end.QuadPart - m_start.QuadPart) / m_frequency.QuadPart;
 
-			_start = _end;
+			m_start = m_end;
 
 			return ret;
 		}
 	private:
-		LARGE_INTEGER _start;
-		LARGE_INTEGER _end;
-		LARGE_INTEGER _frequency;
+		LARGE_INTEGER m_start;
+		LARGE_INTEGER m_end;
+		LARGE_INTEGER m_frequency;
 
 	};
 
 	// 1970_01_01 이후 시간 ms로 얻어오기
 	ULONGLONG GetTimeStamp();
-	
 	ULONGLONG GetTimeStampMicrosecond();
 }
 

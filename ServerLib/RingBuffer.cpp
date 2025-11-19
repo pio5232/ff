@@ -7,7 +7,6 @@ using namespace jh_utility;
 jh_utility::RingBuffer::RingBuffer() :m_iCapacity(RINGBUFFER_DEFAULT_SIZE), m_iFront(0), m_iRear(0)
 {
 	m_chpBuffer = new char[m_iCapacity];
-	//InitializeSRWLock(&m_lock);
 }
 
 
@@ -15,8 +14,6 @@ RingBuffer::RingBuffer(int iCapacity) : m_iFront(0), m_iRear(0)
 {
 	m_iCapacity = iCapacity;
 	m_chpBuffer = new char[m_iCapacity];
-
-	//InitializeSRWLock(&m_lock);
 }
 
 RingBuffer::~RingBuffer()
@@ -24,7 +21,6 @@ RingBuffer::~RingBuffer()
 	delete[] m_chpBuffer;
 }
 
-// resize는 무조건 큰 사이즈로만.
 bool RingBuffer::Resize(int newCapacity)
 {
 	if (newCapacity < m_iCapacity)
@@ -47,7 +43,6 @@ bool RingBuffer::Resize(int newCapacity)
 	return ret;
 }
 
-// Capcity return
 int RingBuffer::GetCapacity()
 {
 	return m_iCapacity;
@@ -73,10 +68,8 @@ int RingBuffer::GetFreeSize()
 	int front = m_iFront;
 	int rear = m_iRear;
 
-	// 이것만 수정함
 	if (front == (rear + 1) % m_iCapacity)
 		return 0;
-
 	else if (rear >= front)
 		return m_iCapacity - (rear - front) - 1;
 	else
@@ -84,7 +77,7 @@ int RingBuffer::GetFreeSize()
 }
 
 // 결국 empty <-> full은 m_rear == m_front 동일
-int RingBuffer::DirectEnqueueSize() // 
+int RingBuffer::DirectEnqueueSize()  
 {
 	int front = m_iFront;
 	int rear = m_iRear;
@@ -196,7 +189,6 @@ bool RingBuffer::PeekRetBool(char* chpDest, int iSize) // Deque와 마찬가지로 성�
 	return true;
 }
 
-//===== 막 집어넣는 경우.
 int RingBuffer::Enqueue(char* chpData, int iSize)
 {
 	int freeSize = GetFreeSize();
@@ -225,7 +217,6 @@ int RingBuffer::Enqueue(char* chpData, int iSize)
 		MoveRear(enqueueSize);
 	}
 
-	//m_iSize += enqueueSize;
 	return enqueueSize;
 }
 int RingBuffer::Dequeue(char* chpDest, int iSize)
@@ -253,7 +244,6 @@ int RingBuffer::Dequeue(char* chpDest, int iSize)
 		MoveFront(dequeueSize);
 	}
 
-	//m_iSize -= dequeueSize;
 	return dequeueSize;
 }
 int RingBuffer::Peek(char* chpDest, int iSize)
@@ -287,14 +277,14 @@ int RingBuffer::Peek(char* chpDest, int iSize)
 
 bool RingBuffer::MoveRear(int iSize)
 {
-	if (GetFreeSize() < iSize) // 남아있는 용량 (== GetFreeSize)이 이동시키려는 용량보다 작으면 실패 return;
+	// 남아있는 용량 (== GetFreeSize)이 이동시키려는 용량보다 작으면 실패 return;
+	if (GetFreeSize() < iSize) 
 	{
 		return false;
 	}
 
 	m_iRear = (m_iRear + iSize) % m_iCapacity;
 
-	//m_iSize += iSize;
 	return true;
 }
 
@@ -307,16 +297,12 @@ bool RingBuffer::MoveFront(int iSize)
 
 	m_iFront = (m_iFront + iSize) % m_iCapacity;
 	 
-	//m_iSize -= iSize;
 	return true;
 }
 
 void RingBuffer::ClearBuffer()
 {
 	m_iFront = m_iRear;
-
-
-	//m_iSize = 0;
 }
 
 char* RingBuffer::GetFrontBufferPtr()

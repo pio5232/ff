@@ -4,15 +4,6 @@
 
 namespace jh_network
 {
-	enum : DWORD
-	{
-		RECV_BUF_CLEAR_SIZE = 0x1000,
-		MAX_RECV_BUF_SIZE = 0x10000,
-
-		MAX_SEND_BUF_SIZE = 4000,
-	};
-
-
 	/*--------------------
 		  NetAddress
 	--------------------*/

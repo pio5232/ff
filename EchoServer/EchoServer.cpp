@@ -71,22 +71,41 @@ void jh_content::EchoServer::EndAction()
 
 void jh_content::EchoServer::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
 {
-	// 멀티 스레드 처리 로직
+	//// 멀티 스레드 처리 로직
+	//short len;
+	//ULONGLONG data;
+
+	//*packet >> data;
+
+	//PacketPtr sendPacket = jh_content::PacketBuilder::BuildEchoPacket(8, data);
+	//SendPacket(sessionId, sendPacket);
+	//return;
+	//
+
+	//// 단일 스레드 처리 로직.
+	////JobPtr job = std::make_shared<jh_utility::Job>(sessionId, type, packet);
+	//JobPtr job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet);
+
+	//m_pEchoSystem->EnqueueJob(job);
+}
+
+void jh_content::EchoServer::OnRecv(ULONGLONG sessionId, jh_utility::SerializationBuffer* packet, USHORT type)
+{
 	short len;
 	ULONGLONG data;
 
 	*packet >> data;
-
-	PacketPtr sendPacket = jh_content::PacketBuilder::BuildEchoPacket(8, data);
-	SendPacket(sessionId, sendPacket);
-	return;
 	
+	g_memSystem->Free(packet->GetBufferPtr());
+	g_memSystem->Free(packet);
 
-	// 단일 스레드 처리 로직.
-	//JobPtr job = std::make_shared<jh_utility::Job>(sessionId, type, packet);
-	JobPtr job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet);
+	PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, 10);
 
-	m_pEchoSystem->EnqueueJob(job);
+	*sendBuffer << (short)8 << data;
+
+	SendPacket(sessionId, sendBuffer);
+
+	return;
 }
 
 void jh_content::EchoServer::OnConnected(ULONGLONG sessionId)

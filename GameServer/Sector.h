@@ -15,12 +15,12 @@ namespace jh_content
 			return *this;
 		}
 
-		bool operator ==(const Sector& other)
+		bool operator ==(const Sector& other) const
 		{
 			return (m_iX == other.m_iX && m_iZ == other.m_iZ);
 		}
 
-		bool operator !=(const Sector& other)
+		bool operator !=(const Sector& other) const
 		{
 			return !(*this == other);
 		}

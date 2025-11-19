@@ -113,7 +113,7 @@ int SerializationBuffer::MoveRearPos(int iSize)
 		moveSize = iSize;
 
 	m_iRear += moveSize;
-	//m_iDataSize += moveSize;
+
 	return moveSize;
 }
 
@@ -129,11 +129,9 @@ int SerializationBuffer::MoveFrontPos(int iSize)
 		moveSize = dataSize;
 
 	m_iFront += moveSize;
-	//m_iDataSize -= moveSize;
 
 	return moveSize;
 }
-// 여기서 사용하지 말고 로직에서 사용.
 
 int SerializationBuffer::GetData(char* chpDest, int iSize) // 바깥으로 데이터 빼기, Throw (int), 1 번 (뺄 사이즈가 요청한 사이즈보다 작음.) 
 {
@@ -454,16 +452,7 @@ SerializationBuffer& SerializationBuffer::operator>> (float& fValue)
 
 	return *this;
 }
-//
-//SerializationBuffer& SerializationBuffer::operator>> (__int64& llValue)
-//{
-//	errno_t errCpy = memcpy_s(&llValue, sizeof(llValue), &m_chpBuffer[m_iFront], sizeof(llValue));
-//
-//	m_iDataSize -= sizeof(llValue);
-//	m_iFront += sizeof(llValue);
-//
-//	return *this;
-//}
+
 SerializationBuffer& SerializationBuffer::operator>> (double& dValue)
 {
 	int dataSize = GetDataSize();

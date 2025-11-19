@@ -128,7 +128,7 @@ namespace jh_network
 		void AddActiveSession(Session* sessionPtr);
 		void RemoveActiveSession(ULONGLONG sessionIdWithIdx); // [index(16) + SessionId]
 
-		void ProcessAllSessions(const std::function<void(ULONGLONG)>& func);
+		void ProcessAllSession(const std::function<void(ULONGLONG)>& func);
 	private:
 		std::unordered_map<ULONGLONG, Session*> m_activeSessionMap;
 		SRWLOCK m_lock;

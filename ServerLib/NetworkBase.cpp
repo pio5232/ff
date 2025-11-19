@@ -123,7 +123,7 @@ void jh_network::IocpServer::Listen()
 	{
 		int gle = WSAGetLastError();
 
-		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Listen] - Listen Failed. GetLastError : %u", gle);
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Listen] Listen Failed. GetLastError : %u", gle);
 
 		return;
 	}
@@ -141,7 +141,7 @@ void jh_network::IocpServer::Stop()
 		if (waitSingleRet != WAIT_OBJECT_0)
 		{
 			DWORD gle = GetLastError();
-			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Stop] - m_hAccept Wait return Error : [%u]", gle);
+			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Stop] m_hAccept Wait return Error : [%u]", gle);
 		}
 	}
 
@@ -156,7 +156,7 @@ void jh_network::IocpServer::Stop()
 		if (waitMultipleRet != WAIT_OBJECT_0)
 		{
 			DWORD gle = GetLastError();
-			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Stop] - m_hWorkerThreads Wait return Error : [%u]", gle);
+			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[Stop] m_hWorkerThreads Wait return Error : [%u]", gle);
 		}
 
 		for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
@@ -227,7 +227,7 @@ bool jh_network::IocpServer::CreateServerThreads()
 	if (nullptr == m_hAcceptThread)
 	{
 		DWORD gle = GetLastError();
-		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"AcceptThread Creation Failed, GetLastError : [%u]", gle);
+		_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[CreateServerThreads] AcceptThread Creation Failed, GetLastError : [%u]", gle);
 
 		return false;
 	}
@@ -262,10 +262,8 @@ void jh_network::IocpServer::DeleteSession(ULONGLONG sessionId)
 
 	OnDisconnected(sessionId);
 
-
 	closesocket(sessionPtr->m_socket);
 	m_activeSessionManager.RemoveActiveSession(sessionId);
-
 	sessionPtr->Reset();
 
 	m_sessionIndexStack.Push(sessionIdx);
@@ -275,7 +273,6 @@ void jh_network::IocpServer::DeleteSession(ULONGLONG sessionId)
 	InterlockedDecrement(&m_lSessionCount);
 	_LOG(L"Session", LOG_LEVEL_DEBUG, L"[DeleteSessIon] PushStack - SessionID : [0x%016llx], SessionIdx : [0x%016llx]", sessionId, sessionIdx);
 
-	// Delete는 얻어온 세션에 대해서 ioCount를 새로 밀어버리기 때문에 정리하지 않도록 한다..
 	return;
 }
 
@@ -345,6 +342,7 @@ jh_network::Session* jh_network::IocpServer::TryAcquireSession(ULONGLONG session
 	LONGLONG sessionIdx = sessionId >> SESSION_IDX_SHIFT_BIT;
 	
 	Session* sessionPtr = &m_pSessionArray[sessionIdx];
+	
 	// 세션을 그냥 얻어가면 줬을 때 내가 준 세션이 해제되었을 수 있다. 그래서 ID 확인 후 건네주도록 한다.
 	if (sessionId != sessionPtr->m_ullSessionId)
 	{
@@ -448,8 +446,10 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memSystem, header);
+		jh_utility::SerializationBuffer* packet = static_cast<jh_utility::SerializationBuffer*>(g_memSystem->Alloc(sizeof(jh_utility::SerializationBuffer)));
+		new (packet) jh_utility::SerializationBuffer(g_memSystem);
 
+		//PacketPtr packet = MakeSharedBuffer(g_memSystem, header);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
@@ -687,7 +687,7 @@ void jh_network::IocpServer::CheckHeartbeatTimeout(ULONGLONG now)
 		DecreaseIoCount(sessionPtr);
 	};
 
-	m_activeSessionManager.ProcessAllSessions(func);
+	m_activeSessionManager.ProcessAllSession(func);
 
 	for (ULONGLONG sessionId : disconnList)
 	{
