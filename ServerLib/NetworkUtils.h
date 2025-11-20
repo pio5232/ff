@@ -30,17 +30,17 @@ namespace jh_network
 		NetAddress& operator=(const NetAddress& other);
 		NetAddress& operator=(const SOCKADDR_IN& sockAddr);
 
-		void Reset() { _sockAddr = {}; }
+		void Reset() { m_sockAddr = {}; }
 		void Init(SOCKADDR_IN sockAddr);
-		const SOCKADDR_IN& GetSockAddr() const { return _sockAddr; }
+		const SOCKADDR_IN& GetSockAddr() const { return m_sockAddr; }
 		const std::wstring	GetIpAddress() const;
-		const USHORT GetPort() const { return ntohs(_sockAddr.sin_port); }
+		const USHORT GetPort() const { return ntohs(m_sockAddr.sin_port); }
 
 		static IN_ADDR IpToAddr(const WCHAR* ip);
 		static USHORT GetPort(SOCKET sock);
 
-		static LPFN_CONNECTEX lpfnConnectEx;
+		static LPFN_CONNECTEX	lpfnConnectEx;
 	private:
-		SOCKADDR_IN _sockAddr = {};
+		SOCKADDR_IN				m_sockAddr = {};
 	};
 }

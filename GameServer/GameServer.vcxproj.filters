@@ -79,6 +79,7 @@
       <Filter>Contents</Filter>
     </ClInclude>
     <ClInclude Include="Sector.h" />
+    <ClInclude Include="BaseComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameServerDefine.cpp">
@@ -142,5 +143,6 @@
       <Filter>Contents</Filter>
     </ClCompile>
     <ClCompile Include="Sector.cpp" />
+    <ClCompile Include="BaseComponent.cpp" />
   </ItemGroup>
 </Project>

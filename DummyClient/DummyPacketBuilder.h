@@ -5,14 +5,14 @@ namespace jh_content
 	{
 	public:
 		//static jh_network::SerializationBufferPtr BuildEchoPacket(DWORD len, ULONGLONG data);
-		static PacketPtr BuildLoginRequestPacket();
-		static PacketPtr BuildHeartbeatPacket(ULONGLONG timeStamp);
-		static PacketPtr BuildMakeRoomRequestPacket();
-		static PacketPtr BuildEnterRoomRequestPacket(USHORT roomNum, const WCHAR* roomName);
-		static PacketPtr BuildLeaveRoomRequestPacket(USHORT roomNum, const WCHAR* roomName);
-		static PacketPtr BuildChatRequestPacket(USHORT roomNum);
-		static PacketPtr BuildRoomListRequestPacket();
+		static PacketBufferRef BuildLoginRequestPacket();
+		static PacketBufferRef BuildHeartbeatPacket(ULONGLONG timeStamp);
+		static PacketBufferRef BuildMakeRoomRequestPacket();
+		static PacketBufferRef BuildEnterRoomRequestPacket(USHORT roomNum, const WCHAR* roomName);
+		static PacketBufferRef BuildLeaveRoomRequestPacket(USHORT roomNum, const WCHAR* roomName);
+		static PacketBufferRef BuildChatRequestPacket(USHORT roomNum);
+		static PacketBufferRef BuildRoomListRequestPacket();
 
-		static PacketPtr BuildEchoPacket();
+		static PacketBufferRef BuildEchoPacket();
 	};
 }

@@ -10,7 +10,7 @@ namespace jh_content
 		virtual ~LobbyDummyClient();
 
 		// IocpClient을(를) 통해 상속됨
-		void OnRecv(ULONGLONG sessionId, PacketPtr dataBuffer, USHORT type) override;
+		void OnRecv(ULONGLONG sessionId, PacketBufferRef dataBuffer, USHORT type) override;
 
 		void OnConnected(ULONGLONG sessionId) override;
 		void OnDisconnected(ULONGLONG sessionId) override;

@@ -155,8 +155,8 @@ jh_memory::Node* jh_memory::MemoryPool::GetNewBlock()
 
 	size_t granularitySize = kNodeCountToCreate / (jh_memory::kAllocationGranularity / m_allocSize);
 
-	//	블록 크기							64,		128,	256,	512,	1024,	2048,	4096
-//	allocationGranurity 당 노드 수			1024,	512,	256,	128,	64,		32,		16
+	//	블록 크기								64,		128,	256,	512,	1024,	2048,	4096
+	//	allocationGranurity 당 노드 수			1024,	512,	256,	128,	64,		32,		16
 
 	SRWLockGuard lockGuard(&m_allocationLock);
 	{

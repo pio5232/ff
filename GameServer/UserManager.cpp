@@ -25,13 +25,12 @@ UserPtr jh_content::UserManager::CreateUser(ULONGLONG sessionId, ULONGLONG userI
 		return nullptr;
 	}
 
-	UserPtr userPtr = MakeShared<jh_content::User>(g_memSystem, sessionId, userId);
+	UserPtr userPtr = jh_memory::MakeShared<jh_content::User>(sessionId, userId);
 	
 	m_sessionIdToUserUMap.insert({ sessionId, userPtr });
 	m_userIdToUserUMap.insert({ userId, userPtr });
 	
 	return userPtr;
-
 }
 
 
@@ -52,12 +51,12 @@ void jh_content::UserManager::RemoveUser(ULONGLONG sessionId)
 	m_userIdToUserUMap.erase(userId);
 }
 
-void jh_content::UserManager::Unicast(ULONGLONG sessionId, PacketPtr& packet)
+void jh_content::UserManager::Unicast(ULONGLONG sessionId, PacketBufferRef& packet)
 {
 	m_sendPacketFunc(sessionId, packet);
 }
 
-void jh_content::UserManager::Broadcast(PacketPtr& packet)
+void jh_content::UserManager::Broadcast(PacketBufferRef& packet)
 {
 	for (const auto& [sessionId, userPtr] : m_sessionIdToUserUMap)
 	{
@@ -76,7 +75,6 @@ void jh_content::UserManager::RegisterEntityIdToUser(ULONGLONG entityId, UserPtr
 	}
 
 	m_entityIdToUserUMap.insert({ entityId, userPtr });
-
 }
 
 void jh_content::UserManager::DeleteEntityIdToUser(ULONGLONG entityId)
@@ -121,7 +119,6 @@ UserPtr jh_content::UserManager::GetUserByEntityId(ULONGLONG entityId)
 
 void jh_content::UserManager::ReserveUMapSize(USHORT requiredUsers, USHORT maxUsers)
 {
-	// 이거 서버의 maxCnt가 0이라서 받지 않음.
 	m_sessionIdToUserUMap.reserve(requiredUsers);
 	m_userIdToUserUMap.reserve(requiredUsers);
 }

@@ -7,7 +7,6 @@ using namespace jh_utility;
 jh_utility::RingBuffer::RingBuffer() :m_iCapacity(RINGBUFFER_DEFAULT_SIZE), m_iFront(0), m_iRear(0)
 {
 	m_chpBuffer = new char[m_iCapacity];
-	//InitializeSRWLock(&m_lock);
 }
 
 
@@ -15,8 +14,6 @@ RingBuffer::RingBuffer(int iCapacity) : m_iFront(0), m_iRear(0)
 {
 	m_iCapacity = iCapacity;
 	m_chpBuffer = new char[m_iCapacity];
-
-	//InitializeSRWLock(&m_lock);
 }
 
 RingBuffer::~RingBuffer()
@@ -24,7 +21,6 @@ RingBuffer::~RingBuffer()
 	delete[] m_chpBuffer;
 }
 
-// resize는 무조건 큰 사이즈로만.
 bool RingBuffer::Resize(int newCapacity)
 {
 	if (newCapacity < m_iCapacity)
@@ -225,7 +221,6 @@ int RingBuffer::Enqueue(char* chpData, int iSize)
 		MoveRear(enqueueSize);
 	}
 
-	//m_iSize += enqueueSize;
 	return enqueueSize;
 }
 int RingBuffer::Dequeue(char* chpDest, int iSize)
@@ -253,7 +248,6 @@ int RingBuffer::Dequeue(char* chpDest, int iSize)
 		MoveFront(dequeueSize);
 	}
 
-	//m_iSize -= dequeueSize;
 	return dequeueSize;
 }
 int RingBuffer::Peek(char* chpDest, int iSize)
@@ -307,16 +301,12 @@ bool RingBuffer::MoveFront(int iSize)
 
 	m_iFront = (m_iFront + iSize) % m_iCapacity;
 	 
-	//m_iSize -= iSize;
 	return true;
 }
 
 void RingBuffer::ClearBuffer()
 {
 	m_iFront = m_iRear;
-
-
-	//m_iSize = 0;
 }
 
 char* RingBuffer::GetFrontBufferPtr()

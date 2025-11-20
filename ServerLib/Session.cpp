@@ -8,7 +8,6 @@ using namespace jh_utility;
 			Session
 ------------------------------*/
 
-// new로 했을 때 사용.
 jh_network::Session::Session()
 {
 	Reset();
@@ -18,7 +17,6 @@ jh_network::Session::~Session()
 {
 }
 
-// 반납, CloseSocket 후 Reset하도록 한다.
 
 void jh_network::Session::Reset()
 {

@@ -25,10 +25,10 @@ namespace jh_memory
 
 		size_t GetTotalAllocSize() const { return m_totalAllocSize; }
 	private:
-		SRWLOCK m_lock;
+		SRWLOCK							m_lock;
 
-		std::vector<AllocedPageInfo> m_allocedInfoList;
-		size_t m_totalAllocSize;
+		std::vector<AllocedPageInfo>	m_allocedInfoList;
+		size_t							m_totalAllocSize;
 
 	};
 }

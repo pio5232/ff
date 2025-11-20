@@ -41,8 +41,6 @@ void jh_utility::ThreadProfileData::Start(const WCHAR* tag)
 	{
 		if (false == m_samples[i].m_bUseFlag) // 첫 사용 체크
 		{
-			// 만약 스레드가 Stop()실행 중에 Reset -> 데이터 초기화돼서 찌꺼기가 남아있어도
-			// 다시 시작할때 초기화해준다. 문제없지 않을까
 			m_samples[i].m_bUseFlag = true;
 
 			StringCchCopy(m_samples[i].m_wszSampleName, ARRAY_SIZE(m_samples[i].m_wszSampleName), tag);
@@ -136,7 +134,6 @@ void jh_utility::Profiler::Start(const WCHAR* funcName)
 		DWORD currentThreadId = GetCurrentThreadId();
 		// 스레드가 재사용된 경우 기존에 등록된 스레드ID의 동적할당 데이터 해제
 		{
-
 			SRWLockGuard lockGuard(&m_lock);
 
 			auto it = m_profilerMap.find(currentThreadId);
@@ -194,6 +191,8 @@ void jh_utility::Profiler::ProfileDataOutText(const WCHAR* fileName)
 		return;
 	}
 
+	// 우측정렬 
+	// THREAD \t | NAME \t | ... 의 형태로 생성
 	fwprintf_s(file, L"%15s | %70s | %17s | %17s | %17s | %15s |\n", L"THREADID", L"FUNC", L"AVERAGE", L"MIN", L"MAX", L"CALL");;
 	fwprintf_s(file, L"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
 
@@ -220,9 +219,6 @@ void jh_utility::Profiler::ProfileDataOutText(const WCHAR* fileName)
 
 	fwprintf_s(file, L"-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
-	// 우측정렬 
-	// THREAD \t | NAME \t | ... 의 형태로 생성하면 될 듯
-	// StringSafe함수를 이용해서 기록하도록 한다.
 
 
 	fclose(file);

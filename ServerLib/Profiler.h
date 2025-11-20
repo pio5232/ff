@@ -29,18 +29,18 @@ namespace jh_utility
 		ProfileSample();
 		void Initialize();
 
-		WCHAR m_wszSampleName[SAMPLE_NAME_LEN]; // 태그 이름
+		WCHAR			m_wszSampleName[SAMPLE_NAME_LEN]; // 태그 이름
 
-		LARGE_INTEGER m_llStartTime; // 시작 시간
+		LARGE_INTEGER	m_llStartTime; // 시작 시간
 
-		ULONGLONG m_ullTotalTime; // 전체 사용 시간
-		ULONGLONG m_ullMinTime[2]; // 최소 사용 시간
-		ULONGLONG m_ullMaxTime[2]; // 최대 사용 시간.
-		ULONGLONG m_ullCallCount; // 호출 횟수 
+		ULONGLONG		m_ullTotalTime; // 전체 사용 시간
+		ULONGLONG		m_ullMinTime[2]; // 최소 사용 시간
+		ULONGLONG		m_ullMaxTime[2]; // 최대 사용 시간.
+		ULONGLONG		m_ullCallCount; // 호출 횟수 
 
-		DWORD m_dwThreadId;
+		DWORD			m_dwThreadId;
 
-		bool m_bUseFlag; // 프로파일의 사용 여부
+		bool			m_bUseFlag; // 프로파일의 사용 여부
 	};
 
 	struct ThreadProfileData
@@ -76,7 +76,6 @@ namespace jh_utility
 		void DataReset();
 
 	private:
-		LARGE_INTEGER m_llQueryPerformanceFrequency;
 
 		Profiler();
 		~Profiler();
@@ -84,7 +83,8 @@ namespace jh_utility
 		Profiler(const Profiler&) = delete;
 		Profiler& operator=(const Profiler&) = delete;
 
-		SRWLOCK m_lock;
+		LARGE_INTEGER						m_llQueryPerformanceFrequency;
+		SRWLOCK								m_lock;
 
 		// 전체 종료를 위한 동적할당 포인터 모음
 		std::map<DWORD, ThreadProfileData*> m_profilerMap;

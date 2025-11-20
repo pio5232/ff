@@ -6,26 +6,22 @@ namespace jh_memory
 }
 namespace jh_utility
 {
-#define CSERIALIZATION_DEFAULT_SIZE 1024
+#define CSERIALIZATION_DEFAULT_SIZE 1000
 #define CSERIALIZATION_MAX_SIZE 2048
 	class SerializationBuffer
 	{
 	public:
-		SerializationBuffer(jh_memory::MemorySystem* memorySystem, size_t iBufferSize);
-
+		SerializationBuffer(size_t iBufferSize = CSERIALIZATION_DEFAULT_SIZE);
 		~SerializationBuffer();
 
 		SerializationBuffer(const SerializationBuffer& other) = delete;
 		SerializationBuffer& operator= (const SerializationBuffer& other) = delete;
 
-		SerializationBuffer(SerializationBuffer&& other) noexcept;
-		SerializationBuffer& operator=(SerializationBuffer&& other) noexcept;
+		SerializationBuffer(SerializationBuffer&& other) = delete;
+		SerializationBuffer& operator=(SerializationBuffer&& other) = delete;
 
 		// 패킷 청소
 		void Clear();
-
-		// 리사이즈.
-		[[deprecated("사용하지 않음.")]] bool Resize();
 
 		//버퍼 포인터 얻기
 		char* GetBufferPtr() const;
@@ -84,7 +80,7 @@ namespace jh_utility
 
 		SerializationBuffer& operator>>(unsigned long& ulValue);
 		SerializationBuffer& operator>>(long& lValue);
-		
+
 		SerializationBuffer& operator>> (float& fValue);
 
 		//SerializationBuffer& operator>> (__int64& llValue);
@@ -109,16 +105,14 @@ namespace jh_utility
 		int MoveFrontPos(int iSize);
 
 	public:
-		static ULONGLONG g_ullPacketCount;
-		
-	private:
-		int m_iBufferCapacity;
-		int m_iFront;
-		int m_iRear;
-		char* m_chpBuffer;
 
-		jh_memory::MemorySystem* m_pMemorySystem;
+		static alignas(64) ULONGLONG g_ullPacketCount;
+		static ULONGLONG GetUsingPacketCount() { return g_ullPacketCount; }
+
+	private:
+		int		m_iBufferCapacity;
+		int		m_iFront;
+		int		m_iRear;
+		char	* m_chpBuffer;
 	};
 }
-
-//#endif // !CSerialization

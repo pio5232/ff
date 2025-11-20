@@ -29,7 +29,7 @@ void jh_content::GameSystem::Init()
 
 void jh_content::GameSystem::Stop()
 {
-	m_bIsRunning.store(false);
+	InterlockedExchange8(&m_bIsRunning, 0);
 
 	if (nullptr != m_hLogicThread)
 	{
@@ -51,15 +51,14 @@ void jh_content::GameSystem::Stop()
 		m_netJobQueue.Clear();
 		m_gameLanRequestQueue.Clear();
 		m_sessionConnEventQueue.Clear();
-
 	}
 
 	m_pGameWorld->Stop();
 }
 
-jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThread(nullptr), m_bIsRunning(false), m_dwLoadCompletedCnt(0), m_pOwner(owner), m_gameInfo{}
+jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThread(nullptr), m_bIsRunning(0), m_usLoadCompletedCnt(0), m_pOwner(owner), m_gameInfo{}
 {
-	auto sendPacketFunc = [this](ULONGLONG sessionId, PacketPtr& _packet)
+	auto sendPacketFunc = [this](ULONGLONG sessionId, PacketBufferRef& _packet)
 		{
 			m_pOwner->SendPacket(sessionId, _packet);
 		};
@@ -69,6 +68,7 @@ jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThre
 
 	std::random_device rd; // 난수 생성기
 	std::mt19937_64 generator(rd()); // 시드 섞음.
+
 	m_gameInfo.m_ullEnterToken = generator();
 
 }
@@ -112,13 +112,12 @@ void jh_content::GameSystem::GameLogic()
 
 	float deltaSum = 0;
 	// 조건 바꾸기.
-	while (true == m_bIsRunning.load())
+	while (1 == m_bIsRunning)
 	{
 		float deltaTime = timer.Lap<float>();
 
 		if (deltaTime > limitDeltaTime)
 			deltaTime = limitDeltaTime;
-
 
 		// 패킷 처리.
 		ProcessNetJob();
@@ -138,11 +137,9 @@ void jh_content::GameSystem::GameLogic()
 
 		Sleep(0);
 	}
-
-	printf("Update Thread Exit...\n");
 }
 
-void jh_content::GameSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet)
+void jh_content::GameSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketBufferRef& packet)
 {
 	if (m_packetFuncDic.find(packetType) == m_packetFuncDic.end())
 		return;
@@ -154,14 +151,14 @@ void jh_content::GameSystem::ProcessPacket(ULONGLONG sessionId, DWORD packetType
 
 void jh_content::GameSystem::ProcessNetJob()
 {
-	static thread_local alignas(64) std::queue<JobPtr> gameJobQ;
-	std::queue<JobPtr>	emptyQ;
+	static thread_local alignas(64) std::queue<JobRef> gameJobQ;
+	std::queue<JobRef>	emptyQ;
 
 	m_netJobQueue.Swap(gameJobQ);
 
 	while(gameJobQ.size() > 0)
 	{
-		JobPtr& job = gameJobQ.front();
+		JobRef& job = gameJobQ.front();
 
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
 		
@@ -173,23 +170,21 @@ void jh_content::GameSystem::ProcessNetJob()
 
 void jh_content::GameSystem::ProcessSessionConnectionEvent()
 {
-	static alignas(64) std::queue<SessionConnectionEventPtr> sessionConnEventQ;
-	std::queue<SessionConnectionEventPtr> emptyQ;
+	static alignas(64) std::queue<SessionConnectionEventRef> sessionConnEventQ;
+	std::queue<SessionConnectionEventRef> emptyQ;
 
 	m_sessionConnEventQueue.Swap(sessionConnEventQ);
 
 	while(sessionConnEventQ.size() > 0)
 	{
-		SessionConnectionEventPtr& sessionConnEvent = sessionConnEventQ.front();
+		SessionConnectionEventRef& sessionConnEvent = sessionConnEventQ.front();
 
 		ULONGLONG sessionId = sessionConnEvent->m_ullSessionId;
 		switch (sessionConnEvent->m_msgType)
 		{
 		case jh_utility::SessionConnectionEventType::CONNECT:
 		{
-			// m_pUserManager->CreateGuest(sessionId);
-			//m_pUserManager->CreateUser(job->m_llSessionId);
-			// 유저 접속 처리.
+
 		}
 		break;
 		case jh_utility::SessionConnectionEventType::DISCONNECT:
@@ -252,7 +247,7 @@ void jh_content::GameSystem::ProcessLanRequest()
 	gameLanRequestJobQ.swap(emptyQ);
 }
 
-void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet)
 {
 	ULONGLONG receivedUserId;
 	ULONGLONG token;
@@ -260,7 +255,7 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 
 	if (m_gameInfo.m_ullEnterToken != token)
 	{
-		PacketPtr errPkt = jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode::CONNECTED_FAILED_WRONG_TOKEN);
+		PacketBufferRef errPkt = jh_content::PacketBuilder::BuildErrorPacket(jh_network::PacketErrorCode::CONNECTED_FAILED_WRONG_TOKEN);
 
 		m_pOwner->SendPacket(sessionId, errPkt);
 
@@ -274,7 +269,7 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 		_LOG(GAME_USER_MANAGER_SAVE_FILE_NAME, LOG_LEVEL_SYSTEM, L"[HandleEnterGameRequestPacket] User creation failed Received UserId : [%llu]", receivedUserId);
 		return;
 	}
-	PacketPtr enterGameResponsePkt = jh_content::PacketBuilder::BuildEnterGameResponsePacket();
+	PacketBufferRef enterGameResponsePkt = jh_content::PacketBuilder::BuildEnterGameResponsePacket();
 	m_pOwner->SendPacket(sessionId, enterGameResponsePkt);
 
 	GamePlayerPtr newPlayer = m_pGameWorld->CreateGamePlayer(newUser);
@@ -289,11 +284,10 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 	ULONGLONG entityId = newPlayer->GetEntityId();
 	const Vector3& pos = newPlayer->GetPosition();
 
-	PacketPtr makeMyCharacterPkt = jh_content::PacketBuilder::BuildMakeMyCharacterPacket(entityId, pos);
+	PacketBufferRef makeMyCharacterPkt = jh_content::PacketBuilder::BuildMakeMyCharacterPacket(entityId, pos);
 
 	m_pOwner->SendPacket(sessionId, makeMyCharacterPkt);
 
-	
 	if (m_gameInfo.m_usRequiredUserCnt == m_pUserManager->GetUserCount())
 	{
 		m_pGameWorld->Init(m_gameInfo.m_usMaxUserCnt, m_gameInfo.m_usRequiredUserCnt);
@@ -302,7 +296,7 @@ void jh_content::GameSystem::HandleEnterGameRequestPacket(ULONGLONG sessionId, P
 	return;
 }
 
-void jh_content::GameSystem::HandleLoadCompletedPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_content::GameSystem::HandleLoadCompletedPacket(ULONGLONG sessionId, PacketBufferRef& packet)
 {
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
 
@@ -314,9 +308,9 @@ void jh_content::GameSystem::HandleLoadCompletedPacket(ULONGLONG sessionId, Pack
 
 	_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_WARNING, L"[HandleLoadCompletedPacket] User Load Completed, SessionId : [0x%016llx], UserId : [%llu]", sessionId,userPtr->GetUserId());
 
-	if (m_gameInfo.m_usRequiredUserCnt == ++m_dwLoadCompletedCnt)
+	if (m_gameInfo.m_usRequiredUserCnt == ++m_usLoadCompletedCnt)
 	{
-		PacketPtr gameStartNotifyPkt = jh_content::PacketBuilder::BuildGameStartNotifyPacket();
+		PacketBufferRef gameStartNotifyPkt = jh_content::PacketBuilder::BuildGameStartNotifyPacket();
 
 		m_pUserManager->Broadcast(gameStartNotifyPkt);
 
@@ -326,7 +320,7 @@ void jh_content::GameSystem::HandleLoadCompletedPacket(ULONGLONG sessionId, Pack
 	return;
 }
 
-void jh_content::GameSystem::HandleMoveStartRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_content::GameSystem::HandleMoveStartRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet)
 {
 	Vector3 clientMoveStartPos;
 	float clientMoveStartRotY;
@@ -358,7 +352,7 @@ void jh_content::GameSystem::HandleMoveStartRequestPacket(ULONGLONG sessionId, P
 
 	return;
 }
-void jh_content::GameSystem::HandleMoveStopRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_content::GameSystem::HandleMoveStopRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet)
 {
 	Vector3 clientMoveStopPos;
 	float clientMoveStopRotY;
@@ -391,10 +385,10 @@ void jh_content::GameSystem::HandleMoveStopRequestPacket(ULONGLONG sessionId, Pa
 	return;
 }
 
-void jh_content::GameSystem::HandleChatRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_content::GameSystem::HandleChatRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet)
 {
 	// GameWorld Chat
-	// roomNum은 무시하도록 한다.
+	// roomNum은 무시한다.
 	USHORT roomNum;
 	USHORT messageLen;
 
@@ -414,7 +408,7 @@ void jh_content::GameSystem::HandleChatRequestPacket(ULONGLONG sessionId, Packet
 	{
 		ULONGLONG userId = userPtr->GetUserId();
 
-		PacketPtr chatNotifyPacket = jh_content::PacketBuilder::BuildChatNotifyPacket(userId, messageLen, message);
+		PacketBufferRef chatNotifyPacket = jh_content::PacketBuilder::BuildChatNotifyPacket(userId, messageLen, message);
 
 		m_pUserManager->Broadcast(chatNotifyPacket);
 	}
@@ -422,7 +416,7 @@ void jh_content::GameSystem::HandleChatRequestPacket(ULONGLONG sessionId, Packet
 
 	return;
 }
-void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet)
 {	
 	UserPtr userPtr = m_pUserManager->GetUserBySessionId(sessionId);
 
@@ -452,7 +446,7 @@ void jh_content::GameSystem::HandleAttackRequestPacket(ULONGLONG sessionId, Pack
 
 
 // 처음 시작할 때 Lan 연결 후 게임과 관련된 정보를 요청하는 패킷에 대한 답장이 왔을 때 답장을 처리하는 함수. Lan 에서 넘겨준다.
-void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketPtr& packets, jh_network::IocpClient* lanClient)
+void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketBufferRef& packets, jh_network::IocpClient* lanClient)
 {
 
 	USHORT roomNum;
@@ -461,11 +455,6 @@ void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lan
 
 	*packets >> roomNum >> requiredUsers >> maxUsers;
 
-	printf("방 번호 [%d]\n", roomNum);
-	printf("인원	[%d]\n", requiredUsers);
-	printf("제한 인원  [%d]\n", maxUsers);
-
-	// G
 	SetGameInfo(roomNum, requiredUsers, maxUsers);
 
 	ULONGLONG xorAfterValue = GetToken() ^ xorTokenKey;
@@ -479,12 +468,11 @@ void jh_content::GameSystem::HandleGameServerSettingResponsePacket(ULONGLONG lan
 	const std::wstring ip = m_pOwner->GetIp();
 	USHORT port = m_pOwner->GetPort();
 
-	PacketPtr gameServerLanInfoPkt = jh_content::PacketBuilder::BuildGameServerLanInfoPacket(ip.c_str(), port, roomNum, m_gameInfo.m_ullEnterToken);
+	PacketBufferRef gameServerLanInfoPkt = jh_content::PacketBuilder::BuildGameServerLanInfoPacket(ip.c_str(), port, roomNum, m_gameInfo.m_ullEnterToken);
 
 	lanClient->SendPacket(lanSessionId, gameServerLanInfoPkt);
 
-	_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[HandleGameServerSettingResponsePacket] Client Joined.");
-
+	_LOG(GAME_SYSTEM_SAVE_FILE_NAME, LOG_LEVEL_INFO, L"[HandleGameServerSettingResponsePacket] roomNum : [%hd], requiredUsers : [%hd], maxUsers : [%hd] Client Joined", roomNum,requiredUsers, maxUsers);
 
 	return;
 }

@@ -36,11 +36,11 @@ namespace jh_content
 
 	struct AroundSector
 	{
-		int sectorCount{};
+		int		sectorCount{};
 
 		/// [] [] []  
 		/// [] [] []  
 		/// [] [] [] 
-		Sector sectors[9]{};
+		Sector	sectors[9]{};
 	};
 }

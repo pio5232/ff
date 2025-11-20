@@ -13,10 +13,11 @@
 #include "SectorManager.h"
 #include "Memory.h"
 
-jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc) : m_bIsUpdateRunning(false), m_fDeltaSum(0), m_pUserManager(userManager), m_sendPacketFunc(sendPacketFunc)
+jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPacketFunc) : m_bIsUpdateRunning{ 0 }, m_fDeltaSum{ 0 }, m_pUserManager{ userManager }, m_sendPacketFunc{ sendPacketFunc }
+, m_ullExpectedWinnerId{ 0 }, m_ullExpectedWinTime{ULLONG_MAX}
 {
 	// entity ID를 통해서 Send를 가능하게 하는 작업을 전달한다.
-	auto sectorSendFunc = [this](ULONGLONG entityId, PacketPtr& packetPtr) {
+	auto sectorSendFunc = [this](ULONGLONG entityId, PacketBufferRef& packetPtr) {
 		UserPtr userPtr = m_pUserManager->GetUserByEntityId(entityId);
 
 		if (nullptr == userPtr)
@@ -39,7 +40,7 @@ jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPa
 
 jh_content::GameWorld::~GameWorld()
 {
-	if (true == m_bIsUpdateRunning.load())
+	if (true == m_bIsUpdateRunning)
 	{
 		Stop();
 	}
@@ -47,7 +48,7 @@ jh_content::GameWorld::~GameWorld()
 
 void jh_content::GameWorld::StartGame()
 {
-	m_bIsUpdateRunning.store(true);
+	InterlockedExchange8(&m_bIsUpdateRunning, 1);
 
 	// 10초마다 초기화
 	TimerAction timerAction;
@@ -62,7 +63,7 @@ void jh_content::GameWorld::StartGame()
 
 void jh_content::GameWorld::Stop()
 {
-	m_bIsUpdateRunning.store(false);
+	InterlockedExchange8(&m_bIsUpdateRunning, 0);
 
 	m_aliveEntityDic.clear();
 	m_aliveEntityArr.clear();
@@ -77,11 +78,11 @@ void jh_content::GameWorld::Stop()
 
 void jh_content::GameWorld::Update(float deltaTime)
 {
-	if (false == m_bIsUpdateRunning.load())
+	if (0 == m_bIsUpdateRunning)
 		return;
 
 	m_fDeltaSum += deltaTime;
-	// 네트워크
+	
 	if (m_fDeltaSum >= fixedDeltaTime)
 	{
 		for (EntityPtr& entity : m_aliveEntityArr)
@@ -108,7 +109,7 @@ void jh_content::GameWorld::Update(float deltaTime)
 
 bool jh_content::GameWorld::TryEnqueueTimerAction(TimerAction&& timerAction)
 {
-	if (false == m_bIsUpdateRunning.load())
+	if (0 == m_bIsUpdateRunning)
 	{
 		return false;
 	}
@@ -147,7 +148,7 @@ void jh_content::GameWorld::ProcessTimerActions()
 
 void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 {
-	AIPlayerPtr aiPlayer = MakeShared<AIPlayer>(g_memSystem, worldPtr);
+	AIPlayerPtr aiPlayer = jh_memory::MakeShared<AIPlayer>(worldPtr);
 
 	AddEntity(aiPlayer);
 
@@ -155,14 +156,14 @@ void jh_content::GameWorld::CreateAI(GameWorld* worldPtr)
 
 GamePlayerPtr jh_content::GameWorld::CreateGamePlayer(UserPtr userPtr)
 {
-	GamePlayerPtr gamePlayerPtr = MakeShared<jh_content::GamePlayer>(g_memSystem, userPtr, this);
+	GamePlayerPtr gamePlayerPtr = jh_memory::MakeShared<jh_content::GamePlayer>(userPtr, this);
 	
 	_LOG(L"GameWorld", LOG_LEVEL_INFO, L"[CreateGamePlayer] EntityID: [%llu], UserId : [%llu]", gamePlayerPtr->GetEntityId(), userPtr->GetUserId());
 
 	return gamePlayerPtr;
 }
 
-void jh_content::GameWorld::SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr)
+void jh_content::GameWorld::SendToEntity(ULONGLONG entityId, PacketBufferRef& packetPtr)
 {
 	UserPtr userPtr = m_pUserManager->GetUserByEntityId(entityId);
 
@@ -174,7 +175,7 @@ void jh_content::GameWorld::SendToEntity(ULONGLONG entityId, PacketPtr& packetPt
 	m_sendPacketFunc(sessionId, packetPtr);
 }
 
-void jh_content::GameWorld::BroadCast(PacketPtr& packetPtr)
+void jh_content::GameWorld::BroadCast(PacketBufferRef& packetPtr)
 {
 	m_pUserManager->Broadcast(packetPtr);
 }
@@ -211,7 +212,7 @@ void jh_content::GameWorld::RemoveEntity(ULONGLONG entityId)
 
 	if (entityToVectorIter == m_aliveEntityToVectorIdxDic.end())
 	{
-		// entityDic에는 존재하지만, entityToVectorDic에는 존재하지 않는 상황.. 이상한 상황임
+		// entityDic에는 존재하지만, entityToVectorDic에는 존재하지 않는 이상한 상황
 		// => insert delete가 동일하게 진행되어야한다.
 		return;
 	}
@@ -239,7 +240,7 @@ void jh_content::GameWorld::RemoveEntity(ULONGLONG entityId)
 
 	Sector sector = entityPtr->GetCurrentSector();
 
-	PacketPtr sendBuffer = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entityPtr->GetEntityId());
+	PacketBufferRef sendBuffer = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entityPtr->GetEntityId());
 
 	if (m_pSectorManager->DeleteEntity(entityPtr, sendBuffer))
 		SendToSpectatorEntities(sendBuffer);
@@ -259,7 +260,7 @@ void jh_content::GameWorld::Init(USHORT total, USHORT gamePlayerCount)
 	m_pSectorManager->SendAllEntityInfo();
 
 	// 초기화 내용 모두 전송했다는 의미
-	PacketPtr sendBuffer = jh_content::PacketBuilder::BuildGameInitDonePacket();
+	PacketBufferRef sendBuffer = jh_content::PacketBuilder::BuildGameInitDonePacket();
 
 	m_pUserManager->Broadcast(sendBuffer);
 }
@@ -271,14 +272,14 @@ void jh_content::GameWorld::SetDSCount(USHORT predMaxCnt)
 	m_aliveEntityToVectorIdxDic.reserve(predMaxCnt);
 }
 
-void jh_content::GameWorld::SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr& packet)
+void jh_content::GameWorld::SendPacketAroundSectorNSpectators(const Sector& sector, PacketBufferRef& packet)
 {
 	m_pSectorManager->SendPacketAroundSector(sector, packet);
 
 	SendToSpectatorEntities(packet);
 }
 
-void jh_content::GameWorld::SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr& packet)
+void jh_content::GameWorld::SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketBufferRef& packet)
 {
 	m_pSectorManager->SendPacketAroundSector(sectorX, sectorZ, packet);
 
@@ -300,11 +301,10 @@ void jh_content::GameWorld::CleanUpSpectatorEntities()
 	TryEnqueueTimerAction(std::move(timerAction));
 }
 
-void jh_content::GameWorld::SendToSpectatorEntities(PacketPtr& packet)
+void jh_content::GameWorld::SendToSpectatorEntities(PacketBufferRef& packet)
 {
 	// 일정 시간 간격으로 clear해주기 때문에
 	// 연결이 끊겼을 경우 참조카운트가 0인 weakPtr 존재할 수 있음.
-
 	for (const std::weak_ptr<jh_content::Entity>& spectatorEntity : m_spectatorEntityArr)
 	{
 		EntityPtr entityPtr = spectatorEntity.lock();
@@ -325,7 +325,7 @@ void jh_content::GameWorld::SetSpectator(EntityPtr entity)
 
 		ULONGLONG entityId = entity->GetEntityId();
 
-		PacketPtr spectatorInitPkt = PacketBuilder::BuildSpectatorInitPacket();
+		PacketBufferRef spectatorInitPkt = PacketBuilder::BuildSpectatorInitPacket();
 		
 		SendToEntity(entityId, spectatorInitPkt);
 
@@ -339,13 +339,13 @@ void jh_content::GameWorld::SetSpectator(EntityPtr entity)
 			const Vector3& aliveEntityPos = aliveEntityPtr->GetPosition();
 			const Vector3& aliveEntityRot = aliveEntityPtr->GetRotation();
 
-			PacketPtr makeOtherCharacterPkt = PacketBuilder::BuildMakeOtherCharacterPacket(aliveEntityId, aliveEntityPos);
+			PacketBufferRef makeOtherCharacterPkt = PacketBuilder::BuildMakeOtherCharacterPacket(aliveEntityId, aliveEntityPos);
 
 			SendToEntity(entityId, makeOtherCharacterPkt);
 
 			if (aliveEntityPtr->IsMoving())
 			{
-				PacketPtr MoveStartNotifyPkt = PacketBuilder::BuildMoveStartNotifyPacket(aliveEntityId, aliveEntityPos, aliveEntityRot.y);
+				PacketBufferRef MoveStartNotifyPkt = PacketBuilder::BuildMoveStartNotifyPacket(aliveEntityId, aliveEntityPos, aliveEntityRot.y);
 
 				SendToEntity(entityId, MoveStartNotifyPkt);
 			}
@@ -385,7 +385,7 @@ void jh_content::GameWorld::CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr)
 		m_ullExpectedWinTime = jh_utility::GetTimeStamp() + victoryZoneCheckDuration;
 
 		// UpdateWinner Packet 전송.
-		PacketPtr sendBuffer = jh_content::PacketBuilder::BuildUpdateWinnerNotifyPacket(m_ullExpectedWinnerId, m_ullExpectedWinTime);
+		PacketBufferRef sendBuffer = jh_content::PacketBuilder::BuildUpdateWinnerNotifyPacket(m_ullExpectedWinnerId, m_ullExpectedWinTime);
 
 		m_pUserManager->Broadcast(sendBuffer);
 	}
@@ -404,7 +404,7 @@ void jh_content::GameWorld::CheckWinner()
 		_LOG(L"GameWorld", LOG_LEVEL_INFO, L"[CheckWinner] UserId : [%llu]", m_ullExpectedWinnerId);
 
 		// 게임 종료 패킷 전송
-		PacketPtr sendBuffer = jh_content::PacketBuilder::BuildGameEndNotifyPacket();
+		PacketBufferRef sendBuffer = jh_content::PacketBuilder::BuildGameEndNotifyPacket();
 
 		m_pUserManager->Broadcast(sendBuffer);
 
@@ -432,7 +432,7 @@ void jh_content::GameWorld::InvalidateWinner(ULONGLONG userId)
 		_LOG(L"GameWorld", LOG_LEVEL_INFO, L"[InvalidateWinner]");
 
 		// invalidate winner packet 전송
-		PacketPtr sendBuffer = jh_content::PacketBuilder::BuildInvalidateWinnerNotifyPacket(m_ullExpectedWinnerId);
+		PacketBufferRef sendBuffer = jh_content::PacketBuilder::BuildInvalidateWinnerNotifyPacket(m_ullExpectedWinnerId);
 
 		m_pUserManager->Broadcast(sendBuffer);
 	}
@@ -440,14 +440,13 @@ void jh_content::GameWorld::InvalidateWinner(ULONGLONG userId)
 
 void jh_content::GameWorld::ProcessAttack(GamePlayerPtr attacker)
 {
-
-	// 1. 공격 상태로 전환 후 모든 녀석들에게 패킷 전송
+	// 1. 공격 상태로 전환 후 주위 모든 대상들에게 패킷 전송
 	attacker->SetAttackState();
 	ULONGLONG entityId = attacker->GetEntityId();
-	PacketPtr buffer = PacketBuilder::BuildAttackNotifyPacket(entityId);
+	PacketBufferRef buffer = PacketBuilder::BuildAttackNotifyPacket(entityId);
 	SendPacketAroundSectorNSpectators(attacker->GetCurrentSector(), buffer);
 
-	// 2. 데미지 판정. 공격당할 녀석을 얻어온다.
+	// 2. 데미지 판정. 공격당할 대상을 얻어온다.
 	EntityPtr victimTarget = m_pSectorManager->GetMinEntityInRange(attacker, attacker->GetAttackRange());
 	if (victimTarget == nullptr)
 			return;
@@ -457,7 +456,7 @@ void jh_content::GameWorld::ProcessAttack(GamePlayerPtr attacker)
 
 	if (victimTarget->IsDead())
 	{
-		PacketPtr buffer = PacketBuilder::BuildDieNotifyPacket(victimTarget->GetEntityId());
+		PacketBufferRef buffer = PacketBuilder::BuildDieNotifyPacket(victimTarget->GetEntityId());
 		SendPacketAroundSectorNSpectators(victimTarget->GetCurrentSector(), buffer);
 
 		// 죽으면 Update하는 Entity 자료구조에서 제외
@@ -484,7 +483,7 @@ void jh_content::GameWorld::ProcessAttack(GamePlayerPtr attacker)
 	}
 	else
 	{
-		PacketPtr buffer = PacketBuilder::BuildAttackedNotifyPacket(victimTarget->GetEntityId(), victimTarget->GetHp());
+		PacketBufferRef buffer = PacketBuilder::BuildAttackedNotifyPacket(victimTarget->GetEntityId(), victimTarget->GetHp());
 		SendPacketAroundSectorNSpectators(victimTarget->GetCurrentSector(), buffer);
 	}
 }

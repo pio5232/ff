@@ -16,24 +16,26 @@ namespace jh_content
 		virtual void Update(float delta) = 0;
 
 		void Move(float delta);
-		bool IsDead() const override { return m_statComponent.IsDead(); }
-		float GetAttackRange() const { return m_statComponent.GetAttackRange(); }
+
 		virtual bool IsMoving() const override;
 		virtual void TakeDamage(USHORT damage) override;
-		virtual USHORT GetHp() const override { return m_statComponent.GetHp(); }
-		USHORT GetAttackDamage() const { return m_statComponent.GetAttackDamage(); }
+		virtual USHORT GetHp() const override				{ return m_statComponent.GetHp(); }
+		virtual bool IsDead() const override				{ return m_statComponent.IsDead(); }
+		
+		USHORT GetAttackDamage() const						{ return m_statComponent.GetAttackDamage(); }
+		float GetAttackRange() const						{ return m_statComponent.GetAttackRange(); }
 	protected:
 		void BroadcastMoveState();
 		void SendPositionUpdate();
 
 	protected:
-		StatComponent m_statComponent;
-		std::unique_ptr<PlayerStateController> m_pStateController;
+		StatComponent							m_statComponent;
+		std::unique_ptr<PlayerStateController>	m_pStateController;
 
-		float m_fPosUpdateInterval;
-		class GameWorld* m_pWorldPtr;
+		float									m_fPosUpdateInterval;
+		class GameWorld							* m_pWorldPtr;
 	private:
-		Vector3 m_lastUpdatePos;
+		Vector3									m_lastUpdatePos;
 
 	};
 }

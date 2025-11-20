@@ -19,63 +19,61 @@ namespace jh_network
 
 #define GAME_USER_MANAGER_SAVE_FILE_NAME L"UserManager"
 
-using SendPacketFunc = std::function<void(ULONGLONG, PacketPtr&)>; // sessionId
+using SendPacketFunc		= std::function<void(ULONGLONG, PacketBufferRef&)>; // [sessionId, packet]
+using GameSessionPtr		= std::shared_ptr<jh_network::GameSession>;
+using LanClientSessionPtr	= std::shared_ptr<jh_network::LanClientSession>;
 
-using GameSessionPtr = std::shared_ptr<jh_network::GameSession>;
+constexpr int fixedFrame			= 60;
+constexpr float fixedDeltaTime		= 1.0f / fixedFrame;
 
-using LanClientSessionPtr = std::shared_ptr<jh_network::LanClientSession>;
+constexpr float limitDeltaTime		= 0.2f;
 
-const int fixedFrame = 60;
-const float fixedDeltaTime = 1.0f / fixedFrame;
-// 한번에 측정가능한 최대 델타 (넘으면 날려버림) => delta가 크게 나왔을때의 처리 프레임 제한
-const float limitDeltaTime = 0.2f;
+constexpr float VictoryZoneMinX		= 45.0f;
+constexpr float VictoryZoneMaxX		= 55.0f;
 
-const float VictoryZoneMinX = 45.0f;
-const float VictoryZoneMaxX = 55.0f;
+constexpr float VictoryZoneMinZ		= 45.0f;
+constexpr float VictoryZoneMaxZ		= 55.0f;
 
-const float VictoryZoneMinZ = 45.0f;
-const float VictoryZoneMaxZ = 55.0f;
+constexpr float COS_30				= 0.8660254f;
 
-constexpr float COS_30 = 0.8660254f;
+constexpr float mapXMin				= 0;
+constexpr float mapXMax				= 100.0f;
+constexpr float mapZMin				= 0;
+constexpr float mapZMax				= 100.0f;
 
-constexpr float mapXMin = 0;
-constexpr float mapXMax = 100.0f;
-constexpr float mapZMin = 0;
-constexpr float mapZMax = 100.0f;
+constexpr float centerX				= (mapXMax - mapXMin) / 2.0f;
+constexpr float centerZ				= (mapZMax - mapZMin) / 2.0f;
+constexpr int sectorCriteriaSize	= 10;
 
-constexpr float centerX = (mapXMax - mapXMin) / 2.0f;
-constexpr float centerZ = (mapZMax - mapZMin) / 2.0f;
-constexpr int sectorCriteriaSize = 10;
-
-constexpr int sectorMaxX = ((int)mapXMax - (int)mapXMin) / sectorCriteriaSize + 2; // 0 [ 1 2 3 4 5 ] 6
-constexpr int sectorMaxZ = ((int)mapZMax - (int)mapZMin) / sectorCriteriaSize + 2;
+constexpr int sectorMaxX			= ((int)mapXMax - (int)mapXMin) / sectorCriteriaSize + 2; // 0 [ 1 2 3 4 5 ] 6
+constexpr int sectorMaxZ			= ((int)mapZMax - (int)mapZMin) / sectorCriteriaSize + 2;
 
 // for문 사용
 // for( i = startX/Z; i<endX/Z; i++)
-const int startXSectorPos = 1;
-const int startZSectorPos = 1;
-constexpr int endXSectorPos = sectorMaxX - 1;
-constexpr int endZSectorPos = sectorMaxZ - 1;
+constexpr int startXSectorPos					= 1;
+constexpr int startZSectorPos					= 1;
+constexpr int endXSectorPos						= sectorMaxX - 1;
+constexpr int endZSectorPos						= sectorMaxZ - 1;
 
-const float edgeThreshold = 10.0f;
+constexpr float edgeThreshold					= 10.0f;
 
-const float defaultSlowWalkSpeed = 3.0f;
-const float defaultWalkSpeed = 6.0f;
-const float defaultRunSpeed = 9.0f;
+constexpr float defaultSlowWalkSpeed			= 3.0f;
+constexpr float defaultWalkSpeed				= 6.0f;
+constexpr float defaultRunSpeed					= 9.0f;
 
-const USHORT defaultMaxHp = 3;
-const USHORT defaultAttackDamage = 1;
+constexpr USHORT defaultMaxHp					= 3;
+constexpr USHORT defaultAttackDamage			= 1;
 
-const float defaultAttackRange = 1.6f;
+constexpr float defaultAttackRange				= 1.6f;
 
-const float defaultErrorRange = 0.5f; // 오차 범위
-const float posUpdateInterval = 0.2f;
+constexpr float defaultErrorRange				= 0.5f; // 오차 범위
+constexpr float posUpdateInterval				= 0.2f;
 
-const float attackDuration = 0.8f;
-const float attackedDuration = 1.0f;
-const float DeadDuration = 3.0f;
+constexpr float attackDuration					= 0.8f;
+constexpr float attackedDuration				= 1.0f;
+constexpr float DeadDuration					= 3.0f;
 
-const ULONGLONG victoryZoneCheckDuration = 10000; // 이름 바꾸기. 존 진입 시 우승자가 되기 위해 견뎌야하는 시간 (ms)
+constexpr ULONGLONG victoryZoneCheckDuration	= 10000; // 이름 바꾸기. 존 진입 시 우승자가 되기 위해 견뎌야하는 시간 (ms)
 
 namespace jh_content
 {
@@ -84,15 +82,6 @@ namespace jh_content
 	class AIPlayer;
 	class WorldChat;
 }
-
-using UserPtr = std::shared_ptr<class jh_content::User>;
-
-using GamePlayerPtr = std::shared_ptr<class jh_content::GamePlayer>;
-using AIPlayerPtr = std::shared_ptr<class jh_content::AIPlayer>;
-using EntityPtr = std::shared_ptr<class jh_content::Entity>;
-
-using WorldChatPtr = std::shared_ptr<class jh_content::WorldChat>;
-using Action = std::function<void()>;
 
 struct TimerAction
 {
@@ -115,7 +104,7 @@ enum class GameLanRequestMsgType
 
 struct GameLanRequest
 {
-	explicit GameLanRequest(ULONGLONG lanSessionId, USHORT msgType, PacketPtr packet, jh_network::IocpClient* lanClient) : m_ullSessionId(lanSessionId), m_usMsgType(msgType), m_pPacket(packet), m_pClient(lanClient) {}
+	explicit GameLanRequest(ULONGLONG lanSessionId, USHORT msgType, PacketBufferRef packet, jh_network::IocpClient* lanClient) : m_ullSessionId(lanSessionId), m_usMsgType(msgType), m_pPacket(packet), m_pClient(lanClient) {}
 	~GameLanRequest()
 	{
 		m_ullSessionId = INVALID_SESSION_ID;
@@ -130,10 +119,19 @@ struct GameLanRequest
 	GameLanRequest& operator=(const GameLanRequest& other) = default;
 	GameLanRequest& operator=(GameLanRequest&& other) = default;
 
-	ULONGLONG m_ullSessionId;
-	USHORT m_usMsgType;
-	PacketPtr m_pPacket;
-	jh_network::IocpClient* m_pClient;
+	ULONGLONG				m_ullSessionId;
+	USHORT					m_usMsgType;
+	PacketBufferRef			m_pPacket;
+	jh_network::IocpClient	* m_pClient;
 };
+
+using UserPtr = std::shared_ptr<class jh_content::User>;
+
+using GamePlayerPtr = std::shared_ptr<class jh_content::GamePlayer>;
+using AIPlayerPtr = std::shared_ptr<class jh_content::AIPlayer>;
+using EntityPtr = std::shared_ptr<class jh_content::Entity>;
+
+using WorldChatPtr = std::shared_ptr<class jh_content::WorldChat>;
+using Action = std::function<void()>;
 
 using GameLanRequestPtr = std::shared_ptr<GameLanRequest>;

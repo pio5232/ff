@@ -11,11 +11,11 @@ namespace jh_utility
 	/// </summary>
 	struct Job
 	{
-		Job(ULONGLONG id, USHORT type, PacketPtr packet) :
+		Job(ULONGLONG id, USHORT type, PacketBufferRef packet) :
 			m_llSessionId(id), m_wJobType(type), m_pPacket(packet) {}
-		ULONGLONG m_llSessionId;
-		USHORT m_wJobType; 
-		PacketPtr m_pPacket;
+		ULONGLONG	m_llSessionId;
+		USHORT		m_wJobType; 
+		PacketBufferRef	m_pPacket;
 
 		~Job()
 		{
@@ -24,18 +24,18 @@ namespace jh_utility
 			m_pPacket.reset();
 		}
 		
-		Job(const Job& other) = default;
-		Job(Job&& other) = default;
+		Job(const Job& other)				= default;
+		Job(Job&& other)					= default;
 
-		Job& operator=(const Job& other) = default;
-		Job& operator=(Job&& other) = default;
+		Job& operator=(const Job& other)	= default;
+		Job& operator=(Job&& other)			= default;
 	};
 
 
 	enum class SessionConnectionEventType : byte
 	{
-		NONE = 0,
-		CONNECT = 1,
+		NONE		= 0,
+		CONNECT		= 1,
 		DISCONNECT,
 	};
 
@@ -47,18 +47,18 @@ namespace jh_utility
 		SessionConnectionEvent(ULONGLONG id, jh_utility::SessionConnectionEventType msg) : m_ullSessionId(id), m_msgType(msg) {}
 		~SessionConnectionEvent()
 		{
-			m_ullSessionId = INVALID_SESSION_ID;
-			m_msgType = SessionConnectionEventType::NONE;
+			m_ullSessionId	= INVALID_SESSION_ID;
+			m_msgType		= SessionConnectionEventType::NONE;
 		}
 
-		SessionConnectionEvent(const SessionConnectionEvent& other) = default;
-		SessionConnectionEvent(SessionConnectionEvent&& other) = default;
+		SessionConnectionEvent(const SessionConnectionEvent& other)				= default;
+		SessionConnectionEvent(SessionConnectionEvent&& other)					= default;
 
-		SessionConnectionEvent& operator=(const SessionConnectionEvent& other) = default;
-		SessionConnectionEvent& operator=(SessionConnectionEvent&& other) = default;
+		SessionConnectionEvent& operator=(const SessionConnectionEvent& other)	= default;
+		SessionConnectionEvent& operator=(SessionConnectionEvent&& other)		= default;
 
-		ULONGLONG m_ullSessionId; 
-		SessionConnectionEventType m_msgType;
+		ULONGLONG					m_ullSessionId; 
+		SessionConnectionEventType	m_msgType;
 	};
 }
 

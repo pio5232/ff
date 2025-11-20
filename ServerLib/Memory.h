@@ -70,26 +70,26 @@ namespace jh_memory
 	// 64 / 128 / 256 / 512 / 1024 / 2048 / 4096
 	// MemoryPool의 개수. 사이즈별로 존재한다.
 	constexpr size_t kPoolCount = 7;
-	constexpr size_t kPoolSizeArr[kPoolCount] = { {64}, { 128 }, { 256 }, { 512 }, { 1024 }, { 2048 }, { 4096 } };
+	constexpr size_t kPoolSizeArr[kPoolCount]		= { {64}, { 128 }, { 256 }, { 512 }, { 1024 }, { 2048 }, { 4096 } };
 
 	// Level 3에서 얻어오는 사이즈를 정하기 위한 수
 	// MemoryPool Size * kMaxBlockCount 와 kAllocationGranularity를 통해 할당받을 사이즈를 정의한다.
-	constexpr size_t kAllocationGranularity = 4096 * 16;
-	constexpr size_t kNodeCountToCreate = 4096;
+	constexpr size_t kAllocationGranularity			= 4096 * 16;
+	constexpr size_t kNodeCountToCreate				= 4096;
 
 	// MemoryPool에서 관리되는 1블럭당 연결된 Node의 수
-	constexpr size_t kNodeCountPerBlock = 512;
+	constexpr size_t kNodeCountPerBlock				= 512;
 
-	constexpr size_t kBlockCountToCreate = kNodeCountToCreate / kNodeCountPerBlock;
+	constexpr size_t kBlockCountToCreate			= kNodeCountToCreate / kNodeCountPerBlock;
 
 	// Pool에서 관리할 수 있는 최대 사이즈. 이 사이즈를 넘어가면 new / delete를 통해 할당/해제를 진행한다.
-	constexpr size_t kMaxAllocSize = 4096;
+	constexpr size_t kMaxAllocSize					= 4096;
+	constexpr size_t kPageSize						= 4096;
 
-	constexpr size_t kPageSize = 4096;
 
 	// [카운터] [포인터] 된 값의 마스킹을 위한 값
-	constexpr ULONGLONG kPointerMask = 0x00007fffffffffff;
-	constexpr int kCounterShift = 47;
+	constexpr ULONGLONG kPointerMask				= 0x00007fffffffffff;
+	constexpr int kCounterShift						= 47;
 
 	inline consteval std::array<int, kMaxAllocSize + 1> CreatePoolTable()
 	{

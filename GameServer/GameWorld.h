@@ -25,11 +25,11 @@ namespace jh_content
 		// 게임 시작 관련 초기화
 		void Init(USHORT total, USHORT gamePlayerCount); // 1. ai+player, 2. player
 
-		void SendPacketAroundSectorNSpectators(const Sector& sector, PacketPtr& packet);
-		void SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketPtr& packet);
+		void SendPacketAroundSectorNSpectators(const Sector& sector, PacketBufferRef& packet);
+		void SendPacketAroundSectorNSpectators(int sectorX, int sectorZ, PacketBufferRef& packet);
 
 		void CleanUpSpectatorEntities();
-		void SendToSpectatorEntities(PacketPtr& packet);
+		void SendToSpectatorEntities(PacketBufferRef& packet);
 
 		void SetSpectator(EntityPtr entity);
 		const class SectorManager* GetSectorManagerConst() const { return m_pSectorManager.get(); }
@@ -39,9 +39,9 @@ namespace jh_content
 		void CreateAI(class jh_content::GameWorld* worldPtr);
 		GamePlayerPtr CreateGamePlayer(UserPtr userPtr);
 
-		void SendToEntity(ULONGLONG entityId, PacketPtr& packetPtr);
+		void SendToEntity(ULONGLONG entityId, PacketBufferRef& packetPtr);
 
-		void BroadCast(PacketPtr& packetPtr);
+		void BroadCast(PacketBufferRef& packetPtr);
 
 	public:
 		void CheckVictoryZoneEntry(GamePlayerPtr gamePlayerPtr);
@@ -51,26 +51,26 @@ namespace jh_content
 		void SetDSCount(USHORT predMaxCnt);
 		bool IsInVictoryZone(const Vector3& pos) const;
 
-		ULONGLONG m_ullExpectedWinnerId = 0;
-		ULONGLONG m_ullExpectedWinTime = ULLONG_MAX;
+		ULONGLONG m_ullExpectedWinnerId;
+		ULONGLONG m_ullExpectedWinTime;
 
 	private:
-		SendPacketFunc m_sendPacketFunc;
-		std::atomic<bool> m_bIsUpdateRunning;
+		SendPacketFunc									m_sendPacketFunc;
+		volatile char									m_bIsUpdateRunning;
 
-		float m_fDeltaSum;
-
-		std::priority_queue<TimerAction> m_timerActionQueue;
+		float											m_fDeltaSum;
+		std::priority_queue<TimerAction>				m_timerActionQueue;
 
 		// [Entity_ID, shared_ptr<Entity>]
-		std::unordered_map<ULONGLONG, EntityPtr> m_aliveEntityDic;
+		std::unordered_map<ULONGLONG, EntityPtr>		m_aliveEntityDic;
+
 		// [shared_ptr<Entity>, vectorIndex] - 
-		std::unordered_map<EntityPtr, int> m_aliveEntityToVectorIdxDic;
-		std::vector<EntityPtr> m_aliveEntityArr;
+		std::unordered_map<EntityPtr, int>				m_aliveEntityToVectorIdxDic;
+		std::vector<EntityPtr>							m_aliveEntityArr;
 
-		std::vector<std::weak_ptr<jh_content::Entity>> m_spectatorEntityArr;
+		std::vector<std::weak_ptr<jh_content::Entity>>	m_spectatorEntityArr;
 
-		std::unique_ptr<class SectorManager> m_pSectorManager;
-		class UserManager* m_pUserManager;
+		std::unique_ptr<class SectorManager>			m_pSectorManager;
+		class UserManager								* m_pUserManager;
 	};
 }

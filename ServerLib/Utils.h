@@ -54,35 +54,35 @@ namespace jh_utility
 	public:
 		LockStack()
 		{
-			InitializeSRWLock(&_lock);
+			InitializeSRWLock(&m_lock);
 		}
 		void Reserve(int reserveCount)
 		{
-			SRWLockGuard lockGuard(&_lock);
-			_vec.reserve(reserveCount);
+			SRWLockGuard lockGuard(&m_lock);
+			m_vec.reserve(reserveCount);
 		}
 		void Push(T data)
 		{
-			SRWLockGuard lockGuard(&_lock);
-			_vec.push_back(data);
+			SRWLockGuard lockGuard(&m_lock);
+			m_vec.push_back(data);
 		}
 
 		bool TryPop(T& data)
 		{
-			SRWLockGuard lockGuard(&_lock);
-			if (_vec.size() > 0)
+			SRWLockGuard lockGuard(&m_lock);
+			if (m_vec.size() > 0)
 			{
-				data = _vec.back();
+				data = m_vec.back();
 
-				_vec.pop_back();
+				m_vec.pop_back();
 				return true;
 			}
 			else
 				return false;
 		}
 	private:
-		SRWLOCK _lock;
-		std::vector<T> _vec;
+		SRWLOCK m_lock;
+		std::vector<T> m_vec;
 	};
 
 	template <typename T>

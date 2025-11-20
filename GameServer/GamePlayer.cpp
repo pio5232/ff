@@ -10,11 +10,11 @@
 #include "GameWorld.h"
 
 using namespace jh_network;
-alignas(64) std::atomic<int> jh_content::GamePlayer::aliveGamePlayerCount = 0;
+alignas(32) volatile LONG jh_content::GamePlayer::aliveGamePlayerCount = 0;
 
 jh_content::GamePlayer::GamePlayer(std::weak_ptr<class jh_content::User> ownerUser, GameWorld* worldPtr) : Player(worldPtr, EntityType::GamePlayer, posUpdateInterval), m_ownerUser(ownerUser),m_bWasInVictoryZone(false)
 {
-	aliveGamePlayerCount.fetch_add(1);
+	InterlockedIncrement(&aliveGamePlayerCount);
 }
 
 void jh_content::GamePlayer::Update(float delta)
@@ -23,7 +23,6 @@ void jh_content::GamePlayer::Update(float delta)
 		return;
 
 	Player::Update(delta);
-
 }
 
 void jh_content::GamePlayer::MoveStart(const Vector3& clientMoveStartPos, float clientMoveStartRotY)

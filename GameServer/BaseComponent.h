@@ -13,10 +13,8 @@ public:
 	BaseComponent(ComponentType componentType);
 	virtual ~BaseComponent();
 
-	ComponentType GetType() const { return _componentType; }
+	ComponentType GetType() const { return m_componentType; }
 private:
-	ComponentType _componentType = ComponentType::NONE;
-	//ULONGLONG _userId = 0;
-
+	ComponentType m_componentType = ComponentType::NONE;
 };
 

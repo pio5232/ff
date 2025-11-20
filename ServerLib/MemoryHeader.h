@@ -12,8 +12,6 @@ namespace jh_memory
 
 		static void* AttachHeader(MemoryHeader* header, size_t size)
 		{
-			// placement new
-
 			new (header) MemoryHeader(size);
 
 			return reinterpret_cast<void*>(++header);

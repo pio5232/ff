@@ -43,9 +43,6 @@ void TransformComponent::Move(float delta)
 		return;
 
 	m_position += moveVector;
-
-	//printf(" Transform Update -  pos [ %0.3f, %0.3f, %0.3f ]]\n", m_position.m_iX, m_position.y, m_position.m_iZ);
-
 }
 
 void TransformComponent::SetDirection(float rotY)
@@ -53,6 +50,7 @@ void TransformComponent::SetDirection(float rotY)
 	const float deg2Rad = 3.141592f / 180.0f;
 
 	m_rotation.y = NormalizeAngle(rotY);
+
 	// transform.forward.normalized와 같다. 내가 바라보고 있는 방향의 방향 벡터, 현재 로테이션은 RotY
 	m_dirNormalized = Vector3(sinf(m_rotation.y * deg2Rad), 0, cosf(m_rotation.y * deg2Rad));
 

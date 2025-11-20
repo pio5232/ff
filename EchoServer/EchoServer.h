@@ -10,7 +10,7 @@ namespace jh_content
 
 		void Monitor();
 	public:
-		virtual void OnRecv(ULONGLONG sessionId, PacketPtr packet,USHORT type) override;
+		virtual void OnRecv(ULONGLONG sessionId, PacketBufferRef packet,USHORT type) override;
 		void OnConnected(ULONGLONG sessionId) override;
 		void OnDisconnected(ULONGLONG sessionId) override;
 

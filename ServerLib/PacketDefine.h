@@ -157,18 +157,18 @@ namespace jh_network
 	{
 	public:
 		//ULONGLONG sendUserId = 0;
-		ULONGLONG targetUserId = 0;
-		USHORT messageLen = 0;
-		WCHAR payLoad[0];		//WCHAR payLoad[MESSAGE_MAX_LEN];
+		ULONGLONG	targetUserId = 0;
+		USHORT		messageLen = 0;
+		WCHAR		payLoad[0];		//WCHAR payLoad[MESSAGE_MAX_LEN];
 
 	};
 	struct ChatRoomRequestPacket : public PacketHeader
 	{
 		// AA
 	public:
-		USHORT roomNum = UINT16_MAX;
-		USHORT messageLen = 0;
-		WCHAR payLoad[0];
+		USHORT	roomNum = UINT16_MAX;
+		USHORT	messageLen = 0;
+		WCHAR	payLoad[0];
 	};
 	
 	// head만 존재.
@@ -195,12 +195,11 @@ namespace jh_network
 	{
 	public :
 		ChatOtherUserNotifyPacket() { type = CHAT_NOTIFY_PACKET; }
-		ULONGLONG sendUserId = 0;
-		USHORT messageLen = 0;
-		WCHAR payLoad[0];
+		ULONGLONG	sendUserId = 0;
+		USHORT		messageLen = 0;
+		WCHAR		payLoad[0];
 	};
 	// LOG_IN
-	// 암호화.. 복호화?
 	struct LogInRequestPacket : public PacketHeader
 	{
 	public:
@@ -247,27 +246,25 @@ namespace jh_network
 	struct MakeRoomResponsePacket : public PacketHeader
 	{
 		MakeRoomResponsePacket() { size = sizeof(isMade) + RoomInfo::GetSize();  type = MAKE_ROOM_RESPONSE_PACKET; }
-		bool isMade = false;
-		RoomInfo roomInfo{};
+		bool		isMade = false;
+		RoomInfo	roomInfo{};
 	};
 
 	//struct alignas (64) EnterRoomResponsePacket : public PacketHeader
 	struct EnterRoomResponsePacket : public PacketHeader
 	{
 		EnterRoomResponsePacket() {  type = ENTER_ROOM_RESPONSE_PACKET; } 
-		bool bAllow = false;
-		USHORT idCnt = 0;
-		ULONGLONG ids[0]; // 여기의 id 정보에는 최상위 bit가 Ready 상태를 가지도록 한다.
-
-		//RoomInfo roomInfo = {};
+		bool		bAllow = false;
+		USHORT		idCnt = 0;
+		ULONGLONG	ids[0]; // 여기의 id 정보에는 최상위 bit가 Ready 상태를 가지도록 한다.
 	};
 
 	// ENTER_ROOM
 	struct EnterRoomRequestPacket : public PacketHeader
 	{
 		EnterRoomRequestPacket() { size = sizeof(roomNum) + sizeof(roomName); type = ENTER_ROOM_REQUEST_PACKET; }
-		USHORT roomNum = 0;
-		WCHAR roomName[ROOM_NAME_MAX_LEN]{};
+		USHORT	roomNum = 0;
+		WCHAR	roomName[ROOM_NAME_MAX_LEN]{};
 	};
 
 	// other notify
@@ -287,8 +284,8 @@ namespace jh_network
 	struct LeaveRoomRequestPacket : public PacketHeader
 	{
 		LeaveRoomRequestPacket() { size = sizeof(roomNum) + sizeof(roomName); type = LEAVE_ROOM_REQUEST_PACKET; }
-		USHORT roomNum = 0;
-		WCHAR roomName[ROOM_NAME_MAX_LEN]{};
+		USHORT	roomNum = 0;
+		WCHAR	roomName[ROOM_NAME_MAX_LEN]{};
 	};
 
 	// REQUEST ROOM LIST
@@ -300,8 +297,8 @@ namespace jh_network
 	struct RoomListResponsePacket : public PacketHeader
 	{
 		RoomListResponsePacket() { type = ROOM_LIST_RESPONSE_PACKET; }
-		USHORT roomCnt = 0;
-		RoomInfo roomInfos[0];
+		USHORT		roomCnt = 0;
+		RoomInfo	roomInfos[0];
 	};	
 
 	// GameReadyPacket
@@ -316,8 +313,8 @@ namespace jh_network
 	{
 	public:
 		GameReadyNotifyPacket() { type = GAME_READY_NOTIFY_PACKET; size = sizeof(isReady) + sizeof(userId); }
-		bool isReady = false;
-		ULONGLONG userId = 0;
+		bool		isReady = false;
+		ULONGLONG	userId = 0;
 	};
 
 
@@ -348,10 +345,10 @@ namespace jh_network
 	{
 		GameServerLanInfoPacket() { type = GAME_SERVER_LAN_INFO_PACKET; size = sizeof(ipStr) + sizeof(port) + sizeof(roomNum) + sizeof(xorToken); }
 
-		WCHAR ipStr[IP_STRING_LEN] = {};
-		USHORT port = 0;
-		USHORT roomNum = 0;
-		ULONGLONG xorToken = 0;
+		WCHAR		ipStr[IP_STRING_LEN] = {};
+		USHORT		port = 0;
+		USHORT		roomNum = 0;
+		ULONGLONG	xorToken = 0;
 	};
 
 
@@ -387,15 +384,15 @@ namespace jh_network
 	struct MakeMyCharacterPacket : public PacketHeader
 	{
 		MakeMyCharacterPacket() { type = MAKE_MY_CHARACTER_PACKET; size = sizeof(entityId) + sizeof(pos); }
-		ULONGLONG entityId = 0;
-		Vector3 pos{};
+		ULONGLONG	entityId = 0;
+		Vector3		pos{};
 	};
 
 	struct MakeOtherCharacterPacket : public PacketHeader
 	{
 		MakeOtherCharacterPacket() { type = MAKE_OTHER_CHARACTER_PACKET; size = sizeof(entityId) + sizeof(pos); }
-		ULONGLONG entityId = 0;
-		Vector3 pos{};
+		ULONGLONG	entityId = 0;
+		Vector3		pos{};
 	};
 
 	struct DeleteOtherCharacterPacket : public PacketHeader
@@ -435,25 +432,24 @@ namespace jh_network
 	struct MoveStartNotifyPacket : public PacketHeader
 	{
 		MoveStartNotifyPacket() { type = MOVE_START_NOTIFY_PACKET; size = sizeof(entityId) + sizeof(pos) + sizeof(rotY); }
-		ULONGLONG entityId = 0;
-		Vector3 pos{};
-		float rotY = 0;
-		//WORD moveDir = DIR_MAX;
+		ULONGLONG	entityId = 0;
+		Vector3		pos{};
+		float		rotY = 0;
 	};
 
 	struct MoveStopRequestPacket : public PacketHeader
 	{
 		MoveStopRequestPacket() { type = MOVE_STOP_REQUEST_PACKET; size = sizeof(pos) + sizeof(rotY); }
-		Vector3 pos{};
-		float rotY = 0;
+		Vector3		pos{};
+		float		rotY = 0;
 	};
 
 	struct MoveStopNotifyPacket : public PacketHeader
 	{
 		MoveStopNotifyPacket() { type = MOVE_STOP_NOTIFY_PACKET; size = sizeof(entityId) + sizeof(pos) + sizeof(rotY); }
-		ULONGLONG entityId = 0;
-		Vector3 pos{};
-		float rotY = 0;
+		ULONGLONG	entityId = 0;
+		Vector3		pos{};
+		float		rotY = 0;
 	};
 
 	struct AttackRequestPacket : public PacketHeader
@@ -470,8 +466,8 @@ namespace jh_network
 	struct AttackedNotifyPacket : public PacketHeader
 	{
 		AttackedNotifyPacket() { type = ATTACKED_NOTIFY_PACKET; size = sizeof(entityId) + sizeof(currentHp); }
-		ULONGLONG entityId = 0;
-		USHORT currentHp = 0;
+		ULONGLONG	entityId = 0;
+		USHORT		currentHp = 0;
 	};
 
 	struct DieNotifyPacket : public PacketHeader
@@ -513,19 +509,19 @@ namespace jh_network
 	struct CharacterPositionSyncPacket : public PacketHeader
 	{
 		CharacterPositionSyncPacket() { type = CHARACTER_POSITION_SYNC_PACKET; size = sizeof(entityId) + sizeof(syncPos) + sizeof(syncRot); }
-		ULONGLONG entityId = 0;
-		Vector3 syncPos{};
-		Vector3 syncRot{};
+		ULONGLONG	entityId = 0;
+		Vector3		syncPos{};
+		Vector3		syncRot{};
 	};
 
 	// 일정 주기로 자신의 Position 전달
 	struct UpdateTransformPacket : public PacketHeader
 	{
 		UpdateTransformPacket() { type = UPDATE_TRANSFORM_PACKET; size = sizeof(timeStamp) + sizeof(entityId) + sizeof(pos) + sizeof(rot); }
-		ULONGLONG timeStamp = 0;
-		ULONGLONG entityId = 0;
-		Vector3 pos{};
-		Vector3 rot{};
+		ULONGLONG	timeStamp = 0;
+		ULONGLONG	entityId = 0;
+		Vector3		pos{};
+		Vector3		rot{};
 	};
 }
 

@@ -69,7 +69,7 @@ void jh_content::EchoServer::EndAction()
 }
 //void jh_content::EchoServer::OnRecv(LONGLONG sessionId, jh_utility::SerializationBuffer* packet, WORD type)
 
-void jh_content::EchoServer::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHORT type)
+void jh_content::EchoServer::OnRecv(ULONGLONG sessionId, PacketBufferRef packet, USHORT type)
 {
 	// 멀티 스레드 처리 로직
 	short len;
@@ -77,29 +77,30 @@ void jh_content::EchoServer::OnRecv(ULONGLONG sessionId, PacketPtr packet, USHOR
 
 	*packet >> data;
 
-	PacketPtr sendPacket = jh_content::PacketBuilder::BuildEchoPacket(8, data);
+	PacketBufferRef sendPacket = jh_content::PacketBuilder::BuildEchoPacket(8, data);
 	SendPacket(sessionId, sendPacket);
 	return;
 	
 
 	// 단일 스레드 처리 로직.
-	//JobPtr job = std::make_shared<jh_utility::Job>(sessionId, type, packet);
-	JobPtr job = MakeShared<jh_utility::Job>(g_memSystem, sessionId, type, packet);
+	//JobRef job = std::make_shared<jh_utility::Job>(sessionId, type, packet);
+	JobRef job = jh_memory::MakeShared<jh_utility::Job>(sessionId, type, packet);
+
 
 	m_pEchoSystem->EnqueueJob(job);
 }
 
 void jh_content::EchoServer::OnConnected(ULONGLONG sessionId)
 {
-	//SessionConnectionEventPtr systemJob = std::make_shared<jh_utility::SessionConnectionEvent>(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
-	//SessionConnectionEventPtr sessionConnectionEventPtr = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	//SessionConnectionEventRef systemJob = std::make_shared<jh_utility::SessionConnectionEvent>(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	//SessionConnectionEventRef sessionConnectionEventPtr = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
 	//m_pEchoSystem->EnqueueSystemJob(sessionConnectionEventPtr);
 }
 void jh_content::EchoServer::OnDisconnected(ULONGLONG sessionId)
 {
-	//SessionConnectionEventPtr systemJob = std::make_shared<jh_utility::SessionConnectionEvent>(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
-	//SessionConnectionEventPtr sessionConnectionEventPtr = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT); // MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
+	//SessionConnectionEventRef systemJob = std::make_shared<jh_utility::SessionConnectionEvent>(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
+	//SessionConnectionEventRef sessionConnectionEventPtr = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT); // MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
 
 
 	//m_pEchoSystem->EnqueueSystemJob(sessionConnectionEventPtr);

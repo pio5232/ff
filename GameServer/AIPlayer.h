@@ -9,7 +9,7 @@ namespace jh_content
 	{
 	public:
 		AIPlayer(GameWorld* worldPtr);
-		~AIPlayer() { printf("~~~AI Destructor\n"); }
+		~AIPlayer() { }
 
 		virtual void Update(float delta);
 

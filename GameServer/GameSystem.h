@@ -9,7 +9,6 @@ namespace jh_content
 	{
 		ULONGLONG m_ullEnterToken;
 		USHORT m_usRoomNumber;
-		//USHORT m_usPort;
 
 		USHORT m_usRequiredUserCnt;
 		USHORT m_usMaxUserCnt;
@@ -17,28 +16,25 @@ namespace jh_content
 
 	class GameSystem
 	{
-		using PacketFunc = void(GameSystem::*)(ULONGLONG, PacketPtr&);
+		using PacketFunc = void(GameSystem::*)(ULONGLONG, PacketBufferRef&);
 
 	public:
 		GameSystem(jh_network::IocpServer* owner);
 		~GameSystem();
 
-
 		USHORT GetRoomNumber() const { return m_gameInfo.m_usRoomNumber; }
 		ULONGLONG GetToken() const { return m_gameInfo.m_ullEnterToken; }
-		//USHORT GetRealPort() const { return m_gameInfo.m_usPort; }
 		USHORT GetRequiredUsers() const { return m_gameInfo.m_usRequiredUserCnt; }
 		USHORT MaxUsers() const { return m_gameInfo.m_usMaxUserCnt; }
-
 
 		// Lan에서 정보를 받으면 갱신한다.
 		void SetGameInfo(USHORT roomNumber, USHORT requiredUsers, USHORT maxUsers);
 
-		void EnqueueJob(JobPtr& job)
+		void EnqueueJob(JobRef& job)
 		{
 			m_netJobQueue.Push(job);
 		}
-		void EnqueueSessionConnEvent(SessionConnectionEventPtr& sessionConnectionEventPtr)
+		void EnqueueSessionConnEvent(SessionConnectionEventRef& sessionConnectionEventPtr)
 		{
 			m_sessionConnEventQueue.Push(sessionConnectionEventPtr);
 		}
@@ -52,41 +48,41 @@ namespace jh_content
 		static unsigned LogicThreadFunc(LPVOID lparam);
 		void GameLogic();
 
-		void ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketPtr& packet);
+		void ProcessPacket(ULONGLONG sessionId, DWORD packetType, PacketBufferRef& packet);
 
 		void ProcessNetJob();
 		void ProcessSessionConnectionEvent();
 		void ProcessLanRequest();
 
 		// GAME
-		void HandleEnterGameRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
-		void HandleLoadCompletedPacket(ULONGLONG sessionId, PacketPtr& packet);
+		void HandleEnterGameRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet);
+		void HandleLoadCompletedPacket(ULONGLONG sessionId, PacketBufferRef& packet);
 
-		void HandleMoveStartRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
-		void HandleMoveStopRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
-		void HandleChatRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
+		void HandleMoveStartRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet);
+		void HandleMoveStopRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet);
+		void HandleChatRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet);
 
-		void HandleAttackRequestPacket(ULONGLONG sessionId, PacketPtr& packet);
+		void HandleAttackRequestPacket(ULONGLONG sessionId, PacketBufferRef& packet);
 
 		// LAN
-		void HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketPtr& packet, jh_network::IocpClient* lanClient);
+		void HandleGameServerSettingResponsePacket(ULONGLONG lanSessionId, PacketBufferRef& packet, jh_network::IocpClient* lanClient);
 	private:
-		GameServerInfo m_gameInfo;
+		GameServerInfo										m_gameInfo;
 
-		std::atomic<bool> m_bIsRunning;
-		USHORT m_dwLoadCompletedCnt;
+		volatile char										m_bIsRunning;
+		USHORT												m_usLoadCompletedCnt;
 
-		jh_utility::LockQueue<JobPtr> m_netJobQueue;
-		jh_utility::LockQueue<SessionConnectionEventPtr> m_sessionConnEventQueue;
-		jh_utility::LockQueue<GameLanRequestPtr> m_gameLanRequestQueue;
+		jh_utility::LockQueue<JobRef> m_netJobQueue;
+		jh_utility::LockQueue<SessionConnectionEventRef>	m_sessionConnEventQueue;
+		jh_utility::LockQueue<GameLanRequestPtr>			m_gameLanRequestQueue;
 		
-		std::unique_ptr<class jh_content::GameWorld> m_pGameWorld;
-		std::unique_ptr<class jh_content::UserManager> m_pUserManager;
+		std::unique_ptr<class jh_content::GameWorld>		m_pGameWorld;
+		std::unique_ptr<class jh_content::UserManager>		m_pUserManager;
 
-		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;
+		std::unordered_map<USHORT, PacketFunc>				m_packetFuncDic;
 		
-		jh_network::IocpServer* m_pOwner;
-		HANDLE m_hLogicThread;
+		jh_network::IocpServer								* m_pOwner;
+		HANDLE												m_hLogicThread;
 	};
 }
 

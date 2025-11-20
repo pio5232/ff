@@ -175,7 +175,7 @@ void jh_utility::Parser::ParseCategory()
 
 #ifdef  PRINT_CATEGORY
 	wprintf(L"+--------------------------------------------------------------+\n");
-	wprintf(L"%s\t", _lineBuffer);
+	wprintf(L"%s\t", m_szLineBuffer);
 #endif //  PRINT_CATEGORY
 
 	if (0x0a == *m_szLineBuffer)
@@ -235,7 +235,7 @@ void jh_utility::Parser::ParseMuchData()
 
 #ifdef PRINT_DATA
 	wprintf(L"+--------------------------------------------------------------+\n");
-	wprintf(L"%s\t", _lineBuffer);
+	wprintf(L"%s\t", m_szLineBuffer);
 #endif // PRINT_DATA
 
 	// 1. 주석 체크
@@ -267,7 +267,7 @@ void jh_utility::Parser::ParseMuchData()
 				{
 					*(m_szParsingBuffer + nextParseBufferIndex++) = L'\0';
 #ifdef PRINT_DATA
-					wprintf(L"ParseMuch -> Call ParseData [ %s ] \n", _parseBuffer);
+					wprintf(L"ParseMuch -> Call ParseData [ %s ] \n", m_szParsingBuffer);
 #endif // #ifdef PRINT_DATA
 
 					ParseData();

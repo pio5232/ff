@@ -33,37 +33,37 @@ void jh_network::NetAddress::Clear()
 	WSACleanup();
 }
 
-jh_network::NetAddress::NetAddress(SOCKADDR_IN sockAddr) :_sockAddr(sockAddr) {}
+jh_network::NetAddress::NetAddress(SOCKADDR_IN sockAddr) :m_sockAddr(sockAddr) {}
 
 
 jh_network::NetAddress::NetAddress(std::wstring ip, USHORT port)
 {
-	memset(&_sockAddr, 0, sizeof(_sockAddr));
+	memset(&m_sockAddr, 0, sizeof(m_sockAddr));
 
-	_sockAddr.sin_family = AF_INET;
-	_sockAddr.sin_port = htons(port);
-	_sockAddr.sin_addr = IpToAddr(ip.c_str());
+	m_sockAddr.sin_family = AF_INET;
+	m_sockAddr.sin_port = htons(port);
+	m_sockAddr.sin_addr = IpToAddr(ip.c_str());
 }
 
-jh_network::NetAddress::NetAddress(const NetAddress& other) : _sockAddr(other._sockAddr) {}
+jh_network::NetAddress::NetAddress(const NetAddress& other) : m_sockAddr(other.m_sockAddr) {}
 
 jh_network::NetAddress& jh_network::NetAddress::operator=(const NetAddress& other)
 {
-	_sockAddr = other._sockAddr;
+	m_sockAddr = other.m_sockAddr;
 
 	return *this;
 }
 
 jh_network::NetAddress& jh_network::NetAddress::operator=(const SOCKADDR_IN& other)
 {
-	_sockAddr = other;
+	m_sockAddr = other;
 
 	return *this;
 }
 
 void jh_network::NetAddress::Init(SOCKADDR_IN sockAddr)
 {
-	_sockAddr = sockAddr;
+	m_sockAddr = sockAddr;
 }
 
 const std::wstring jh_network::NetAddress::GetIpAddress() const
@@ -71,7 +71,7 @@ const std::wstring jh_network::NetAddress::GetIpAddress() const
 	WCHAR ipWstr[IP_STRING_LEN]{};
 
 	// 주소체계, &IN_ADDR
-	InetNtopW(AF_INET, &_sockAddr.sin_addr, ipWstr, sizeof(ipWstr) / sizeof(WCHAR));
+	InetNtopW(AF_INET, &m_sockAddr.sin_addr, ipWstr, sizeof(ipWstr) / sizeof(WCHAR));
 
 	return std::wstring(ipWstr);
 }

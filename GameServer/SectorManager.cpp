@@ -19,7 +19,7 @@ bool jh_content::SectorManager::AddEntity(int sectorZ, int sectorX, EntityPtr en
 	return true;
 }
 
-bool jh_content::SectorManager::DeleteEntity(EntityPtr entity, PacketPtr& sendBuffer)
+bool jh_content::SectorManager::DeleteEntity(EntityPtr entity, PacketBufferRef& sendBuffer)
 {
 	Sector sector = entity->GetCurrentSector();
 
@@ -42,7 +42,7 @@ void jh_content::SectorManager::SendAllEntityInfo()
 
 	jh_network::MakeOtherCharacterPacket makeOtherCharacterPacket;
 
-	// 각 섹터마다 정보를 모아서 주변의 섹터에게 뿌림.
+	// 각 섹터마다 정보를 모아서 주변의 섹터에게 전달.
 	for (int z = startZSectorPos; z < endZSectorPos; z++)
 	{
 		for (int x = startXSectorPos; x < endXSectorPos; x++)
@@ -57,7 +57,7 @@ void jh_content::SectorManager::SendAllEntityInfo()
 				aroundEntityInfos.push_back(entity);
 			}
 
-			PacketPtr sendBuffer = MakeSharedBuffer(g_memSystem, sizeof(jh_network::MakeOtherCharacterPacket) * aroundEntityInfos.size());
+			PacketBufferRef sendBuffer = jh_memory::MakeShared<PacketBuffer>(sizeof(jh_network::MakeOtherCharacterPacket) * aroundEntityInfos.size());
 
 			for (const EntityPtr& entity : aroundEntityInfos)
 			{
@@ -71,7 +71,6 @@ void jh_content::SectorManager::SendAllEntityInfo()
 }
 void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 {
-	// 나는 player, ai가 존재하기 때문에 판별 잘 해야한다.
 	AroundSector removeAroundSector, addAroundSector;
 
 	GetUpdatedSectorAround(entity, &removeAroundSector, &addAroundSector);
@@ -79,11 +78,10 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	// Player가 아니어도 작동해야함.
 	// 1. 삭제되어야할 섹터에 존재하는 플레이어에게 삭제 패킷을 보낸다. (나를 삭제해라!!)
 	{
-		PacketPtr delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entity->GetEntityId());
+		PacketBufferRef delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(entity->GetEntityId());
 
 		for (int i = 0; i < removeAroundSector.sectorCount; i++)
 		{
-			//printf("1_UpdateSector [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(),removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
 			SendPacket_Sector(removeAroundSector.sectors[i], delOtherCharacterPkt);
 		}
 	}
@@ -91,19 +89,16 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	// Player가 아니더라도 작동해야한다.
 	// 3. 추가되어야할 섹터에 나를 생성 패킷을 보낸다. (나를 만들어라!!!)
 	{
-		PacketPtr makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(entity->GetEntityId(), entity->GetPosition());
-		PacketPtr moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(entity->GetEntityId(), entity->GetPosition(), entity->GetRotation().y);
+		PacketBufferRef makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(entity->GetEntityId(), entity->GetPosition());
+		PacketBufferRef moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(entity->GetEntityId(), entity->GetPosition(), entity->GetRotation().y);
 
 		for (int i = 0; i < addAroundSector.sectorCount; i++)
 		{
-			//printf("2_UpdateSector [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(), removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
-
 			SendPacket_Sector(addAroundSector.sectors[i], makeOtherCharacterPkt);
 
 			// 만약 내가 이동중이면 이동중인 것까지 보내야한다.
 			if (entity->IsMoving())
 			{
-				//printf("2_UpdateSector Move [%d] : %llu [Sector [%d, %d]]\n", i, entity->GetEntityId(), removeAroundSector.sectors[i].m_iZ, removeAroundSector.sectors[i].m_iX);
 				SendPacket_Sector(addAroundSector.sectors[i], moveStartNotifyPkt);
 			}
 		}
@@ -122,7 +117,7 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	{
 		for (const auto& removeEntity : m_sectorSet[removeAroundSector.sectors[i].m_iZ][removeAroundSector.sectors[i].m_iX])
 		{
-			PacketPtr delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(removeEntity->GetEntityId());
+			PacketBufferRef delOtherCharacterPkt = jh_content::PacketBuilder::BuildDeleteOtherCharacterPacket(removeEntity->GetEntityId());
 
 			m_sendPacketFunc(entityId, delOtherCharacterPkt);
 		}
@@ -137,13 +132,13 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 			if (addEntity->IsDead())
 				continue;
 
-			PacketPtr makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(addEntity->GetEntityId(), addEntity->GetPosition());
+			PacketBufferRef makeOtherCharacterPkt = jh_content::PacketBuilder::BuildMakeOtherCharacterPacket(addEntity->GetEntityId(), addEntity->GetPosition());
 
 			m_sendPacketFunc(entityId, makeOtherCharacterPkt);
 
 			if (addEntity->IsMoving())
 			{
-				PacketPtr moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(addEntity->GetEntityId(), addEntity->GetPosition(), addEntity->GetRotation().y);
+				PacketBufferRef moveStartNotifyPkt = jh_content::PacketBuilder::BuildMoveStartNotifyPacket(addEntity->GetEntityId(), addEntity->GetPosition(), addEntity->GetRotation().y);
 
 				m_sendPacketFunc(entityId, moveStartNotifyPkt);
 			}
@@ -151,13 +146,12 @@ void jh_content::SectorManager::UpdateSector(EntityPtr entity)
 	}
 }
 
-void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPtr& packet)
+void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketBufferRef& packet)
 {
+	// 유효한 섹터이면서 보낼 대상이 존재해야한다.
 	if (false == IsValidSector(sector.m_iX, sector.m_iZ) || 0 == m_usAliveGamePlayerCount[sector.m_iZ][sector.m_iX])
 			return;
 	
-	// 유효한 섹터이면서 보낼 대상이 존재해야한다.
-
 	for (const auto& entity : m_sectorSet[sector.m_iZ][sector.m_iX])
 	{
 		if (entity->GetType() == jh_content::Entity::EntityType::GamePlayer)
@@ -169,7 +163,7 @@ void jh_content::SectorManager::SendPacket_Sector(const Sector& sector, PacketPt
 	}
 }
 
-void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, PacketPtr& packet)
+void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, PacketBufferRef& packet)
 {
 	if (false == IsValidSector(sector.m_iX, sector.m_iZ))
 		return;
@@ -184,7 +178,7 @@ void jh_content::SectorManager::SendPacketAroundSector(const Sector& sector, Pac
 	}
 }
 
-void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ, PacketPtr& packet)
+void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ, PacketBufferRef& packet)
 {
 	if (false == IsValidSector(sectorX, sectorZ))
 		return;
@@ -201,7 +195,6 @@ void jh_content::SectorManager::SendPacketAroundSector(int sectorX, int sectorZ,
 
 EntityPtr jh_content::SectorManager::GetMinEntityInRange(EntityPtr targetEntity, float range)
 {
-	// Range가 섹터 하나의 크기보다 크다면..? 어떻게 처리하지
 	float minRange = range * range;
 	EntityPtr minEntity = nullptr;
 
@@ -295,8 +288,7 @@ void jh_content::SectorManager::GetUpdatedSectorAround(EntityPtr entity, AroundS
 	int curSectorX = entity->GetCurrentSector().m_iX;
 	int curSectorZ = entity->GetCurrentSector().m_iZ;
 
-	//printf("GetUpdatedSector [%d, %d] ---> [%d, %d]\n", prevSectorZ, prevSectorX, curSectorZ, curSectorX);
-	// 이전 섹터 9방향, 다음 섹터 9방향 get
+	// 이전 섹터 9방향 -> 다음 섹터 9방향으로 정보 업데이트
 	GetSectorAround(prevSectorX, prevSectorZ, pRemoveAroundSector);
 	GetSectorAround(curSectorX, curSectorZ, pAddAroundSector);
 
@@ -316,7 +308,6 @@ void jh_content::SectorManager::GetUpdatedSectorAround(EntityPtr entity, AroundS
 	std::vector<Sector> pureAddVec;
 	std::vector<Sector> pureRemoveVec;
 
-	// 
 	for (const auto& sector : addSet)
 	{
 		if (removeSet.find(sector) == removeSet.end())

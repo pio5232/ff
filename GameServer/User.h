@@ -7,12 +7,12 @@ namespace jh_content
 	public:
 		User(ULONGLONG sessionId, ULONGLONG userId) : m_ullUserId(userId), m_ullSessionId(sessionId), m_pGamePlayer(nullptr)
 		{
-			aliveGameUserCount.fetch_add(1);
+			InterlockedIncrement(&aliveGameUserCount);
 		}
 
 		~User()
 		{
-			aliveGameUserCount.fetch_sub(1);
+			InterlockedDecrement(&aliveGameUserCount);
 
 			m_pGamePlayer.reset();
 		}
@@ -22,18 +22,18 @@ namespace jh_content
 			m_pGamePlayer = gamePlayer;
 		}
 
-		GamePlayerPtr GetPlayer() { return m_pGamePlayer; }
+		GamePlayerPtr GetPlayer()			{ return m_pGamePlayer; }
 
-		ULONGLONG GetUserId() const { return m_ullUserId; }
-		ULONGLONG GetSessionId() const { return m_ullSessionId; }
+		ULONGLONG GetUserId() const			{ return m_ullUserId; }
+		ULONGLONG GetSessionId() const		{ return m_ullSessionId; }
 
-		static int GetAliveGameUserCount() { return aliveGameUserCount.load(); }
-		static alignas(64) std::atomic<int> aliveGameUserCount;
+		static LONG GetAliveGameUserCount() { return aliveGameUserCount; }
+		static alignas(32) volatile LONG	aliveGameUserCount;
 	private:
-		const ULONGLONG m_ullSessionId;
-		const ULONGLONG m_ullUserId;
+		const ULONGLONG						m_ullSessionId;
+		const ULONGLONG						m_ullUserId;
 
-		GamePlayerPtr m_pGamePlayer;
+		GamePlayerPtr						m_pGamePlayer;
 	};
 }
 

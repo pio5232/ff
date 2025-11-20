@@ -15,7 +15,6 @@ void jh_content::AIPlayer::Update(float delta)
 		return;
 
 	m_fMovementUpdateInterval -= delta;
-	//m_fPosUpdateInterval -= delta;
 
 	if (m_fMovementUpdateInterval <= 0)
 	{
@@ -23,15 +22,6 @@ void jh_content::AIPlayer::Update(float delta)
 
 		UpdateAIMovement();
 	}
-
-	//if (m_fPosUpdateInterval <= 0)
-	//{
-	//	m_fPosUpdateInterval = posUpdateInterval;
-
-	//	SendPositionUpdate();
-	//}
-
-	//m_pStateController->Update(delta);
 
 	Player::Update(delta);
 }

@@ -18,27 +18,30 @@ namespace jh_content
 		~Entity() {}
 
 		virtual void Update(float delta) = 0;
-		const Vector3& GetPosition() const { return m_transformComponent.GetPosConst(); }
-		const Vector3& GetRotation() const { return m_transformComponent.GetRotConst(); }
-		const Vector3& GetNormalizedForward() const { return m_transformComponent.GetNormalizedDir(); }
-
-		ULONGLONG GetEntityId() const { return m_ullEntityId; }
-		EntityType GetType() const { return m_entityType; }
-
+		
 		virtual void TakeDamage(USHORT damage) = 0;
 		virtual bool IsDead() const = 0;
 		virtual USHORT GetHp() const = 0;
-		virtual bool IsMoving() const { return false; }
+		virtual bool IsMoving() const				{ return false; }
+
+
+		const Vector3& GetPosition() const			{ return m_transformComponent.GetPosConst(); }
+		const Vector3& GetRotation() const			{ return m_transformComponent.GetRotConst(); }
+		const Vector3& GetNormalizedForward() const { return m_transformComponent.GetNormalizedDir(); }
+
+		ULONGLONG GetEntityId() const				{ return m_ullEntityId; }
+		EntityType GetType() const					{ return m_entityType; }
 
 		bool IsSectorUpdated();
-		const Sector& GetCurrentSector() const { return m_curSector; }
-		const Sector& GetPrevSector() const { return m_prevSector; }
+		const Sector& GetCurrentSector() const		{ return m_curSector; }
+		const Sector& GetPrevSector() const			{ return m_prevSector; }
+
 	private:
-		ULONGLONG m_ullEntityId;
-		const EntityType m_entityType;
+		ULONGLONG				m_ullEntityId;
+		const EntityType		m_entityType;
 	protected:
-		TransformComponent m_transformComponent;
-		Sector m_curSector;
-		Sector m_prevSector;
+		TransformComponent		m_transformComponent;
+		Sector					m_curSector;
+		Sector					m_prevSector;
 	};
 }

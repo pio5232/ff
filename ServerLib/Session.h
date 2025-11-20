@@ -48,7 +48,6 @@ struct SendOverlapped : public CustomOverlapped
 {
 	SendOverlapped() : CustomOverlapped(OverlappedType::SEND)
 	{
-		//m_pendingList.reserve(20);
 	}
 
 	void Reset()
@@ -63,7 +62,7 @@ struct SendOverlapped : public CustomOverlapped
 		 m_pendingList.clear();
 	}
 
-	std::vector<PacketPtr> m_pendingList;
+	std::vector<PacketBufferRef> m_pendingList;
 };
 
 struct ConnectOverlapped : public CustomOverlapped
@@ -93,26 +92,23 @@ namespace jh_network
 		void Reset();
 		void Activate(SOCKET sock, const SOCKADDR_IN* sockAddr, ULONGLONG newId);
 
-	private:
-		LONGLONG GetSessionId() const { return m_ullSessionId & SESSION_ID_MASKING_BIT; }
-		LONGLONG GetSessionIdx() const { return m_ullSessionId >> SESSION_IDX_SHIFT_BIT; }
 	public:
-		LONGLONG m_ullSessionId;
-		SOCKET m_socket;
-		NetAddress m_targetNetAddr;
+		LONGLONG								m_ullSessionId;
+		SOCKET									m_socket;
+		NetAddress								m_targetNetAddr;
 
-		ULONGLONG m_ullLastTimeStamp;
+		ULONGLONG								m_ullLastTimeStamp;
 	
-		jh_utility::LockQueue<PacketPtr> m_sendQ;
-		jh_utility::RingBuffer m_recvBuffer;
+		jh_utility::LockQueue<PacketBufferRef>	m_sendQ;
+		jh_utility::RingBuffer					m_recvBuffer;
 
-		RecvOverlapped m_recvOverlapped;
-		SendOverlapped m_sendOverlapped;
-		ConnectOverlapped m_connectOverlapped; // 클라이언트
+		RecvOverlapped							m_recvOverlapped;
+		SendOverlapped							m_sendOverlapped;
+		ConnectOverlapped						m_connectOverlapped; // 클라이언트
 
-		alignas(64) LONG m_lIoCount;
-		alignas(64) char m_bSendFlag; // Use - 1, unUse - 0
-		alignas(64) char m_bConnectedFlag;
+		alignas(64) LONG						m_lIoCount;
+		alignas(64) char						m_bSendFlag; // Use - 1, unUse - 0
+		alignas(64) char						m_bConnectedFlag;
 	};
 
 	/*------------------------------------------
@@ -131,6 +127,6 @@ namespace jh_network
 		void ProcessAllSessions(const std::function<void(ULONGLONG)>& func);
 	private:
 		std::unordered_map<ULONGLONG, Session*> m_activeSessionMap;
-		SRWLOCK m_lock;
+		SRWLOCK									m_lock;
 	};
 }

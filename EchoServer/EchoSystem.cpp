@@ -51,7 +51,6 @@ void jh_content::EchoSystem::LobbyLogic()
 		// System 관련 작업 처리.
 		ProcessSystemJob();
 
-		// 채팅이기 때문에 들어오는대로 바로 작업을 처리해도 괜찮아보임.
 	}
 }
 
@@ -74,34 +73,30 @@ void jh_content::EchoSystem::Stop()
 
 void jh_content::EchoSystem::ProcessNetJob()
 {
-	static thread_local alignas(64) std::queue<JobPtr> echoJobQ;
+	static thread_local alignas(64) std::queue<JobRef> echoJobQ;
 
 	m_netJobQueue.Swap(echoJobQ);
 
 	while(echoJobQ.size() > 0)
 	{
-		JobPtr& job = echoJobQ.front();
+		JobRef& job = echoJobQ.front();
 
 		ProcessPacket(job->m_llSessionId, job->m_wJobType, job->m_pPacket);
 		
 		echoJobQ.pop();
 	}
-
-	// netJobQueue에서 Job 확인 후 
-	// 작업따라 패킷 처리
-
 }
 
 void jh_content::EchoSystem::ProcessSystemJob()
 {
-	static thread_local alignas(64) std::queue<SessionConnectionEventPtr> systemJobQ;
-	std::queue<SessionConnectionEventPtr> emptyQ;
+	static thread_local alignas(64) std::queue<SessionConnectionEventRef> systemJobQ;
+	std::queue<SessionConnectionEventRef> emptyQ;
 
 	m_sessionConnEventQueue.Swap(systemJobQ);
 
 	while(systemJobQ.size() > 0)
 	{
-		SessionConnectionEventPtr& job = systemJobQ.front();
+		SessionConnectionEventRef& job = systemJobQ.front();
 
 		switch (job->m_msgType)
 		{
@@ -122,18 +117,14 @@ void jh_content::EchoSystem::ProcessSystemJob()
 	}
 }
 
-//ErrorCode jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, jh_network::SerializationBufferPtr& serializationBufferPtr)
-ErrorCode jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, PacketPtr& packet)
+void jh_content::EchoSystem::ProcessEchoPacket(LONGLONG sessionId, PacketBufferRef& packet)
 {
 	short len;
 	ULONGLONG data;
 
 	*packet >> data;
-	//_LOG(m_pOwner->GetServerName(), LOG_LEVEL_DETAIL, L"ProcessEchoPacket - data : %u", data);
 
-	PacketPtr pPacket = jh_content::PacketBuilder::BuildEchoPacket(8, data);
+	PacketBufferRef pPacket = jh_content::PacketBuilder::BuildEchoPacket(8, data);
 
 	m_pOwner->SendPacket(sessionId, pPacket);
-
-	return ErrorCode::NONE;
 }

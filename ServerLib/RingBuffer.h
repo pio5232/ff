@@ -2,7 +2,7 @@
 
 namespace jh_utility
 {
-#define RINGBUFFER_DEFAULT_SIZE 4000
+#define RINGBUFFER_DEFAULT_SIZE 8192
 	class RingBuffer
 	{
 	public:
@@ -20,7 +20,7 @@ namespace jh_utility
 		bool EnqueueRetBool(char* chpData, int iSize);
 		bool DequeueRetBool(char* chpDest, int iSize);
 		bool PeekRetBool(char* chpDest, int iSize);
-
+		 
 		int Enqueue(char* chpData, int iSize);
 		int Dequeue(char* chpDest, int iSize);
 		int Peek(char* chpDest, int iSize);
@@ -37,9 +37,9 @@ namespace jh_utility
 		bool IsFull();
 
 	private:
-		int m_iCapacity;
-		int m_iFront;
-		int m_iRear;
-		char* m_chpBuffer;
+		int		m_iCapacity;
+		int		m_iFront;
+		int		m_iRear;
+		char	* m_chpBuffer;
 	};
 }

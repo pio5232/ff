@@ -8,7 +8,7 @@ jh_content::Entity::Entity(EntityType type) : m_entityType(type), m_transformCom
 
 	m_ullEntityId = InterlockedIncrement64((LONGLONG*)&generator);
 
-	printf("My ID : %llu\n", m_ullEntityId);
+	_LOG(L"Entity", LOG_LEVEL_DEBUG, L"[Entity(type)] My ID : [%llu]", m_ullEntityId);
 
 	const Vector3& position = m_transformComponent.GetPosConst();
 	m_curSector.m_iX = position.x / sectorCriteriaSize + 1;
@@ -24,7 +24,7 @@ jh_content::Entity::Entity(EntityType type, const Vector3& startPos) : m_entityT
 
 	m_ullEntityId = InterlockedIncrement64((LONGLONG*)&generator);
 
-	printf("My ID : %llu\n", m_ullEntityId);
+	_LOG(L"Entity", LOG_LEVEL_DEBUG, L"[Entity(type, pos)] My ID : [%llu]", m_ullEntityId);
 
 	const Vector3& position = m_transformComponent.GetPosConst();
 	m_curSector.m_iX = position.x / sectorCriteriaSize + 1;

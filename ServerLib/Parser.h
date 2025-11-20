@@ -100,7 +100,7 @@ namespace jh_utility
 					value = std::stoull(*pWstr);
 				else
 				{
-					wprintf(L"해당안됨.\n");
+					
 				}
 
 			}
@@ -163,21 +163,21 @@ namespace jh_utility
 
 		// ★ 텍스트의 한 줄 길이가 _maxLineLen보다 클 경우 파싱이 제대로 되지 않을 수 있음.
 		// 넉넉하게 두자.
-		static constexpr DWORD s_dwMaxLineLen = 256;
+		static constexpr DWORD				s_dwMaxLineLen = 256;
 
 		// Data 파싱 종료 플래그
-		static constexpr WCHAR s_wchCloseSymbol = L'$';
+		static constexpr WCHAR				s_wchCloseSymbol = L'$';
 
-		FILE* m_pFile;
+		FILE								* m_pFile;
 
-		WCHAR m_szLineBuffer[s_dwMaxLineLen];
+		WCHAR								m_szLineBuffer[s_dwMaxLineLen];
 		// 한 줄마다 파싱을 위한 버퍼.
-		WCHAR m_szParsingBuffer[s_dwMaxLineLen];
+		WCHAR								m_szParsingBuffer[s_dwMaxLineLen];
 
-		ParseType m_eParseType;
+		ParseType							m_eParseType;
 
-		Category* m_pCurrentParsingCategory; // Load에서 파싱할 때 사용
-		Category* m_pCurrentReadingCategory; // 사용자가 데이터 변환을 위해 GetValue함수 사용하기 전 지정
+		Category							* m_pCurrentParsingCategory; // Load에서 파싱할 때 사용
+		Category							* m_pCurrentReadingCategory; // 사용자가 데이터 변환을 위해 GetValue함수 사용하기 전 지정
 
 		std::unordered_map<std::wstring, Category*> m_categories;
 	};

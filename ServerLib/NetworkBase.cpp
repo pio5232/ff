@@ -8,8 +8,9 @@
 #include "Session.h"
 #include "Memory.h"
 #include "Job.h"
+#include "ObjectPool.h"
 
-#define ECHO
+//#define ECHO
 
 #pragma comment (lib, "ws2_32.lib")
 	/*-----------------------
@@ -177,12 +178,12 @@ void jh_network::IocpServer::Stop()
 		m_hCompletionPort = nullptr;
 	}
 
-	ForceStop();
+	ClearSessions();
 
 	return;
 }
 
-void jh_network::IocpServer::ForceStop()
+void jh_network::IocpServer::ClearSessions()
 {
 	// 정리되지 않은 세션들을 정리
 	for (int i = 0; i < m_dwMaxSessionCnt; i++)
@@ -222,7 +223,6 @@ bool jh_network::IocpServer::CreateServerThreads()
 		}
 	}
 
-	// TODO_
 	m_hAcceptThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, AcceptThreadFunc, this, 0, nullptr));
 	if (nullptr == m_hAcceptThread)
 	{
@@ -262,7 +262,6 @@ void jh_network::IocpServer::DeleteSession(ULONGLONG sessionId)
 
 	OnDisconnected(sessionId);
 
-
 	closesocket(sessionPtr->m_socket);
 	m_activeSessionManager.RemoveActiveSession(sessionId);
 
@@ -275,7 +274,6 @@ void jh_network::IocpServer::DeleteSession(ULONGLONG sessionId)
 	InterlockedDecrement(&m_lSessionCount);
 	_LOG(L"Session", LOG_LEVEL_DEBUG, L"[DeleteSessIon] PushStack - SessionID : [0x%016llx], SessionIdx : [0x%016llx]", sessionId, sessionIdx);
 
-	// Delete는 얻어온 세션에 대해서 ioCount를 새로 밀어버리기 때문에 정리하지 않도록 한다..
 	return;
 }
 
@@ -361,7 +359,6 @@ jh_network::Session* jh_network::IocpServer::TryAcquireSession(ULONGLONG session
 
 		return nullptr;
 	}
-	//wprintf(L"TryAcquireSession ID [%lld], SINGLE THREAD - m_lIoCount : [%d], caller [%s]\n", m_llSessionId, sessionPtr->m_lIoCount, caller);
 
 	return sessionPtr;
 }
@@ -379,7 +376,6 @@ void jh_network::IocpServer::WorkerThreadMain()
 		bool gqcsRet = GetQueuedCompletionStatus(m_hCompletionPort, &transferredBytes,
 			reinterpret_cast<PULONG_PTR>(&sessionPtr), &lpOverlapped, INFINITE);
 
-		// 
 		if (nullptr == lpOverlapped)
 		{
 			// gqcsRet == true -> pqcs로 보낸 lpOverlapped 가 nullptr
@@ -419,14 +415,13 @@ void jh_network::IocpServer::OnError(int errCode, WCHAR* cause)
 {
 }
 
-ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transferredBytes)
+void jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transferredBytes)
 {
-
 	if (false == sessionPtr->m_recvBuffer.MoveRear(transferredBytes))
 	{
 		Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Overflow");
 
-		return ErrorCode::RECV_BUF_OVERFLOW;
+		return;
 	}
 
 	while (1)
@@ -448,8 +443,7 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memSystem, header);
-
+		PacketBufferRef packet = jh_memory::MakeShared<PacketBuffer>(header);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
@@ -475,13 +469,13 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memSystem, header.size);
+		PacketBufferRef packet = jh_memory::MakeShared<PacketBuffer>(header.size);
 		
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
 			Disconnect(sessionPtr->m_ullSessionId, L"ProcessRecv - Recv Buffer Deque Failed");
 
-			return ErrorCode::RECV_BUF_DEQUE_FAILED;
+			return;
 		}
 
 		packet->MoveRearPos(header.size);
@@ -492,10 +486,10 @@ ErrorCode jh_network::IocpServer::ProcessRecv(Session* sessionPtr, DWORD transfe
 
 	PostRecv(sessionPtr);
 
-	return ErrorCode::NONE;
+	return;
 }
 
-ErrorCode jh_network::IocpServer::ProcessSend(Session* sessionPtr, DWORD transferredBytes)
+void jh_network::IocpServer::ProcessSend(Session* sessionPtr, DWORD transferredBytes)
 {
 	sessionPtr->m_sendOverlapped.ClearPendingList();
 
@@ -503,7 +497,7 @@ ErrorCode jh_network::IocpServer::ProcessSend(Session* sessionPtr, DWORD transfe
 
 	PostSend(sessionPtr);
 
-	return ErrorCode::NONE;
+	return;
 }
 
 void jh_network::IocpServer::Disconnect(ULONGLONG sessionId, const WCHAR* reason)
@@ -542,7 +536,7 @@ void jh_network::IocpServer::PostSend(Session* sessionPtr)
 		return;
 	}
 
-	static thread_local alignas(64) std::queue<PacketPtr> tempQ;
+	static thread_local alignas(64) std::queue<PacketBufferRef> tempQ;
 
 	sessionPtr->m_sendQ.Swap(tempQ);
 
@@ -559,7 +553,7 @@ void jh_network::IocpServer::PostSend(Session* sessionPtr)
 
 	wsaBufs.reserve(popCount);
 
-	for (PacketPtr& packet : sessionPtr->m_sendOverlapped.m_pendingList)
+	for (PacketBufferRef& packet : sessionPtr->m_sendOverlapped.m_pendingList)
 	{
 		wsaBufs.push_back({static_cast<ULONG>(packet->GetDataSize()), packet->GetFrontPtr()});
 	}
@@ -630,7 +624,6 @@ void jh_network::IocpServer::PostRecv(Session* sessionPtr)
 		{
 			switch (gle)
 			{
-				//
 				// 사용자가 일방적으로 연결을 끊은 경우는 에러 출력을 하지 않도록 하겠다. WSAECONNRESET
 			case 10054:break;
 			case 10053:
@@ -706,7 +699,7 @@ USHORT jh_network::IocpServer::GetPort() const
 	return jh_network::NetAddress::GetPort(m_listenSock);
 }
 
-void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_network::IocpServer::SendPacket(ULONGLONG sessionId, PacketBufferRef& packet)
 {
 	Session* sessionPtr = TryAcquireSession(sessionId, PROF_WFUNC);
 
@@ -763,7 +756,6 @@ void jh_network::IocpServer::AcceptThreadMain()
 
 jh_network::Session* jh_network::IocpServer::CreateSession(SOCKET sock, const SOCKADDR_IN* pSockAddr)
 {
-	// 여기부터 세션빼서 내껄로 사용하는거 적기,
 	DWORD availableIndex = UINT_MAX;
 
 	if (false == m_sessionIndexStack.TryPop(availableIndex))
@@ -773,7 +765,7 @@ jh_network::Session* jh_network::IocpServer::CreateSession(SOCKET sock, const SO
 		return nullptr;
 	}
 
-	// 세션 수를 증가하고.
+	// 세션 수를 증가시키고.
 	InterlockedIncrement(&m_lSessionCount);
 	Session* sessionPtr = &m_pSessionArray[availableIndex];
 
@@ -781,7 +773,6 @@ jh_network::Session* jh_network::IocpServer::CreateSession(SOCKET sock, const SO
 
 	// Session에 등록할 id
 	// [16 idx ][48 id]
-
 	ULONGLONG id = (static_cast<ULONGLONG>(availableIndex) << SESSION_IDX_SHIFT_BIT) | ((++sessionIdGen) & SESSION_ID_MASKING_BIT);
 
 	// 세션 초기화
@@ -842,7 +833,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memSystem, header);
+		PacketBufferRef packet = jh_memory::MakeShared<PacketBuffer>(header);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header))
 		{
@@ -871,7 +862,7 @@ void jh_network::IocpClient::ProcessRecv(Session* sessionPtr, DWORD transferredB
 
 		sessionPtr->m_recvBuffer.MoveFront(sizeof(header));
 
-		PacketPtr packet = MakeSharedBuffer(g_memSystem, header.size);
+		PacketBufferRef packet = jh_memory::MakeShared<PacketBuffer>(header.size);
 
 		if (false == sessionPtr->m_recvBuffer.DequeueRetBool(packet->GetRearPtr(), header.size))
 		{
@@ -936,7 +927,7 @@ void jh_network::IocpClient::PostSend(Session* sessionPtr)
 		return;
 	}
 
-	static thread_local alignas(64) std::queue<PacketPtr> tempQ;
+	static thread_local alignas(64) std::queue<PacketBufferRef> tempQ;
 
 	sessionPtr->m_sendQ.Swap(tempQ);
 
@@ -953,7 +944,7 @@ void jh_network::IocpClient::PostSend(Session* sessionPtr)
 
 	wsaBufs.reserve(popCount);
 
-	for (PacketPtr& packet : sessionPtr->m_sendOverlapped.m_pendingList)
+	for (PacketBufferRef& packet : sessionPtr->m_sendOverlapped.m_pendingList)
 	{
 		wsaBufs.push_back({ static_cast<ULONG>(packet->GetDataSize()), packet->GetFrontPtr() });
 	}
@@ -1024,7 +1015,7 @@ void jh_network::IocpClient::PostRecv(Session* sessionPtr)
 	InterlockedIncrement(&m_lTotalRecvCount);
 }
 
-void jh_network::IocpClient::SendPacket(ULONGLONG sessionId, PacketPtr& packet)
+void jh_network::IocpClient::SendPacket(ULONGLONG sessionId, PacketBufferRef& packet)
 {
 	Session* sessionPtr = TryAcquireSession(sessionId);
 
@@ -1283,7 +1274,7 @@ bool jh_network::IocpClient::InitSessionArray(DWORD maxSessionCount)
 	return true;
 }
 
-void jh_network::IocpClient::ForceStop()
+void jh_network::IocpClient::ClearSessions()
 {
 	// 정리되지 않은 세션들을 정리
 	for (int i = 0; i < m_dwMaxSessionCnt; i++)
@@ -1394,7 +1385,7 @@ void jh_network::IocpClient::Stop()
 		m_hCompletionPort = nullptr;
 	}
 
-	ForceStop();
+	ClearSessions();
 }
 
 void jh_network::IocpClient::Connect(int cnt)

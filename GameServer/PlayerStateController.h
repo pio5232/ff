@@ -22,12 +22,12 @@ namespace jh_content
 		PlayerActionStateBase::ActionState GetActionType();
 	private:
 		// 동적할당하지않는 포인터.
-		jh_content::Player* m_pPlayer;
+		jh_content::Player*					m_pPlayer;
 
-		jh_content::PlayerActionStateBase* m_pActionStateBasePtr;
-		jh_content::PlayerMoveStateBase* m_pMoveStateBasePtr;
+		jh_content::PlayerActionStateBase*	m_pActionStateBasePtr;
+		jh_content::PlayerMoveStateBase*	m_pMoveStateBasePtr;
 
-		float m_fActionElapsedTime;
+		float								m_fActionElapsedTime;
 	};
 }
 
