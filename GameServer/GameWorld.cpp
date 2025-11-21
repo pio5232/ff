@@ -40,7 +40,7 @@ jh_content::GameWorld::GameWorld(UserManager* userManager, SendPacketFunc sendPa
 
 jh_content::GameWorld::~GameWorld()
 {
-	if (true == m_bIsUpdateRunning)
+	if (true == InterlockedOr8(&m_bIsUpdateRunning, 0))
 	{
 		Stop();
 	}
@@ -78,7 +78,7 @@ void jh_content::GameWorld::Stop()
 
 void jh_content::GameWorld::Update(float deltaTime)
 {
-	if (0 == m_bIsUpdateRunning)
+	if (0 == InterlockedOr8(&m_bIsUpdateRunning, 0))
 		return;
 
 	m_fDeltaSum += deltaTime;
@@ -109,7 +109,7 @@ void jh_content::GameWorld::Update(float deltaTime)
 
 bool jh_content::GameWorld::TryEnqueueTimerAction(TimerAction&& timerAction)
 {
-	if (0 == m_bIsUpdateRunning)
+	if (0 == InterlockedOr8(&m_bIsUpdateRunning, 0))
 	{
 		return false;
 	}

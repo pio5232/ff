@@ -61,7 +61,7 @@ void jh_utility::FileLogger::LogThreadFunc()
 {
 	std::queue<LogInfo*> logQ;
 		
-	while (1 == m_bIsRunning)
+	while (1 == InterlockedOr8(&m_bIsRunning, 0))
 	{
 		WaitForSingleObject(m_hLogEvent, INFINITE);
 

@@ -56,7 +56,7 @@ void jh_content::GameSystem::Stop()
 	m_pGameWorld->Stop();
 }
 
-jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThread(nullptr), m_bIsRunning(0), m_usLoadCompletedCnt(0), m_pOwner(owner), m_gameInfo{}
+jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThread{ nullptr }, m_bIsRunning{ 0 }, m_usLoadCompletedCnt{ 0 }, m_pOwner{ owner }, m_gameInfo{}
 {
 	auto sendPacketFunc = [this](ULONGLONG sessionId, PacketBufferRef& _packet)
 		{
@@ -75,7 +75,7 @@ jh_content::GameSystem::GameSystem(jh_network::IocpServer* owner) : m_hLogicThre
 
 jh_content::GameSystem::~GameSystem()
 {
-	if (false != m_bIsRunning)
+	if (0 != InterlockedOr8(&m_bIsRunning, 0))
 	{
 		Stop();
 	}
@@ -98,7 +98,7 @@ unsigned jh_content::GameSystem::LogicThreadFunc(LPVOID lparam)
 	if (nullptr == gameInstance)
 		return 0;
 
-	gameInstance->m_bIsRunning = true;
+	InterlockedExchange8(&gameInstance->m_bIsRunning, 1);
 	gameInstance->GameLogic();
 
 	return 0;
@@ -112,7 +112,7 @@ void jh_content::GameSystem::GameLogic()
 
 	float deltaSum = 0;
 	// 조건 바꾸기.
-	while (1 == m_bIsRunning)
+	while (1 == InterlockedOr8(&m_bIsRunning, 0))
 	{
 		float deltaTime = timer.Lap<float>();
 

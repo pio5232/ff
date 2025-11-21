@@ -53,7 +53,7 @@ do {																			\
 			LEVEL_SYSTEM,
 			LEVEL_NO_LOGGING,
 		};
-;
+		;
 		FileLogger();
 		~FileLogger();
 
@@ -83,17 +83,17 @@ do {																			\
 		void SetLogInfo(WCHAR* fileNameBuffer, size_t fileNameBufferSize, const WCHAR* logType, LogLevel logLevel, WCHAR* logInfoBuffer, size_t logInfoBufferSize);
 
 		// .\\FileLog\\DATE_TIME
-		WCHAR m_wszCommonFilePath[DEFAULT_FILE_PATH_SIZE];
+		WCHAR							m_wszCommonFilePath[DEFAULT_FILE_PATH_SIZE];
 
-		LogLevel m_eLogLevel;
+		LogLevel						m_eLogLevel;
 
 		jh_utility::LockQueue<LogInfo*> m_logQ;
 
-		ULONGLONG m_ullLogCounter;
+		ULONGLONG						m_ullLogCounter;
 
-		volatile char m_bIsRunning;
-		bool m_bCasOpen;
-		HANDLE m_hThread;
-		HANDLE m_hLogEvent;
+		char							m_bIsRunning;
+		bool							m_bCasOpen;
+		HANDLE							m_hThread;
+		HANDLE							m_hLogEvent;
 	};
 }

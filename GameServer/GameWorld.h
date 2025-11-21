@@ -56,7 +56,7 @@ namespace jh_content
 
 	private:
 		SendPacketFunc									m_sendPacketFunc;
-		volatile char									m_bIsUpdateRunning;
+		char											m_bIsUpdateRunning;
 
 		float											m_fDeltaSum;
 		std::priority_queue<TimerAction>				m_timerActionQueue;

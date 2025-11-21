@@ -26,7 +26,7 @@ void jh_content::DummyUpdateSystem::DummyLogic(int threadNum)
 	
 	static thread_local ULONGLONG lastSendCheckTime = 0;
 
-	while (true == m_bRunnigFlag)
+	while (1 == InterlockedOr8(&m_bRunnigFlag, 0))
 	{
 		WaitForSingleObject(jobEvent, 10);
 
@@ -59,7 +59,7 @@ jh_content::DummyUpdateSystem::DummyUpdateSystem(jh_network::IocpClient* owner) 
 
 jh_content::DummyUpdateSystem::~DummyUpdateSystem()
 {
-	if (0 != m_bRunnigFlag)
+	if (0 != InterlockedOr8(&m_bRunnigFlag, 0))
 	{
 		Stop();
 	}

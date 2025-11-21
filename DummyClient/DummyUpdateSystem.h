@@ -90,13 +90,13 @@ namespace jh_content
 
 		ULONGLONG GetRTT() const;
 
-		std::unordered_map<USHORT, PacketFunc> m_packetFuncDic;
-		jh_network::IocpClient* m_pOwner;
+		std::unordered_map<USHORT, PacketFunc>	m_packetFuncDic;
+		jh_network::IocpClient*					m_pOwner;
 
-		LogicData m_logicData[LOGIC_THREAD_COUNT];
+		LogicData								m_logicData[LOGIC_THREAD_COUNT];
 		
-		alignas(64) volatile char m_bRunnigFlag;
-		alignas(64) ULONGLONG m_ullRtt;
+		char									m_bRunnigFlag;
+		alignas(64) ULONGLONG					m_ullRtt;
 
 
 

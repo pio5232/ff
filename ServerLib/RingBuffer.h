@@ -2,7 +2,7 @@
 
 namespace jh_utility
 {
-#define RINGBUFFER_DEFAULT_SIZE 8192
+#define RINGBUFFER_DEFAULT_SIZE 16384
 	class RingBuffer
 	{
 	public:

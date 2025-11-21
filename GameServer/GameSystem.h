@@ -69,7 +69,7 @@ namespace jh_content
 	private:
 		GameServerInfo										m_gameInfo;
 
-		volatile char										m_bIsRunning;
+		char												m_bIsRunning;
 		USHORT												m_usLoadCompletedCnt;
 
 		jh_utility::LockQueue<JobRef> m_netJobQueue;
