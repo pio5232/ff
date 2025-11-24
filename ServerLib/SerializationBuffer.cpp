@@ -8,7 +8,7 @@ alignas(64) ULONGLONG SerializationBuffer::g_ullPacketCount = 0;
 
 SerializationBuffer::SerializationBuffer(size_t iBufferSize) : m_iBufferCapacity(iBufferSize), m_iFront(0), m_iRear(0)
 {
-	m_chpBuffer = static_cast<char*>(g_memSystem->Alloc(m_iBufferCapacity));
+	m_chpBuffer = static_cast<char*>(g_pMemSystem->Alloc(m_iBufferCapacity));
 
 	InterlockedIncrement64((LONGLONG*)&g_ullPacketCount);
 }
@@ -16,7 +16,7 @@ SerializationBuffer::SerializationBuffer(size_t iBufferSize) : m_iBufferCapacity
 
 SerializationBuffer::~SerializationBuffer()
 {
-	g_memSystem->Free(m_chpBuffer);
+	g_pMemSystem->Free(m_chpBuffer);
 
 	m_chpBuffer = nullptr;
 

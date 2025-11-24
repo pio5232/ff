@@ -34,11 +34,11 @@ namespace jh_utility
 #define LOG_LEVEL_SYSTEM jh_utility::FileLogger::LogLevel::LEVEL_SYSTEM // 치명적 로그
 #define LOG_LEVEL_NO_LOG jh_utility::FileLogger::LogLevel::LEVEL_NO_LOGGING
 
-#define SET_LOG_LEVEL(LOG_LEVEL) g_logger->SetLogLevel(LOG_LEVEL)
+#define SET_LOG_LEVEL(LOG_LEVEL) g_pLogger->SetLogLevel(LOG_LEVEL)
 
 #define _LOG(logType, logLevelMacro, format, ...)										\
 do {																			\
-	g_logger->WriteLog(logType, logLevelMacro, format L"\n", ##__VA_ARGS__);	\
+	g_pLogger->WriteLog(logType, logLevelMacro, format L"\n", ##__VA_ARGS__);	\
 } while(0)
 
 
@@ -50,8 +50,8 @@ do {																			\
 			LEVEL_DEBUG = 0,
 			LEVEL_INFO,
 			LEVEL_WARNING,
-			LEVEL_SYSTEM,
 			LEVEL_NO_LOGGING,
+			LEVEL_SYSTEM,
 		};
 		;
 		FileLogger();

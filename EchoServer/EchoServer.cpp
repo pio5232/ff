@@ -93,14 +93,14 @@ void jh_content::EchoServer::OnRecv(ULONGLONG sessionId, PacketBufferRef packet,
 void jh_content::EchoServer::OnConnected(ULONGLONG sessionId)
 {
 	//SessionConnectionEventRef systemJob = std::make_shared<jh_utility::SessionConnectionEvent>(sessionId, jh_utility::SessionConnectionEventType::CONNECT);
-	//SessionConnectionEventRef sessionConnectionEventPtr = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);
+	//SessionConnectionEventRef sessionConnectionEventPtr = MakeShared<jh_utility::SessionConnectionEvent>(g_pMemSystem, sessionId, jh_utility::SessionConnectionEventType::CONNECT);
 
 	//m_pEchoSystem->EnqueueSystemJob(sessionConnectionEventPtr);
 }
 void jh_content::EchoServer::OnDisconnected(ULONGLONG sessionId)
 {
 	//SessionConnectionEventRef systemJob = std::make_shared<jh_utility::SessionConnectionEvent>(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
-	//SessionConnectionEventRef sessionConnectionEventPtr = MakeShared<jh_utility::SessionConnectionEvent>(g_memSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT); // MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
+	//SessionConnectionEventRef sessionConnectionEventPtr = MakeShared<jh_utility::SessionConnectionEvent>(g_pMemSystem, sessionId, jh_utility::SessionConnectionEventType::DISCONNECT); // MakeSystemJob(sessionId, jh_utility::SessionConnectionEventType::DISCONNECT);
 
 
 	//m_pEchoSystem->EnqueueSystemJob(sessionConnectionEventPtr);

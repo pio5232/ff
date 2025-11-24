@@ -1,4 +1,6 @@
 #pragma once
+#include "ThreadExecutor.h"
+#include "WorkerExecutor.h"
 #include "RingBuffer.h"
 #include "SerializationBuffer.h"
 #include "CrashDump.h"
@@ -162,7 +164,6 @@ namespace jh_utility
 		{
 			SRWLockGuard lockGuard(&m_lock);
 			
-			// move 
 			m_queue = std::queue<T>();	
 		}
 	private:

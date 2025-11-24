@@ -207,7 +207,7 @@ void jh_network::IocpServer::ClearSessions()
 
 bool jh_network::IocpServer::CreateServerThreads()
 {
-	m_hWorkerThreads = static_cast<HANDLE*>(g_memSystem->Alloc(sizeof(HANDLE) * m_dwConcurrentWorkerThreadCount));
+	m_hWorkerThreads = static_cast<HANDLE*>(g_pMemSystem->Alloc(sizeof(HANDLE) * m_dwConcurrentWorkerThreadCount));
 
 	for (int i = 0; i < m_dwConcurrentWorkerThreadCount; i++)
 	{
@@ -218,7 +218,7 @@ bool jh_network::IocpServer::CreateServerThreads()
 			DWORD gle = GetLastError();
 			_LOG(m_pcwszServerName, LOG_LEVEL_SYSTEM, L"[CreateServerThreads] WorkerThread Creation Failed, GetLastError : [%u]", gle);
 
-			g_memSystem->Free(m_hWorkerThreads);
+			g_pMemSystem->Free(m_hWorkerThreads);
 			return false;
 		}
 	}

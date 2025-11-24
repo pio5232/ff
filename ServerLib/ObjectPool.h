@@ -12,7 +12,7 @@ namespace jh_memory
 		template <typename... Args>
 		static T* Alloc(Args&&... args)
 		{
-			T* obj = static_cast<T*>(g_memSystem->Alloc(sizeof(T)));
+			T* obj = static_cast<T*>(g_pMemSystem->Alloc(sizeof(T)));
 
 			new (obj) T(std::forward<Args>(args)...);
 
@@ -27,7 +27,7 @@ namespace jh_memory
 
 			obj->~T();
 
-			g_memSystem->Free(obj);
+			g_pMemSystem->Free(obj);
 		}
 
 	};

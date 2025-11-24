@@ -1,65 +1,34 @@
 #pragma once
 
 #include <functional>
-// ----------------------
-//			Job
-// ----------------------
-namespace jh_utility
+
+namespace jh_content
 {
-	/// <summary>
-	/// 서버가 해야할 작업의 용도를 알리는 용도로 사용된다.
-	/// </summary>
-	struct Job
-	{
-		Job(ULONGLONG id, USHORT type, PacketBufferRef packet) :
-			m_llSessionId(id), m_wJobType(type), m_pPacket(packet) {}
-		ULONGLONG	m_llSessionId;
-		USHORT		m_wJobType; 
-		PacketBufferRef	m_pPacket;
+	using CallbackType = std::function<void()>;
 
-		~Job()
+	class Job
+	{
+	public:
+		Job(CallbackType callback) : m_callback{ callback } {}
+
+		template<typename T, typename Ret, typename... Args>
+		Job(std::shared_ptr<T> owner, Ret(T::* memFunc)(Args...), Args&&... args)
 		{
-			m_llSessionId = INVALID_SESSION_ID;
-			m_wJobType = (USHORT)(jh_network::INVALID_PACKET);
-			m_pPacket.reset();
-		}
-		
-		Job(const Job& other)				= default;
-		Job(Job&& other)					= default;
-
-		Job& operator=(const Job& other)	= default;
-		Job& operator=(Job&& other)			= default;
-	};
-
-
-	enum class SessionConnectionEventType : byte
-	{
-		NONE		= 0,
-		CONNECT		= 1,
-		DISCONNECT,
-	};
-
-	/// <summary>
-	/// Session의 연결 / 해제를 알리는 용도로 사용된다.
-	/// </summary>
-	struct SessionConnectionEvent
-	{
-		SessionConnectionEvent(ULONGLONG id, jh_utility::SessionConnectionEventType msg) : m_ullSessionId(id), m_msgType(msg) {}
-		~SessionConnectionEvent()
-		{
-			m_ullSessionId	= INVALID_SESSION_ID;
-			m_msgType		= SessionConnectionEventType::NONE;
+			m_callback = [owner, memFunc, args...]()
+				{
+					(owner.get()->*memFunc)(args...);
+				};
 		}
 
-		SessionConnectionEvent(const SessionConnectionEvent& other)				= default;
-		SessionConnectionEvent(SessionConnectionEvent&& other)					= default;
+		void Execute()
+		{
+			m_callback();
+		}
 
-		SessionConnectionEvent& operator=(const SessionConnectionEvent& other)	= default;
-		SessionConnectionEvent& operator=(SessionConnectionEvent&& other)		= default;
-
-		ULONGLONG					m_ullSessionId; 
-		SessionConnectionEventType	m_msgType;
+	private:
+		CallbackType m_callback;
 	};
+
 }
 
 

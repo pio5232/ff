@@ -394,7 +394,7 @@ void jh_content::GameSystem::HandleChatRequestPacket(ULONGLONG sessionId, Packet
 
 	*packet >> roomNum >> messageLen;
 
-	char* message = static_cast<char*>(g_memSystem->Alloc(messageLen));
+	char* message = static_cast<char*>(g_pMemSystem->Alloc(messageLen));
 
 	packet->GetData(message, messageLen);
 
@@ -412,7 +412,7 @@ void jh_content::GameSystem::HandleChatRequestPacket(ULONGLONG sessionId, Packet
 
 		m_pUserManager->Broadcast(chatNotifyPacket);
 	}
-	g_memSystem->Free(message);
+	g_pMemSystem->Free(message);
 
 	return;
 }

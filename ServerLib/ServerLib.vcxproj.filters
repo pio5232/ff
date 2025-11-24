@@ -18,6 +18,9 @@
     <Filter Include="Memory">
       <UniqueIdentifier>{9407a1db-55f6-49d8-9eb5-c69ea2f530a4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Job">
+      <UniqueIdentifier>{34d30683-df22-4553-b8c0-988ab48b234b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -27,9 +30,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ErrorCode.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Job.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="LibraryPch.h">
@@ -95,12 +95,27 @@
     <ClInclude Include="MemorySystem.h">
       <Filter>Memory</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalQueue.h">
+      <Filter>Job</Filter>
+    </ClInclude>
+    <ClInclude Include="Job.h">
+      <Filter>Job</Filter>
+    </ClInclude>
+    <ClInclude Include="JobQueue.h">
+      <Filter>Job</Filter>
+    </ClInclude>
+    <ClInclude Include="WorkerExecutor.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadExecutor.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="JobTimer.h">
+      <Filter>Job</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ServerLib.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Job.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="LibraryPch.cpp">
@@ -168,6 +183,24 @@
     </ClCompile>
     <ClCompile Include="MemorySystem.cpp">
       <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalQueue.cpp">
+      <Filter>Job</Filter>
+    </ClCompile>
+    <ClCompile Include="Job.cpp">
+      <Filter>Job</Filter>
+    </ClCompile>
+    <ClCompile Include="JobQueue.cpp">
+      <Filter>Job</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadExecutor.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="WorkerExecutor.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="JobTimer.cpp">
+      <Filter>Job</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

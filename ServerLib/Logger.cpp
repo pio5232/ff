@@ -90,7 +90,7 @@ void jh_utility::FileLogger::LogThreadFunc()
 					fclose(file);
 				}
 			}
-			g_memSystem->Free(logInfo);
+			g_pMemSystem->Free(logInfo);
 		}
 	}
 }
@@ -147,7 +147,7 @@ jh_utility::FileLogger::~FileLogger()
 
 		remainingLogInfoQ.pop();
 
-		g_memSystem->Free(logInfo);
+		g_pMemSystem->Free(logInfo);
 	}
 }
 
@@ -156,14 +156,14 @@ void jh_utility::FileLogger::WriteLog(const WCHAR* logType, LogLevel logLevel, c
 	if (m_eLogLevel > logLevel)
 		return;
 
-	//WCHAR* filePathBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_FILE_PATH_SIZE * sizeof(WCHAR)));
-	//WCHAR* logHeaderBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_LOG_INFO_SIZE * sizeof(WCHAR)));
-	//WCHAR* logBodyBuffer = static_cast<WCHAR*>(g_memSystem->Alloc(DEFAULT_LOG_SIZE * sizeof(WCHAR)));
+	//WCHAR* filePathBuffer = static_cast<WCHAR*>(g_pMemSystem->Alloc(DEFAULT_FILE_PATH_SIZE * sizeof(WCHAR)));
+	//WCHAR* logHeaderBuffer = static_cast<WCHAR*>(g_pMemSystem->Alloc(DEFAULT_LOG_INFO_SIZE * sizeof(WCHAR)));
+	//WCHAR* logBodyBuffer = static_cast<WCHAR*>(g_pMemSystem->Alloc(DEFAULT_LOG_SIZE * sizeof(WCHAR)));
 
 	//const size_t maxFileNameBufferSize = DEFAULT_FILE_PATH_SIZE;// sizeof(filePathBuffer) / sizeof(filePathBuffer[0]);
 	//const size_t maxLogInfoBuffeSize = DEFAULT_LOG_INFO_SIZE; // sizeof(logInfoBuffer) / sizeof(logInfoBuffer[0]);
 
-	LogInfo* logInfo = static_cast<LogInfo*>(g_memSystem->Alloc(sizeof(LogInfo)));
+	LogInfo* logInfo = static_cast<LogInfo*>(g_pMemSystem->Alloc(sizeof(LogInfo)));
 	ZeroMemory(logInfo, sizeof(LogInfo));
 
 	static_assert(DEFAULT_FILE_PATH_SIZE >= sizeof(m_wszCommonFilePath) / sizeof(m_wszCommonFilePath[0]));

@@ -393,7 +393,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 
 	*packet >> roomCnt;
 
-	RoomInfo* roomInfo = static_cast<RoomInfo*>(g_memSystem->Alloc(RoomInfo::GetSize() * roomCnt));
+	RoomInfo* roomInfo = static_cast<RoomInfo*>(g_pMemSystem->Alloc(RoomInfo::GetSize() * roomCnt));
 	
 	for (int i = 0; i < roomCnt; i++)
 	{
@@ -430,7 +430,7 @@ void jh_content::DummyUpdateSystem::HandleRoomListResponsePacket(ULONGLONG sessi
 		}
 	}
 
-	g_memSystem->Free(roomInfo);
+	g_pMemSystem->Free(roomInfo);
 }
 
 void jh_content::DummyUpdateSystem::HandleLogInResponsePacket(ULONGLONG sessionId, PacketBufferRef& packet, int threadNum)

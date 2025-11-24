@@ -26,6 +26,9 @@ namespace jh_network
 
 namespace jh_content
 {
+	class Job;
+	class JobQueue;
+
 	class Room;
 	class User;
 
@@ -50,7 +53,10 @@ const ULONGLONG xorTokenKey = 0x0123456789ABCDEF;
 using PacketBuffer				= class jh_utility::SerializationBuffer;
 
 using PacketBufferRef			= std::shared_ptr<class jh_utility::SerializationBuffer>;
-using JobRef					= std::shared_ptr<class jh_utility::Job>;
+//using JobRef					= std::shared_ptr<class jh_utility::Job>;
+using JobRef					= std::shared_ptr<class jh_content::Job>;
+using JobQueueRef				= std::shared_ptr<class jh_content::JobQueue>;
 using SessionConnectionEventRef	= std::shared_ptr<class jh_utility::SessionConnectionEvent>;
+
 
 

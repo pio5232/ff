@@ -300,7 +300,7 @@ void jh_content::LobbySystem::HandleChatToRoomRequestPacket(ULONGLONG sessionId,
 
 	*packet >> roomNum >> messageLen;
 	
-	std::shared_ptr<char> payLoad(static_cast<char*>(g_memSystem->Alloc(messageLen)),[](char* p) { g_memSystem->Free(p); });
+	std::shared_ptr<char> payLoad(static_cast<char*>(g_pMemSystem->Alloc(messageLen)),[](char* p) { g_pMemSystem->Free(p); });
 	
 	packet->GetData(payLoad.get(), messageLen);
 

@@ -5,18 +5,18 @@ namespace jh_utility
 	class Timer
 	{
 	public:
-		Timer();
-		void Start();
+		Timer() : m_start{}, m_end{} {};
+		void Start() { QueryPerformanceCounter(&m_start); }
 
 		// end - start 
 		template<typename T = double>
 		T Stop()
 		{
-			QueryPerformanceCounter(&_end);
+			QueryPerformanceCounter(&m_end);
 
-			T ret = static_cast<T>(_end.QuadPart - _start.QuadPart) / _frequency.QuadPart;
+			T ret = static_cast<T>(m_end.QuadPart - m_start.QuadPart) / frequency.QuadPart;
 
-			_start.QuadPart = 0;
+			m_start.QuadPart = 0;
 
 			return ret;
 		}
@@ -26,24 +26,43 @@ namespace jh_utility
 		template<typename T = double>
 		T Lap()
 		{
-			QueryPerformanceCounter(&_end);
+			QueryPerformanceCounter(&m_end);
 
-			T ret = static_cast<T>(_end.QuadPart - _start.QuadPart) / _frequency.QuadPart;
+			T ret = static_cast<T>(m_end.QuadPart - m_start.QuadPart) / frequency.QuadPart;
 
-			_start = _end;
+			m_start = m_end;
 
 			return ret;
 		}
+		static ULONGLONG GetFrequency() { return frequency.QuadPart; }
 	private:
-		LARGE_INTEGER _start;
-		LARGE_INTEGER _end;
-		LARGE_INTEGER _frequency;
+		LARGE_INTEGER m_start;
+		LARGE_INTEGER m_end;
+		const inline static LARGE_INTEGER frequency = []() 
+			{
+				LARGE_INTEGER fq; 
+				QueryPerformanceFrequency(&fq); 
+				return fq; 
+			}();
 
 	};
 
-	// 1970_01_01 이후 시간 ms로 얻어오기
-	ULONGLONG GetTimeStamp();
-	
-	ULONGLONG GetTimeStampMicrosecond();
+	// ms는 *1000
+	// micro는 *1000 *1000
+	ULONGLONG jh_utility::GetTimeStamp()
+	{
+		LARGE_INTEGER t;
+		QueryPerformanceCounter(&t);
+
+		return (t.QuadPart * 1'000) / jh_utility::Timer::GetFrequency();
+	}
+
+	ULONGLONG jh_utility::GetTimeStampMicrosecond()
+	{
+		LARGE_INTEGER t;
+		QueryPerformanceCounter(&t);
+
+		return (t.QuadPart * 1'000'000) / jh_utility::Timer::GetFrequency();
+	}
 }
 
