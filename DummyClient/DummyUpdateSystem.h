@@ -9,11 +9,12 @@ namespace jh_content
 		
 		struct EtcData
 		{
-			LONG m_llDestroyedRoomErrorCount = 0;
-			LONG m_llDiffRoomNameErrorCount = 0;
-			LONG m_llFullRoomErrorCount = 0;
-			LONG m_llAlreadyRunningRoomErrorCount = 0;
+			LONG m_lDestroyedRoomErrorCount = 0;
+			LONG m_lDiffRoomNameErrorCount = 0;
+			LONG m_lFullRoomErrorCount = 0;
+			LONG m_lAlreadyRunningRoomErrorCount = 0;
 			LONG m_lReSendTimeoutCount = 0;
+			LONG m_lDummyDisconnectCount = 0; // 일부러 더미에서 재연결 재현 횟수
 		};
 	private:
 
@@ -22,10 +23,11 @@ namespace jh_content
 		
 			struct ErrorAggregator
 			{
-				alignas(32) LONG m_llDestroyedRoom = 0;
-				alignas(32) LONG m_llDiffRoomName = 0;
-				alignas(32) LONG m_llFullRoom = 0;
-				alignas(32) LONG m_llAlreadyRunningRoom = 0;
+				alignas(32) LONG m_lDestroyedRoom = 0;
+				alignas(32) LONG m_lDiffRoomName = 0;
+				alignas(32) LONG m_lFullRoom = 0;
+				alignas(32) LONG m_lAlreadyRunningRoom = 0;
+				alignas(32) LONG m_lDummyDisconnectCount = 0;
 			};
 		public:
 			LogicData() : m_hLogicThread{}, m_hJobEvent{}, m_netJobQueue{}, m_sessionConnEventQueue{}, m_dummyUmap{}, m_reSendTimeoutCnt{} {}

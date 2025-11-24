@@ -101,12 +101,13 @@ void jh_content::LobbyDummyClient::Monitor()
 
 	DummyUpdateSystem::EtcData etcData = m_pDummySystem->UpdateEtc();
 
+	wprintf(L" [Content] total Dummy Disconnect_Count .. : [%d]\n",etcData.m_lDummyDisconnectCount);
 	wprintf(L" [Content] Packet Re-Send Timeout Count [%d]s : %d\n", RE_SEND_TIMEOUT/1000, etcData.m_lReSendTimeoutCount);
 	
-	wprintf(L" [Content] Enter Failed.. DestroyedRoom_Count : [%d]\n",etcData.m_llDestroyedRoomErrorCount);
-	wprintf(L" [Content] Enter Failed.. DiffRoom_Count : [%d]\n", etcData.m_llDiffRoomNameErrorCount);
-	wprintf(L" [Content] Enter Failed.. FullRoom_Count : [%d]\n", etcData.m_llFullRoomErrorCount);
-	wprintf(L" [Content] Enter Failed.. AlreadyRunning_Count : [%d]\n", etcData.m_llAlreadyRunningRoomErrorCount);
+	wprintf(L" [Content] Enter Failed.. total DestroyedRoom_Count : [%d]\n",etcData.m_lDestroyedRoomErrorCount);
+	wprintf(L" [Content] Enter Failed.. total DiffRoom_Count : [%d]\n", etcData.m_lDiffRoomNameErrorCount);
+	wprintf(L" [Content] Enter Failed.. total FullRoom_Count : [%d]\n", etcData.m_lFullRoomErrorCount);
+	wprintf(L" [Content] Enter Failed.. total AlreadyRunning_Count : [%d]\n", etcData.m_lAlreadyRunningRoomErrorCount);
 
 	wprintf(L"[RTT] : [%llu]ms \n",m_pDummySystem->GetRTT());
 }

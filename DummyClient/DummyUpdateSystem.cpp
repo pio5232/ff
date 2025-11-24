@@ -317,9 +317,14 @@ void jh_content::DummyUpdateSystem::ProcessDummyLogic(int threadNum)
 		}
 		case DummyStatus::IN_ROOM:
 		{
-			int ran = GetRandValue(100,0);
+			int ran = GetRandValue(1000,0);
 
-			if (ran < 15)
+			if (ran > 998)
+			{
+				m_pOwner->Disconnect(dummy->m_ullSessionId);
+				InterlockedIncrement(&m_logicData[threadNum].m_errorAggregator.m_lDummyDisconnectCount);
+			}
+			else if (ran < 150)
 			{
 				PacketBufferRef leaveRoomRqPkt = DummyPacketBuilder::BuildLeaveRoomRequestPacket(dummy->m_usExpectedRoomNum, dummy->m_wszExpectedRoomName);
 
@@ -581,10 +586,10 @@ void jh_content::DummyUpdateSystem::HandleErrorPacket(ULONGLONG sessionId, Packe
 
 	switch (PacketErrorCode)
 	{
-	case jh_network::PacketErrorCode::REQUEST_DESTROYED_ROOM: InterlockedIncrement(&agg.m_llDestroyedRoom); break;
-	case jh_network::PacketErrorCode::REQUEST_DIFF_ROOM_NAME: InterlockedIncrement(&agg.m_llDiffRoomName); break;
-	case jh_network::PacketErrorCode::FULL_ROOM: InterlockedIncrement(&agg.m_llFullRoom); break;
-	case jh_network::PacketErrorCode::ALREADY_RUNNING_ROOM: InterlockedIncrement(&agg.m_llAlreadyRunningRoom); break;
+	case jh_network::PacketErrorCode::REQUEST_DESTROYED_ROOM: InterlockedIncrement(&agg.m_lDestroyedRoom); break;
+	case jh_network::PacketErrorCode::REQUEST_DIFF_ROOM_NAME: InterlockedIncrement(&agg.m_lDiffRoomName); break;
+	case jh_network::PacketErrorCode::FULL_ROOM: InterlockedIncrement(&agg.m_lFullRoom); break;
+	case jh_network::PacketErrorCode::ALREADY_RUNNING_ROOM: InterlockedIncrement(&agg.m_lAlreadyRunningRoom); break;
 	}
 
 	m_logicData[threadNum].m_dummyUmap[sessionId]->m_dummyStatus = DummyStatus::IN_LOBBY;
@@ -651,12 +656,12 @@ jh_content::DummyUpdateSystem::EtcData jh_content::DummyUpdateSystem::UpdateEtc(
 
 	for (int i = 0; i < LOGIC_THREAD_COUNT; i++)
 	{
-		etc.m_lReSendTimeoutCount += InterlockedExchange(&m_logicData[i].m_reSendTimeoutCnt, 0);
-
-		etc.m_llDestroyedRoomErrorCount += InterlockedExchange(&m_logicData[i].m_errorAggregator.m_llDestroyedRoom, 0);
-		etc.m_llDiffRoomNameErrorCount += InterlockedExchange(&m_logicData[i].m_errorAggregator.m_llDiffRoomName, 0);
-		etc.m_llFullRoomErrorCount += InterlockedExchange(&m_logicData[i].m_errorAggregator.m_llFullRoom, 0);
-		etc.m_llAlreadyRunningRoomErrorCount += InterlockedExchange(&m_logicData[i].m_errorAggregator.m_llAlreadyRunningRoom, 0);
+		etc.m_lReSendTimeoutCount += m_logicData[i].m_reSendTimeoutCnt;// InterlockedExchange(&m_logicData[i].m_reSendTimeoutCnt, 0);
+		etc.m_lDestroyedRoomErrorCount += m_logicData[i].m_errorAggregator.m_lDestroyedRoom; // InterlockedExchange(&m_logicData[i].m_errorAggregator.m_lDestroyedRoom, 0);
+		etc.m_lDiffRoomNameErrorCount += m_logicData[i].m_errorAggregator.m_lDiffRoomName;// InterlockedExchange(&m_logicData[i].m_errorAggregator.m_lDiffRoomName, 0);
+		etc.m_lFullRoomErrorCount += m_logicData[i].m_errorAggregator.m_lFullRoom;// InterlockedExchange(&m_logicData[i].m_errorAggregator.m_lFullRoom, 0);
+		etc.m_lAlreadyRunningRoomErrorCount += m_logicData[i].m_errorAggregator.m_lAlreadyRunningRoom;// InterlockedExchange(&m_logicData[i].m_errorAggregator.m_lAlreadyRunningRoom, 0);
+		etc.m_lDummyDisconnectCount += m_logicData[i].m_errorAggregator.m_lDummyDisconnectCount;// InterlockedExchange(&m_logicData[i].m_errorAggregator.m_lDummyDisconnectCount, 0);
 	}
 
 	return etc;
